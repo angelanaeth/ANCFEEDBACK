@@ -150,7 +150,7 @@
 
     async function init() {
       try {
-        const res = await fetch('/api/coach/athletes');
+        const res = await fetch('/api/feedback/athletes');
         const data = await res.json();
         athletes = data.athletes || [];
         const select = document.getElementById('athleteSelect');
