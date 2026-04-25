@@ -14,6 +14,14 @@ import {
   calculateMetricsEndpoint
 } from './gpt/gpt-api'
 
+import {
+  generateFeedback,
+  regenerateFeedback,
+  saveFeedback,
+  getBlockTypes,
+} from './athlete-feedback'
+
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
