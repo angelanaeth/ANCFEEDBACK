@@ -1,0 +1,215 @@
+/* VO2 CALCULATOR STYLE UNIFICATION - MATCHES STANDARD CALCULATORS */
+
+/* Override all custom fonts to match standard */
+#vo2-bike *,
+#vo2-run * {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+}
+
+/* Title Block - Match standard calculator headers */
+#vo2-bike .title-block,
+#vo2-run .title-block {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+#vo2-bike .title-main,
+#vo2-run .title-main {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  margin-bottom: 4px !important;
+}
+
+#vo2-bike .title-sub,
+#vo2-run .title-sub {
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  font-weight: 400 !important;
+}
+
+/* Input Labels - Increase from 9px to 13px */
+#vo2-bike .input-label,
+#vo2-run .input-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+/* Input Fields - Standard sizing */
+#vo2-bike .input-field,
+#vo2-bike .pace-field,
+#vo2-bike .pace-field-sec,
+#vo2-run .input-field,
+#vo2-run .pace-field,
+#vo2-run .pace-field-sec {
+  font-size: 16px !important;
+  padding: 8px 12px !important;
+  height: 40px !important;
+}
+
+/* Pace separators and units */
+#vo2-bike .pace-sep,
+#vo2-bike .pace-unit,
+#vo2-run .pace-sep,
+#vo2-run .pace-unit {
+  font-size: 16px !important;
+}
+
+/* Section Headers - Increase from 9px to 14px */
+#vo2-bike [style*="font-size:9px"],
+#vo2-run [style*="font-size:9px"] {
+  font-size: 14px !important;
+}
+
+/* Prescribe Button - Match standard button */
+#vo2-bike .prescribe-btn,
+#vo2-run .prescribe-btn {
+  font-size: 16px !important;
+  padding: 12px 24px !important;
+  height: auto !important;
+}
+
+/* Durability Buttons */
+#vo2-bike .dur-btn,
+#vo2-run .dur-btn {
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+}
+
+/* Results Section */
+#vo2-bike .results,
+#vo2-run .results {
+  padding: 20px !important;
+}
+
+/* Stats Cards */
+#vo2-bike .stat-label,
+#vo2-run .stat-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+}
+
+#vo2-bike .stat-value,
+#vo2-run .stat-value {
+  font-size: 32px !important;
+  font-weight: 600 !important;
+}
+
+#vo2-bike .stat-unit,
+#vo2-run .stat-unit {
+  font-size: 13px !important;
+  color: #6b7280 !important;
+}
+
+/* Profile Badges */
+#vo2-bike .profile-badge,
+#vo2-run .profile-badge {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 4px 12px !important;
+}
+
+#vo2-bike .profile-text,
+#vo2-run .profile-text {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+#vo2-bike .profile-note,
+#vo2-run .profile-note {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+/* Workout Tabs */
+#vo2-bike .tab-btn,
+#vo2-run .tab-btn {
+  font-size: 14px !important;
+  padding: 12px 20px !important;
+}
+
+/* Workout Card Content */
+#vo2-bike .workout-card h3,
+#vo2-run .workout-card h3 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+#vo2-bike .workout-card h4,
+#vo2-run .workout-card h4 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+#vo2-bike .workout-card p,
+#vo2-bike .workout-card li,
+#vo2-run .workout-card p,
+#vo2-run .workout-card li {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+/* Interval Details */
+#vo2-bike .interval-row strong,
+#vo2-run .interval-row strong {
+  font-size: 14px !important;
+}
+
+#vo2-bike .interval-row span,
+#vo2-run .interval-row span {
+  font-size: 14px !important;
+}
+
+/* Error Messages */
+#vo2-bike .error-msg,
+#vo2-run .error-msg {
+  font-size: 13px !important;
+}
+
+/* Success Messages */
+#vo2-bike .success-msg,
+#vo2-run .success-msg {
+  font-size: 14px !important;
+}
+
+/* Any remaining small text - minimum 12px */
+#vo2-bike *,
+#vo2-run * {
+  font-size: max(12px, 1em) !important;
+}
+
+/* Headers hierarchy */
+#vo2-bike h1,
+#vo2-run h1 {
+  font-size: 24px !important;
+}
+
+#vo2-bike h2,
+#vo2-run h2 {
+  font-size: 20px !important;
+}
+
+#vo2-bike h3,
+#vo2-run h3 {
+  font-size: 18px !important;
+}
+
+#vo2-bike h4,
+#vo2-run h4 {
+  font-size: 16px !important;
+}
+
+#vo2-bike h5,
+#vo2-run h5 {
+  font-size: 14px !important;
+}
+
+#vo2-bike h6,
+#vo2-run h6 {
+  font-size: 13px !important;
+}

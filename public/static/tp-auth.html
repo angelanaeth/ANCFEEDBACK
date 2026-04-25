@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect TrainingPeaks - Angela Coach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
+            padding: 40px;
+        }
+        .btn-tp {
+            background: #00A3E0;
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+            border: none;
+        }
+        .btn-tp:hover {
+            background: #0080B3;
+            color: white;
+        }
+        .logo {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="text-center">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h1 class="mb-3">Angela Coaching Engine</h1>
+            <h4 class="text-muted mb-4">Connect Your TrainingPeaks Account</h4>
+            
+            <div class="alert alert-info text-start">
+                <h6><i class="fas fa-info-circle"></i> What happens next:</h6>
+                <ol class="mb-0">
+                    <li>You'll be redirected to TrainingPeaks</li>
+                    <li>Log in with your TrainingPeaks account</li>
+                    <li>Approve access to your coaching data</li>
+                    <li>You'll be redirected back here</li>
+                    <li>Your athletes will sync automatically</li>
+                </ol>
+            </div>
+
+            <button id="connectBtn" class="btn btn-tp btn-lg w-100 mb-3">
+                <i class="fas fa-plug me-2"></i>
+                Connect TrainingPeaks Coach Account
+            </button>
+
+            <div id="loading" class="text-center d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Redirecting...</span>
+                </div>
+                <p class="mt-2 text-muted">Redirecting to TrainingPeaks...</p>
+            </div>
+
+            <div class="text-muted small mt-4">
+                <p class="mb-1"><strong>Scopes requested:</strong></p>
+                <ul class="list-unstyled small">
+                    <li>✓ Read athlete profiles</li>
+                    <li>✓ Read workout data</li>
+                    <li>✓ Write workout plans</li>
+                    <li>✓ Access wellness metrics</li>
+                </ul>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="text-center">
+                <a href="/static/coach" class="text-decoration-none">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            // Show loading state
+            document.getElementById('connectBtn').classList.add('d-none');
+            document.getElementById('loading').classList.remove('d-none');
+
+            // Build OAuth URL - Use the pre-registered redirect URI
+            const clientId = 'qt2systems';
+            const redirectUri = encodeURIComponent('http://127.0.0.1:5000/handle_trainingpeaks_authorization');
+            const scope = encodeURIComponent('coach:athletes:read coach:athletes:write coach:workouts:read coach:workouts:write coach:wellness:read');
+            const state = 'coach_auth_' + Date.now();
+
+            const authUrl = `https://oauth.trainingpeaks.com/OAuth/Authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}`;
+
+            console.log('🔐 Redirecting to TrainingPeaks OAuth:', authUrl);
+            console.log('⚠️ NOTE: Using pre-registered redirect URI http://127.0.0.1:5000/...');
+            console.log('After authorization, manually copy the code and use /tp-callback-manual endpoint');
+
+            // Redirect to TrainingPeaks OAuth
+            window.location.href = authUrl;
+        });
+    </script>
+</body>
+</html>

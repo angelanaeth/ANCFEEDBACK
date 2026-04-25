@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taper Calculator - Echodevo Coach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --accent: #f97316;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            background: var(--background);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            background: var(--card-bg);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            color: white;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .taper-week {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .taper-week h5 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .day-plan {
+            background: var(--background);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .day-plan .day-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .day-plan .day-details {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .alert-info {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 8px;
+            color: var(--primary);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            color: var(--warning);
+        }
+
+        .save-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border: 2px solid var(--success);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .tsb-chart {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .tsb-bar {
+            height: 30px;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .tsb-positive {
+            background: linear-gradient(90deg, var(--success) 0%, #059669 100%);
+        }
+
+        .tsb-negative {
+            background: linear-gradient(90deg, var(--primary) 0%, #1e40af 100%);
+        }
+
+        .tsb-target {
+            background: linear-gradient(90deg, var(--accent) 0%, #ea580c 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/static/coach">
+                <i class="fas fa-calendar-check me-2"></i>Taper Calculator
+            </a>
+            <div class="d-flex gap-2">
+                <a href="/static/coach" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2 class="mb-2"><i class="fas fa-calendar-check me-2"></i>Taper Calculator</h2>
+            <p class="text-secondary mb-0">Optimize your taper to peak on race day with a scientifically designed training reduction plan</p>
+        </div>
+
+        <!-- Race Information -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-flag-checkered me-2"></i>Race Information
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Race Name *</label>
+                        <input type="text" class="form-control" id="raceName" placeholder="e.g., Ironman Arizona 2026" required>
+                        <small class="text-muted">Required for saving to athlete profile</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Race Date *</label>
+                        <input type="date" class="form-control" id="raceDate" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Race Distance *</label>
+                        <select class="form-select" id="raceDistance">
+                            <option value="sprint">Sprint Distance</option>
+                            <option value="olympic">Olympic Distance</option>
+                            <option value="70.3">Half Ironman (70.3)</option>
+                            <option value="ironman">Ironman</option>
+                            <option value="marathon">Marathon</option>
+                            <option value="half-marathon">Half Marathon</option>
+                            <option value="10k">10K</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Training Load -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-line me-2"></i>Current Training Load
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Current CTL *</label>
+                        <input type="number" class="form-control" id="currentCTL" placeholder="80" required>
+                        <small class="text-muted">Chronic Training Load (Fitness)</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Current ATL</label>
+                        <input type="number" class="form-control" id="currentATL" placeholder="60">
+                        <small class="text-muted">Acute Training Load (Fatigue)</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Current TSB</label>
+                        <input type="number" class="form-control" id="currentTSB" placeholder="20">
+                        <small class="text-muted">Training Stress Balance (Form)</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Weeks Trained *</label>
+                        <input type="number" class="form-control" id="weeksTrained" placeholder="16" required>
+                        <small class="text-muted">Total training cycle weeks</small>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-2">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>What is TSB?</strong> Training Stress Balance = CTL - ATL. 
+                    Negative TSB means you're fatigued, positive means you're fresh and ready to race. 
+                    Target TSB for race day: <strong>+5 to +15</strong> for most athletes (positive = tapered and fresh!).
+                </div>
+            </div>
+        </div>
+
+        <!-- Taper Preferences -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-sliders-h me-2"></i>Taper Preferences
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Taper Length</label>
+                        <select class="form-select" id="taperLength">
+                            <option value="auto" selected>Auto (Based on race distance)</option>
+                            <option value="1">1 Week</option>
+                            <option value="2">2 Weeks</option>
+                            <option value="3">3 Weeks</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Goal TSB on Race Day</label>
+                        <select class="form-select" id="goalTSB">
+                            <option value="5">+5 (Slightly Fresh)</option>
+                            <option value="8">+8 (Moderately Fresh)</option>
+                            <option value="10" selected>+10 (Optimal)</option>
+                            <option value="12">+12 (Very Fresh)</option>
+                            <option value="15">+15 (Maximum Freshness)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculate Button -->
+        <div class="text-center mb-4">
+            <button class="btn btn-primary btn-lg" onclick="calculateTaper()">
+                <i class="fas fa-calculator me-2"></i>Generate Taper Plan
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section">
+            <!-- Taper Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-2"></i>Taper Overview
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Taper Duration</div>
+                                <div class="metric-value" id="taperDuration">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Total Volume Reduction</div>
+                                <div class="metric-value" id="volumeReduction">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Race Day CTL</div>
+                                <div class="metric-value" id="raceDayCTL">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Race Day TSB</div>
+                                <div class="metric-value" id="raceDayTSB">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TSB Progression Chart -->
+                    <div class="tsb-chart">
+                        <h5 class="mb-3">TSB Progression to Race Day</h5>
+                        <div id="tsbChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Taper Plan -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-week me-2"></i>Weekly Taper Plan
+                </div>
+                <div class="card-body">
+                    <div id="weeklyPlan"></div>
+                </div>
+            </div>
+
+            <!-- Key Guidelines -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb me-2"></i>Taper Guidelines
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Important Taper Principles</h5>
+                        <ul class="mb-0">
+                            <li><strong>Maintain Intensity:</strong> Keep workout intensity high, but drastically reduce volume</li>
+                            <li><strong>Preserve Frequency:</strong> Continue regular training sessions, just shorter</li>
+                            <li><strong>Listen to Your Body:</strong> If you feel fatigued, reduce more. If restless, add short sessions</li>
+                            <li><strong>Final Week:</strong> Minimal training 4-5 days before race. Day before: 15-20 min easy + 3-5 x 20sec pickups</li>
+                            <li><strong>Nutrition:</strong> Increase carbs by 10-20% in final 2-3 days. Stay hydrated</li>
+                            <li><strong>Sleep:</strong> Prioritize 8+ hours. Go to bed earlier than usual</li>
+                            <li><strong>Trust the Taper:</strong> Feeling sluggish in week 1-2 is normal. You'll feel sharp race week</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save to Profile Section -->
+            <div class="save-section">
+                <h4 class="mb-3"><i class="fas fa-save me-2"></i>Save Taper Plan to Athlete Profile</h4>
+                <p class="text-muted mb-3">Save this taper plan to the athlete's profile for future reference and tracking.</p>
+                <div class="row align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label">Athlete ID</label>
+                        <input type="number" class="form-control" id="athleteId" placeholder="427194">
+                        <small class="text-muted">Enter the TrainingPeaks athlete ID</small>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-success w-100" onclick="saveToProfile()">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Save to Profile
+                        </button>
+                    </div>
+                </div>
+                <div id="saveMessage" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // Global variable to store calculation results
+        let calculationResults = null;
+
+        // Taper length guidelines by race distance
+        const taperLengthGuidelines = {
+            'sprint': 1,
+            'olympic': 1,
+            '70.3': 2,
+            'ironman': 3,
+            'marathon': 3,
+            'half-marathon': 2,
+            '10k': 1
+        };
+
+        // Volume reduction by week (percentage of normal training)
+        // Based on Angela Naeth's Brain - Proven race-day taper formulas
+        const volumeReductionByWeek = {
+            1: [0.80], // Olympic: Week -1: 80% volume (Angela: "openers only")
+            2: [0.70, 0.40], // Half Ironman: Week -2: 70%, Week -1: 40%
+            3: [0.85, 0.60, 0.30] // Ironman: Week -3: 85%, Week -2: 60% (Angela), Week -1: 30% (Angela)
+        };
+
+        function calculateTaper() {
+            // Get inputs
+            const raceName = document.getElementById('raceName').value.trim();
+            const raceDate = document.getElementById('raceDate').value;
+            const raceDistance = document.getElementById('raceDistance').value;
+            const currentCTL = parseFloat(document.getElementById('currentCTL').value);
+            const currentATL = parseFloat(document.getElementById('currentATL').value) || currentCTL - 20;
+            const currentTSB = parseFloat(document.getElementById('currentTSB').value) || (currentCTL - currentATL);
+            const weeksTrained = parseInt(document.getElementById('weeksTrained').value);
+            const taperLengthInput = document.getElementById('taperLength').value;
+            const goalTSB = parseFloat(document.getElementById('goalTSB').value);
+
+            // Validation
+            if (!raceName) {
+                alert('Please enter a race name');
+                return;
+            }
+            if (!raceDate) {
+                alert('Please select a race date');
+                return;
+            }
+            if (!currentCTL || currentCTL <= 0) {
+                alert('Please enter a valid CTL');
+                return;
+            }
+            if (!weeksTrained || weeksTrained <= 0) {
+                alert('Please enter weeks trained');
+                return;
+            }
+
+            // Determine taper length
+            let taperWeeks;
+            if (taperLengthInput === 'auto') {
+                taperWeeks = taperLengthGuidelines[raceDistance] || 2;
+            } else {
+                taperWeeks = parseInt(taperLengthInput);
+            }
+
+            // Adjust taper based on fatigue
+            if (currentTSB < -30) {
+                taperWeeks = Math.min(taperWeeks + 1, 3); // Add a week if very fatigued
+            }
+
+            // Get volume reductions for the taper weeks
+            const volumeReductions = volumeReductionByWeek[taperWeeks];
+
+            // Calculate weekly TSS targets
+            const normalWeeklyTSS = currentCTL * 7; // Rough estimate
+            const weeklyTSSTargets = volumeReductions.map(reduction => 
+                Math.round(normalWeeklyTSS * reduction)
+            );
+
+            // Calculate daily TSS for each week
+            const dailyTSSByWeek = weeklyTSSTargets.map(weeklyTSS => 
+                Math.round(weeklyTSS / 7)
+            );
+
+            // Simulate CTL/ATL/TSB progression
+            let ctl = currentCTL;
+            let atl = currentATL;
+            const tsbProgression = [currentTSB];
+            const ctlProgression = [currentCTL];
+
+            for (let week = 0; week < taperWeeks; week++) {
+                for (let day = 0; day < 7; day++) {
+                    const dailyTSS = dailyTSSByWeek[week];
+                    ctl = ctl + (dailyTSS - ctl) / 42; // 42-day time constant
+                    atl = atl + (dailyTSS - atl) / 7; // 7-day time constant
+                    const tsb = ctl - atl;
+                    tsbProgression.push(tsb);
+                    ctlProgression.push(ctl);
+                }
+            }
+
+            const raceDayCTL = ctlProgression[ctlProgression.length - 1];
+            const raceDayTSB = tsbProgression[tsbProgression.length - 1];
+
+            // Generate weekly plan
+            const weeklyPlan = generateWeeklyPlan(taperWeeks, dailyTSSByWeek, raceDistance);
+
+            // Store results
+            calculationResults = {
+                race_name: raceName,
+                race_date: raceDate,
+                race_distance: raceDistance,
+                taper_weeks: taperWeeks,
+                current_training_load: {
+                    ctl: currentCTL,
+                    atl: currentATL,
+                    tsb: currentTSB,
+                    weeks_trained: weeksTrained
+                },
+                taper_plan: {
+                    weekly_tss_targets: weeklyTSSTargets,
+                    daily_tss_by_week: dailyTSSByWeek,
+                    volume_reduction_percent: Math.round((1 - volumeReductions[volumeReductions.length - 1]) * 100),
+                    race_day_ctl: raceDayCTL.toFixed(1),
+                    race_day_tsb: raceDayTSB.toFixed(1),
+                    goal_tsb: goalTSB
+                },
+                tsb_progression: tsbProgression,
+                ctl_progression: ctlProgression,
+                weekly_plan: weeklyPlan
+            };
+
+            // Display results
+            displayResults();
+        }
+
+        function generateWeeklyPlan(taperWeeks, dailyTSSByWeek, raceDistance) {
+            const plan = [];
+            
+            for (let week = 0; week < taperWeeks; week++) {
+                const weekNumber = taperWeeks - week;
+                const dailyTSS = dailyTSSByWeek[week];
+                const weeklyTSS = dailyTSS * 7;
+                
+                let weekPlan = {
+                    week: weekNumber,
+                    weekly_tss: weeklyTSS,
+                    daily_tss: dailyTSS,
+                    days: []
+                };
+
+                if (weekNumber === 1) {
+                    // Final week - very light
+                    weekPlan.days = [
+                        { day: 'Monday', tss: Math.round(dailyTSS * 1.2), description: 'Easy spin/run. 30-40 min Z1-Z2. Stay loose.' },
+                        { day: 'Tuesday', tss: Math.round(dailyTSS * 1.3), description: 'Short intervals. 4-5 x 1 min @ race pace, full recovery. Total 30-40 min.' },
+                        { day: 'Wednesday', tss: Math.round(dailyTSS * 0.8), description: 'Easy swim + easy bike or run. 20-30 min each. Very light.' },
+                        { day: 'Thursday', tss: Math.round(dailyTSS * 0.6), description: 'Pre-race shakeout. 15-20 min easy + 3-5 x 20sec pickups.' },
+                        { day: 'Friday', tss: 0, description: 'REST. Travel day if needed. Hydrate, fuel, sleep.' },
+                        { day: 'Saturday', tss: Math.round(dailyTSS * 0.5), description: 'Optional 15 min easy spin/jog + 3 x 20sec race pace. Check gear.' },
+                        { day: 'Sunday', tss: 0, description: 'RACE DAY! Trust your training. Execute your plan.' }
+                    ];
+                } else if (weekNumber === 2) {
+                    // Week -2: moderate reduction
+                    weekPlan.days = [
+                        { day: 'Monday', tss: Math.round(dailyTSS * 0.8), description: 'Recovery day. Easy 30-40 min Z1-Z2.' },
+                        { day: 'Tuesday', tss: Math.round(dailyTSS * 1.4), description: 'Key session. Race pace intervals with good recovery. Maintain intensity.' },
+                        { day: 'Wednesday', tss: Math.round(dailyTSS * 1.0), description: 'Moderate session. 45-60 min Z2-Z3.' },
+                        { day: 'Thursday', tss: Math.round(dailyTSS * 1.2), description: 'Threshold work. 2-3 x 8-10 min @ FTP/threshold. Quality over quantity.' },
+                        { day: 'Friday', tss: Math.round(dailyTSS * 0.8), description: 'Easy recovery. 30-40 min Z1.' },
+                        { day: 'Saturday', tss: Math.round(dailyTSS * 1.4), description: 'Long-ish but reduced. 60-70% of normal long workout.' },
+                        { day: 'Sunday', tss: Math.round(dailyTSS * 0.4), description: 'Easy active recovery. 20-30 min Z1.' }
+                    ];
+                } else if (weekNumber === 3) {
+                    // Week -3: slight reduction
+                    weekPlan.days = [
+                        { day: 'Monday', tss: Math.round(dailyTSS * 0.6), description: 'Easy recovery. 30-45 min Z1-Z2.' },
+                        { day: 'Tuesday', tss: Math.round(dailyTSS * 1.5), description: 'Last big interval session. Race specificity. Quality focus.' },
+                        { day: 'Wednesday', tss: Math.round(dailyTSS * 1.0), description: 'Moderate endurance. 60-75 min Z2-Z3.' },
+                        { day: 'Thursday', tss: Math.round(dailyTSS * 1.3), description: 'Tempo or sweet spot. 3-4 x 10-12 min. Maintain power/pace.' },
+                        { day: 'Friday', tss: Math.round(dailyTSS * 0.8), description: 'Easy day. 40-50 min Z1-Z2.' },
+                        { day: 'Saturday', tss: Math.round(dailyTSS * 1.5), description: 'Last long workout. 75-80% of peak volume. Race simulation.' },
+                        { day: 'Sunday', tss: Math.round(dailyTSS * 0.3), description: 'Easy recovery or rest. 20-30 min Z1 or off.' }
+                    ];
+                }
+
+                plan.push(weekPlan);
+            }
+
+            return plan;
+        }
+
+        function displayResults() {
+            const results = calculationResults;
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+            // Taper overview
+            document.getElementById('taperDuration').textContent = `${results.taper_weeks} Week${results.taper_weeks > 1 ? 's' : ''}`;
+            document.getElementById('volumeReduction').textContent = `${results.taper_plan.volume_reduction_percent}%`;
+            document.getElementById('raceDayCTL').textContent = results.taper_plan.race_day_ctl;
+            document.getElementById('raceDayTSB').textContent = results.taper_plan.race_day_tsb;
+
+            // TSB progression chart
+            const tsbChart = document.getElementById('tsbChart');
+            const numDays = results.tsb_progression.length;
+            let chartHTML = '';
+            
+            // Show TSB for key days
+            const keyDays = [0, 7, 14, 21, numDays - 1].filter(d => d < numDays);
+            keyDays.forEach(dayIndex => {
+                const tsb = results.tsb_progression[dayIndex];
+                const label = dayIndex === 0 ? 'Today' : dayIndex === numDays - 1 ? 'Race Day' : `Day ${dayIndex}`;
+                const barClass = dayIndex === numDays - 1 ? 'tsb-target' : tsb >= 0 ? 'tsb-positive' : 'tsb-negative';
+                const width = Math.abs(tsb) * 5; // Scale for visualization
+                
+                chartHTML += `
+                    <div class="mb-2">
+                        <small class="text-muted">${label}</small>
+                        <div class="tsb-bar ${barClass}" style="width: ${Math.min(width, 100)}%">
+                            TSB: ${tsb.toFixed(1)}
+                        </div>
+                    </div>
+                `;
+            });
+            tsbChart.innerHTML = chartHTML;
+
+            // Weekly plan
+            const weeklyPlanDiv = document.getElementById('weeklyPlan');
+            let planHTML = '';
+            
+            results.weekly_plan.forEach(week => {
+                planHTML += `
+                    <div class="taper-week">
+                        <h5>Week ${week.week} (${week.week === 1 ? 'Race Week' : week.week + ' Weeks Out'})</h5>
+                        <p class="text-muted">Target Weekly TSS: ${week.weekly_tss} (Average: ${week.daily_tss}/day)</p>
+                `;
+                
+                week.days.forEach(day => {
+                    planHTML += `
+                        <div class="day-plan">
+                            <div class="day-label">
+                                ${day.day} - ${day.tss} TSS
+                            </div>
+                            <div class="day-details">
+                                ${day.description}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                planHTML += '</div>';
+            });
+            
+            weeklyPlanDiv.innerHTML = planHTML;
+        }
+
+        async function saveToProfile() {
+            const athleteId = document.getElementById('athleteId').value;
+            
+            if (!athleteId) {
+                alert('Please enter an athlete ID');
+                return;
+            }
+
+            if (!calculationResults) {
+                alert('Please generate taper plan first');
+                return;
+            }
+
+            try {
+                const response = await axios.post(
+                    `/api/coach/athlete/${athleteId}/race-note`,
+                    {
+                        note_type: 'taper_plan',
+                        race_name: calculationResults.race_name,
+                        content: calculationResults
+                    }
+                );
+
+                if (response.data.success) {
+                    const messageDiv = document.getElementById('saveMessage');
+                    messageDiv.style.display = 'block';
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Success!</strong> Taper plan saved to athlete profile.
+                        <a href="/static/athlete-profile.html?athlete=${athleteId}" class="alert-link ms-2">
+                            View Profile <i class="fas fa-external-link-alt ms-1"></i>
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('saveMessage');
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error!</strong> ${error.response?.data?.error || 'Failed to save taper plan'}
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

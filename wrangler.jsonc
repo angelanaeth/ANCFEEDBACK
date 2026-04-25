@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "angela-coach",
+  "compatibility_date": "2024-01-01",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": ["nodejs_compat"],
+  
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "angela-db-production",
+      "database_id": "9597d96f-1e8f-476f-b1bf-ab0c8b4e5602"
+    }
+  ],
+  
+  "vars": {
+    "TP_CLIENT_ID": "qt2systems",
+    "TP_AUTH_URL": "https://oauth.trainingpeaks.com",
+    "TP_TOKEN_URL": "https://oauth.trainingpeaks.com/oauth/token",
+    "TP_API_BASE_URL": "https://api.trainingpeaks.com",
+    "TP_REDIRECT_URI_COACH": "https://angela-coach.pages.dev/handle_trainingpeaks_authorization",
+    "TP_REDIRECT_URI_ATHLETE": "https://angela-coach.pages.dev/handle_trainingpeaks_authorization"
+  }
+}

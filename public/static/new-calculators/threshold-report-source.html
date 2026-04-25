@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QT2 Systems · Threshold Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--bg2:#111113;--bg3:#161618;--bg4:#1c1c1f;--bg5:#222225;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#e8e6e1;--muted:#68645f;--hint:#3a3835;--sub:#9b9790;
+  --lt1:#1D9E75;--lt1d:rgba(29,158,117,0.10);--lt1b:rgba(29,158,117,0.28);
+  --ogc:#C17D22;--ogcd:rgba(193,125,34,0.10);--ogcb:rgba(193,125,34,0.28);
+  --cp:#2a477f;--cpd:rgba(42,71,127,0.15);--cpb:rgba(42,71,127,0.35);
+  --accent:#4a7fd4;--accent2:#2a477f;--accent3:#204e99;--accent4:#003c6f;
+  --danger:#d94f4e;--warn:#d4831a;--ok:#1D9E75;--info:#4a7fd4;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:3px;--r2:5px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;min-height:100vh;padding:36px 28px;max-width:1200px;margin:0 auto;font-size:14px;line-height:1.6}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--qt2-border);position:relative}header::after{content:'';position:absolute;bottom:-1px;left:0;width:120px;height:2px;background:linear-gradient(90deg,var(--qt2-mid),var(--qt2-bright) 60%,transparent)}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.logo-wrap{width:116px;height:42px;background:transparent;border-radius:var(--r);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;padding:4px}
+.logo-wrap img{width:100%;height:100%;object-fit:contain}
+.logo-text{font-family:var(--mono);font-size:8px;color:#333;text-align:center;line-height:1.4}
+.hdr-title h1{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--qt2-bright);letter-spacing:.02em}
+.hdr-title p{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+
+/* ── INPUTS ── */
+.inputs-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.inputs-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.ig label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ig input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:.15s}
+.ig input:focus{border-color:var(--qt2-bright);box-shadow:0 0 0 3px rgba(74,127,212,.12)}
+.ig input[type=date]{color-scheme:dark}
+
+/* ── DROP ZONE ── */
+.drop-zone{border:1px dashed var(--qt2-border);border-radius:var(--r2);padding:36px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;margin-bottom:20px}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--qt2-bright);background:rgba(32,78,153,.08)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{width:32px;height:32px;border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:14px;color:var(--muted)}
+.drop-zone h2{font-size:12px;font-weight:400;margin-bottom:3px}
+.drop-zone p{font-size:10px;color:var(--muted);font-family:var(--mono)}
+
+/* ── STATUS / DIAG ── */
+.status-bar{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;display:none;align-items:center;gap:8px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--qt2-bright);animation:pulse 1.4s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.diag{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);margin-bottom:18px;overflow:hidden;display:none}
+.diag-hdr{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--qt2-border);background:rgba(0,60,111,0.15)}
+.diag-icon{width:22px;height:22px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;flex-shrink:0}
+.di-ok{background:rgba(29,158,117,.15);color:var(--lt1)}
+.di-warn{background:rgba(212,131,26,.15);color:var(--warn)}
+.di-err{background:rgba(217,79,78,.15);color:var(--danger)}
+.dt-ok{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--lt1)}
+.dt-warn{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--warn)}
+.dt-err{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--danger)}
+.diag-body{padding:12px 14px;font-size:11px;color:var(--muted);line-height:1.7}
+.diag-body strong{color:var(--sub);font-weight:400}
+.diag-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ds{background:var(--bg3);border-radius:var(--r);padding:7px 11px}
+.ds-l{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
+.ds-v{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text)}
+
+/* ── FLAGS (new) ── */
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.flag{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:var(--r);font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.03em}
+.flag-warn{background:rgba(212,131,26,.1);color:var(--warn);border:1px solid rgba(212,131,26,.2)}
+.flag-err{background:rgba(217,79,78,.08);color:var(--danger);border:1px solid rgba(217,79,78,.18)}
+.flag-ok{background:rgba(29,158,117,.08);color:var(--lt1);border:1px solid rgba(29,158,117,.18)}
+.flag-info{background:rgba(74,127,212,.08);color:var(--info);border:1px solid rgba(74,127,212,.18)}
+
+/* ── RESULTS ── */
+#results{display:none}
+.results-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--qt2-bright);text-transform:uppercase;opacity:.85}
+.export-row{display:flex;align-items:center;gap:9px}
+.theme-tog{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;user-select:none}
+.tog-track{position:relative;width:26px;height:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;transition:.2s;flex-shrink:0}
+.tog-track.on{background:rgba(74,127,212,.2);border-color:var(--accent)}
+.tog-thumb{position:absolute;top:2px;left:2px;width:8px;height:8px;background:var(--muted);border-radius:50%;transition:.2s}
+.tog-track.on .tog-thumb{transform:translateX(12px);background:var(--accent)}
+.pdf-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(0,60,111,0.3),rgba(32,78,153,0.15));border:1px solid var(--qt2-border);border-radius:var(--r);padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--qt2-bright);transition:.15s;font-weight:500}
+.pdf-btn:hover{border-color:var(--qt2-bright);color:var(--text);background:rgba(74,127,212,.18)}
+.pdf-btn svg{width:12px;height:12px;flex-shrink:0}
+
+/* ── SUMMARY CARDS ── */
+.summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:20px}
+.sc{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);padding:13px;border-top:2px solid var(--qt2-mid)}
+.sc-l{font-family:var(--mono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sc-v{font-family:var(--mono);font-size:20px;font-weight:500;line-height:1}
+.sc-u{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px}
+.v-lt1{color:var(--lt1)}.v-ogc{color:var(--ogc)}.v-cp{color:var(--accent)}.v-info{color:var(--info)}
+
+/* ── ZONE PRESCRIPTION (new) ── */
+.zone-block{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);margin-bottom:20px;overflow:hidden;border-top:2px solid var(--qt2-mid)}
+.zone-block-hdr{padding:10px 14px;border-bottom:1px solid var(--qt2-border);background:linear-gradient(135deg,rgba(0,60,111,0.4),rgba(32,78,153,0.18));display:flex;align-items:center;justify-content:space-between}
+.zone-block-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--qt2-bright)}
+.zone-rows{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.zr{padding:12px 10px;border-right:1px solid rgba(74,127,212,0.12);position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px}
+.zr:last-child{border-right:none}
+.zr-name{font-family:var(--mono);font-size:7px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zr-range{font-family:var(--mono);font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zr-pct{font-family:var(--mono);font-size:8px;font-weight:500;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zr-hr{font-family:var(--mono);font-size:8.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zr-desc{font-size:9px;color:var(--sub);line-height:1.45;margin-top:3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.zr-bar{position:absolute;top:0;left:0;right:0;height:3px}
+.zr-zr .zr-bar{background:#3a3835}.zr-zr .zr-name{color:var(--muted)}
+.zr-z1 .zr-bar{background:var(--accent2)}.zr-z1 .zr-name{color:var(--accent)}
+.zr-z2 .zr-bar{background:var(--lt1)}.zr-z2 .zr-name{color:var(--lt1)}
+.zr-z3 .zr-bar{background:var(--ogc)}.zr-z3 .zr-name{color:var(--ogc)}
+.zr-zcp .zr-bar{background:var(--danger)}.zr-zcp .zr-name{color:var(--danger)}
+
+/* ── CHARTS ── */
+.chart-pair{display:grid;grid-template-columns:3fr 2fr;gap:12px;margin-bottom:18px}
+.chart-box{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);padding:18px;border-top:2px solid var(--qt2-light)}
+.chart-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.ch-wrap{position:relative;height:210px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:10px;color:var(--muted)}
+.leg-sq{width:7px;height:7px;border-radius:1px;display:inline-block;margin-right:3px;vertical-align:middle}
+
+/* ── CONFIDENCE METER (new) ── */
+.conf-row{display:flex;gap:12px;margin-bottom:18px}
+.conf-card{flex:1;background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);padding:12px 14px;border-left:3px solid var(--qt2-mid)}
+.conf-label{font-family:var(--mono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--qt2-bright);margin-bottom:8px;opacity:.85}
+.conf-bar-track{background:var(--bg4);border-radius:2px;height:5px;margin-bottom:6px;overflow:hidden}
+.conf-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+.conf-detail{font-family:var(--mono);font-size:9px;color:var(--sub);line-height:1.6;margin-bottom:6px}
+.conf-guidance{font-size:10px;line-height:1.55;padding:7px 9px;border-radius:var(--r);margin-top:2px}
+.conf-guidance strong{font-weight:500;display:block;margin-bottom:2px;font-family:var(--mono);font-size:9px;letter-spacing:.03em}
+.conf-guidance-high{background:rgba(26,170,128,0.07);border-left:2px solid var(--lt1);color:var(--sub)}
+.conf-guidance-moderate{background:rgba(201,132,32,0.07);border-left:2px solid var(--warn);color:var(--sub)}
+.conf-guidance-low{background:rgba(217,79,78,0.07);border-left:2px solid var(--danger);color:var(--sub)}
+.conf-guidance-vlow{background:rgba(217,79,78,0.12);border-left:2px solid var(--danger);color:var(--text)}
+
+/* ── TABLE ── */
+.sec-gap{margin-top:24px;margin-bottom:10px}
+.tbl-wrap{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;border-top:2px solid var(--qt2-light)}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--qt2-bright);text-align:left;padding:8px 11px;border-bottom:1px solid var(--qt2-border);background:linear-gradient(135deg,rgba(0,60,111,0.40),rgba(32,78,153,0.20));font-weight:500}
+td{font-family:var(--mono);font-size:10px;padding:8px 11px;border-bottom:1px solid rgba(74,127,212,0.07);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.rl{background:rgba(29,158,117,.05)}.ro{background:rgba(193,125,34,.05)}
+.badge{display:inline-block;padding:2px 5px;border-radius:2px;font-size:8px;font-weight:500;letter-spacing:.04em}
+.b-lt1{background:var(--lt1d);color:var(--lt1);border:1px solid var(--lt1b)}
+.b-ogc{background:var(--ogcd);color:var(--ogc);border:1px solid var(--ogcb)}
+.b-base{background:rgba(255,255,255,.03);color:var(--muted);border:1px solid var(--border)}
+.b-buf{background:rgba(74,127,212,.08);color:var(--info);border:1px solid rgba(74,127,212,.2)}
+.b-near{background:rgba(217,79,78,.07);color:var(--danger);border:1px solid rgba(217,79,78,.18)}
+.b-zr{background:rgba(58,56,53,.3);color:var(--muted);border:1px solid var(--border)}
+.fl{color:var(--lt1);font-size:9px}.st{color:var(--ogc);font-size:9px}.av{color:var(--hint);font-size:9px}
+.dw{color:var(--warn)}.dok{color:var(--muted)}
+
+/* ── AI SECTION ── */
+.ai-section{background:var(--bg2);border:1px solid var(--qt2-border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;border-top:2px solid var(--qt2-mid)}
+.ai-hdr{display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid var(--qt2-border);background:linear-gradient(135deg,rgba(0,60,111,0.40),rgba(32,78,153,0.18))}
+.ai-badge{background:linear-gradient(135deg,rgba(0,60,111,0.6),rgba(32,78,153,0.4));color:var(--qt2-bright);border:1px solid var(--border3);padding:2px 7px;border-radius:2px;font-family:var(--mono);font-size:8px;letter-spacing:.06em;font-weight:600}
+.ai-title{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.ai-loading{display:flex;align-items:center;gap:9px;padding:20px 22px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.ai-text{font-size:12px;color:var(--text);line-height:1.9;padding:20px 22px}
+.ai-text p{margin-bottom:13px}.ai-text p:last-child{margin-bottom:0}
+.ai-list{margin:0 0 13px 0;padding-left:0;list-style:none}
+.ai-list li{padding:4px 0 4px 16px;position:relative;line-height:1.7;font-size:12px;color:var(--text)}
+.ai-list li::before{content:'•';position:absolute;left:0;color:var(--qt2-bright);font-weight:600}
+
+/* ── BLOCK PRESCRIPTION TABLE ── */
+.qt2-block-table{margin:14px 0 6px;overflow-x:auto}
+.qt2-block-table table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.qt2-block-table thead tr{background:linear-gradient(135deg,rgba(0,60,111,0.40),rgba(32,78,153,0.20));border-bottom:1px solid var(--qt2-border)}
+.qt2-block-table th{padding:7px 10px;text-align:left;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--qt2-bright);font-weight:500}
+.qt2-block-table td{padding:9px 10px;border-bottom:1px solid rgba(74,127,212,0.07);vertical-align:top;line-height:1.55;color:var(--text)}
+.qt2-block-table td strong{font-weight:600;color:var(--text);font-size:10px}
+.qt2-block-table td span{font-size:9px;color:var(--muted)}
+.qt2-block-table tr:last-child td{border-bottom:none}
+.qt2-block-table tr:hover td{background:rgba(74,127,212,0.04)}
+.qt2-block-table td:nth-child(1){min-width:110px}
+.qt2-block-table td:nth-child(2){min-width:90px}
+.qt2-block-table td:nth-child(3){min-width:100px}
+.qt2-block-table td:nth-child(4){min-width:200px}
+.qt2-block-table td:nth-child(5){min-width:80px;font-weight:500;color:var(--qt2-bright)}
+/* Zone pills */
+.zp{display:inline-block;font-size:9px;font-weight:500;padding:2px 6px;border-radius:2px;margin:2px 3px 2px 0;white-space:nowrap}
+.zp-z1{background:rgba(42,71,127,0.18);color:var(--qt2-bright)}
+.zp-z2{background:rgba(26,170,128,0.12);color:var(--lt1)}
+.zp-ss{background:rgba(201,132,32,0.12);color:var(--ogc)}
+.zp-cp{background:rgba(217,79,78,0.10);color:var(--danger)}
+.zp-vo2{background:rgba(147,80,200,0.12);color:#9b60cc}
+.ai-error{padding:20px 22px;font-family:var(--mono);font-size:10px;color:var(--danger)}
+
+/* ── ATHLETE DISPLAY ── */
+#athlete-display{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+
+@media(max-width:760px){
+  body{padding:16px 14px}
+  .summary-grid{grid-template-columns:repeat(3,1fr)}
+  .chart-pair,.inputs-grid,.inputs-meta{grid-template-columns:1fr}
+  .zone-rows{grid-template-columns:1fr 1fr}
+  .zr{border-right:none;border-bottom:1px solid var(--border)}
+}
+@media print{
+  body{padding:0}
+  .drop-zone,.status-bar,.diag,.export-row,.ig{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="logo-wrap" id="logo-wrap">
+      <div class="logo-text" id="logo-text">QT2<br>SYSTEMS</div>
+    </div>
+    <div class="hdr-title">
+      <h1>QT2 · Threshold Analysis Report</h1>
+      <p>LT1 &amp; Oxidative-Glycolytic Crossover · Recovery-Valley Protocol · Powered by Claude</p>
+    </div>
+  </div>
+</header>
+
+<!-- ── INPUTS ── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+  <div class="ig"><label>Athlete Name</label><input type="text" id="athlete-name" placeholder="e.g. Jane Smith"></div>
+  <div class="ig"><label>Test Date</label><input type="date" id="test-date"></div>
+</div>
+<div class="inputs-grid">
+  <div class="ig"><label>Critical Power (W)</label><input type="number" id="cp" value="263" min="80" max="700"></div>
+  <div class="ig"><label>Resting HR (bpm)</label><input type="number" id="hrrest" value="48" min="30" max="80"></div>
+  <div class="ig" style="position:relative">
+    <label>Max HR (bpm) <span id="hrmax-src" style="font-size:8px;color:var(--muted);font-family:var(--mono);margin-left:4px"></span></label>
+    <input type="number" id="hrmax" placeholder="optional — or enter age" min="120" max="220" oninput="onHrmaxInput()">
+  </div>
+  <div class="ig">
+    <label>Age (yrs) <span style="font-size:8px;color:var(--muted);font-family:var(--mono)">→ estimates HRmax</span></label>
+    <input type="number" id="age" placeholder="optional" min="14" max="85" oninput="onAgeInput()">
+  </div>
+  <div class="ig"><label>3-min Power (W)</label><input type="number" id="p3" placeholder="optional" min="0" max="900"></div>
+  <div class="ig"><label>12-min Power (W)</label><input type="number" id="p12" placeholder="optional" min="0" max="900"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:-4px;margin-bottom:20px">
+  <div id="hrmax-estimate-bar" style="display:none;grid-column:1/3;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:7px 11px;font-family:var(--mono);font-size:10px;color:var(--muted);align-items:center;gap:8px">
+    <span>Tanaka: <strong id="hrmax-tanaka" style="color:var(--accent)">—</strong></span>
+    <span style="margin-left:8px">220−age: <strong id="hrmax-fox" style="color:var(--sub)">—</strong></span>
+    <span style="margin-left:8px;font-size:9px">Using Tanaka (208 − 0.7×age) — more accurate for trained athletes</span>
+  </div>
+  <div class="ig">
+    <label>Body Weight (lbs) <span id="bw-kg-label" style="font-size:8px;color:var(--qt2-bright);font-family:var(--mono)"></span></label>
+    <input type="number" id="bw-lbs" placeholder="optional" min="66" max="330" step="0.5" oninput="onBwInput()">
+    <input type="hidden" id="bw">
+  </div>
+</div>
+
+<div class="drop-zone" id="drop-zone">
+  <input type="file" id="fit-file" accept="*/*">
+  <div class="dz-icon">↑</div>
+  <h2>Drop .fit file here or click to browse</h2>
+  <p>Garmin · Wahoo · TrainingPeaks export · .fit or .FIT</p>
+</div>
+
+<div class="status-bar" id="status-bar"><div class="dot"></div><span id="status-text">Parsing...</span></div>
+<div class="diag" id="diag">
+  <div class="diag-hdr"><div class="diag-icon" id="diag-icon"></div><span id="diag-title"></span></div>
+  <div class="diag-body" id="diag-body"></div>
+</div>
+
+<!-- ── RESULTS ── -->
+<div id="results">
+
+  <div class="results-hdr">
+    <div>
+      <p class="sec-lbl">Analysis results</p>
+      <div id="athlete-display"></div>
+    </div>
+    <div class="export-row">
+      <label class="theme-tog" onclick="togglePdfTheme()">
+        <div class="tog-track" id="theme-track"><div class="tog-thumb"></div></div>
+        <span id="theme-label">Dark PDF</span>
+      </label>
+      <button class="pdf-btn" id="pdf-btn" onclick="exportPDF()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h10M8 3v7M5 7l3 3 3-3"/></svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- FLAGS -->
+  <div class="flags" id="flags-row"></div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-grid">
+    <div class="sc"><div class="sc-l">LT1 power</div><div class="sc-v v-lt1" id="r-lt1w">—</div><div class="sc-u" id="r-lt1pct"></div></div>
+    <div class="sc"><div class="sc-l">LT1 heart rate</div><div class="sc-v v-lt1" id="r-lt1hr">—</div><div class="sc-u" id="r-lt1hr-sub">bpm</div></div>
+    <div class="sc"><div class="sc-l">OGC power</div><div class="sc-v v-ogc" id="r-ogcw">—</div><div class="sc-u" id="r-ogcpct"></div></div>
+    <div class="sc"><div class="sc-l">OGC heart rate</div><div class="sc-v v-ogc" id="r-ogchr">—</div><div class="sc-u" id="r-ogchr-sub">bpm</div></div>
+    <div class="sc"><div class="sc-l">Aerobic window</div><div class="sc-v v-info" id="r-window">—</div><div class="sc-u" id="r-windowsub"></div></div>
+  </div>
+
+  <!-- ZONE PRESCRIPTION -->
+  <p class="sec-lbl sec-gap">Training zone prescription</p>
+  <div class="zone-block">
+    <div class="zone-block-hdr">
+      <span class="zone-block-title">Power &amp; HR zones — derived from LT1, OGC, and Critical Power</span>
+      <span id="zone-cp-label" style="font-family:var(--mono);font-size:9px;color:var(--muted)"></span>
+    </div>
+    <div class="zone-rows" id="zone-rows"></div>
+    <div id="zone-footnote" style="display:none;padding:7px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);border-top:1px solid var(--border2);background:var(--bg3)">
+      * HR values marked with * are extrapolated from the upper-stage regression — not directly measured. Use as estimates.
+    </div>
+  </div>
+
+  <!-- CONFIDENCE -->
+  <div class="conf-row" id="conf-row"></div>
+
+  <!-- CHARTS -->
+  <p class="sec-lbl sec-gap">HR response analysis</p>
+  <div class="chart-pair">
+    <div class="chart-box">
+      <div class="chart-lbl">HR response curve — stable HR by stage</div>
+      <div class="ch-wrap"><canvas id="c-hr"></canvas></div>
+      <div class="leg">
+        <span><span class="leg-sq" style="background:var(--accent2)"></span>Z1 · aerobic base</span>
+        <span><span class="leg-sq" style="background:var(--lt1)"></span>LT1</span>
+        <span><span class="leg-sq" style="background:rgba(29,158,117,.5)"></span>Z2 · threshold band</span>
+        <span><span class="leg-sq" style="background:var(--ogc)"></span>OGC</span>
+        <span><span class="leg-sq" style="background:#6a6865"></span>Z3+</span>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-lbl">HR delta / watt — slope by stage</div>
+      <div class="ch-wrap"><canvas id="c-delta"></canvas></div>
+      <div class="leg">
+        <span><span class="leg-sq" style="background:rgba(130,130,120,.35);border:1px dashed #555"></span>mean slope</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <p class="sec-lbl sec-gap">Stage breakdown</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Power</th><th>% CP</th><th>W/kg</th>
+          <th>Stable HR</th><th>% HRR</th><th>HR Δ</th><th>Δ/W</th>
+          <th>vs mean</th><th>Drift</th><th>Zone</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+
+  <!-- AI -->
+  <p class="sec-lbl sec-gap">AI coaching interpretation</p>
+  <div class="ai-section">
+    <div class="ai-hdr">
+      <span class="ai-badge">Claude</span>
+      <span class="ai-title">Coaching analysis — generated from your specific test data</span>
+    </div>
+    <div class="ai-loading" id="ai-loading" style="display:none"><div class="dot"></div><span>Analyzing test data...</span></div>
+    <div id="ai-body" style="display:none"></div>
+    <div class="ai-error" id="ai-error" style="display:none"></div>
+  </div>
+
+</div><!-- /results -->
+
+<script>
+const $=id=>document.getElementById(id);
+let _analysis=null,_logoDataUrl=null,_pdfLight=false,_aiText='',_aiDone=false,_blockTableHTML='';
+
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+const LOGO_B64='data:image/png;base64,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';
+if(LOGO_B64){
+  const img=document.createElement('img');
+  img.src=LOGO_B64;
+  img.onerror=()=>{};
+  $('logo-text').replaceWith(img);
+  _logoDataUrl=LOGO_B64;
+}
+
+$('test-date').value=new Date().toISOString().split('T')[0];
+
+// ── HRMAX ESTIMATION ──────────────────────────────────────────────────────────
+let _hrmaxIsEstimated=false;
+
+function getHrmax(){
+  const val=parseInt($('hrmax').value);
+  if(val&&val>=120)return{val,estimated:false};
+  const age=parseInt($('age').value);
+  if(age&&age>=14){
+    const tanaka=Math.round(208-0.7*age);
+    return{val:tanaka,estimated:true};
+  }
+  return{val:null,estimated:null};
+}
+
+function onAgeInput(){
+  const age=parseInt($('age').value);
+  const hrmaxInput=parseInt($('hrmax').value);
+  const bar=$('hrmax-estimate-bar');
+  if(age&&age>=14&&!hrmaxInput){
+    const tanaka=Math.round(208-0.7*age);
+    const fox=220-age;
+    bar.style.display='flex';
+    $('hrmax-tanaka').textContent=tanaka+' bpm';
+    $('hrmax-fox').textContent=fox+' bpm';
+    $('hrmax').placeholder=tanaka+' (Tanaka est.)';
+    $('hrmax-src').textContent='(est. from age)';
+    _hrmaxIsEstimated=true;
+  }else if(!age){
+    bar.style.display='none';
+    $('hrmax').placeholder='optional — or enter age';
+    $('hrmax-src').textContent='';
+    _hrmaxIsEstimated=false;
+  }
+}
+
+function onHrmaxInput(){
+  const val=parseInt($('hrmax').value);
+  if(val&&val>=120){
+    $('hrmax-src').textContent='(measured)';
+    $('hrmax-estimate-bar').style.display='none';
+    _hrmaxIsEstimated=false;
+  }else if(!val){
+    onAgeInput();
+  }
+}
+
+function onBwInput(){
+  const lbs=parseFloat($('bw-lbs').value);
+  if(lbs&&lbs>0){
+    const kg=parseFloat((lbs*0.453592).toFixed(1));
+    $('bw').value=kg;
+    $('bw-kg-label').textContent='= '+kg+' kg';
+  }else{
+    $('bw').value='';
+    $('bw-kg-label').textContent='';
+  }
+}
+
+function togglePdfTheme(){
+  _pdfLight=!_pdfLight;
+  const t=$('theme-track'),l=$('theme-label');
+  if(_pdfLight){t.classList.add('on');l.textContent='Light PDF';}
+  else{t.classList.remove('on');l.textContent='Dark PDF';}
+}
+
+// ── FIT PARSER ────────────────────────────────────────────────────────────────
+function parseFIT(buf){
+  const dv=new DataView(buf),b=new Uint8Array(buf);
+  if(String.fromCharCode(b[8],b[9],b[10],b[11])!=='.FIT') throw new Error('Not a valid FIT file');
+  const dataSize=dv.getUint32(4,true);
+  let off=b[0];const end=b[0]+dataSize,defs={},recs=[];
+  while(off<end-1&&off<b.length-1){
+    const hdr=b[off++];
+    const isDef=(hdr&0x40)!==0,isComp=(hdr&0x80)!==0,hasDev=(hdr&0x20)!==0;
+    const ln=isComp?(hdr&0x60)>>5:(hdr&0x0F);
+    if(isComp){const dComp=defs[ln];if(dComp)off+=dComp.sz;continue;}
+    if(isDef){
+      off++;
+      const le=b[off++]===0;
+      const gn=le?dv.getUint16(off,true):dv.getUint16(off,false);off+=2;
+      const nf=b[off++];const fields=[];let sz=0;
+      for(let i=0;i<nf;i++){fields.push({n:b[off],s:b[off+1]});sz+=b[off+1];off+=3;}
+      let dsz=0;
+      if(hasDev){const nd=b[off++];for(let i=0;i<nd;i++){dsz+=b[off+1];off+=3;}}
+      defs[ln]={gn,fields,sz:sz+dsz,le};
+    }else{
+      const def=defs[ln];if(!def){off++;continue;}
+      if(def.gn===20){
+        let pos=off;const rec={};
+        for(const f of def.fields){
+          let v;
+          if(f.s===1)v=b[pos];
+          else if(f.s===2)v=def.le?dv.getUint16(pos,true):dv.getUint16(pos,false);
+          else if(f.s===4)v=def.le?dv.getUint32(pos,true):dv.getUint32(pos,false);
+          rec[f.n]=v;pos+=f.s;
+        }
+        let hr=rec[3]??null,pw=rec[7]??null;
+        if(hr===255||hr===0)hr=null;
+        if(pw===65535||pw===0)pw=null;
+        recs.push({ts:rec[253]??null,hr,power:pw});
+      }
+      off+=def.sz;
+    }
+  }
+  return recs;
+}
+
+// ── CLASSIFIER ────────────────────────────────────────────────────────────────
+function classify(records,cp){
+  const pows=records.map(r=>r.power).filter(v=>v!=null&&v>50);
+  const hrs=records.map(r=>r.hr).filter(v=>v!=null);
+  if(!pows.length||!hrs.length)return{type:'no_data'};
+  const durMin=records.length/60,minP=Math.min(...pows),maxP=Math.max(...pows);
+  const allP=records.map(r=>r.power);
+  const sp=allP.map((_,i)=>{const sl=allP.slice(Math.max(0,i-15),Math.min(allP.length,i+15)).filter(v=>v!=null);return sl.length?sl.reduce((a,b)=>a+b,0)/sl.length:null;});
+  let ups=0,downs=0,trans=0,lastL=sp.find(v=>v!=null),lastC=0;
+  for(let i=60;i<sp.length;i++){
+    if(!sp[i])continue;
+    if(Math.abs(sp[i]-lastL)>18&&i-lastC>60){if(sp[i]>lastL)ups++;else downs++;trans++;lastL=sp[i];lastC=i;}
+  }
+  const wSDs=[];
+  for(let i=0;i<pows.length-300;i+=300){const w=pows.slice(i,i+300),m=w.reduce((a,b)=>a+b,0)/w.length;wSDs.push(Math.sqrt(w.reduce((a,b)=>a+(b-m)**2,0)/w.length));}
+  const avgSD=wSDs.length?wSDs.reduce((a,b)=>a+b,0)/wSDs.length:999;
+  const recPow=pows.filter(p=>p<cp*0.52);
+  const hasValleys=recPow.length>0&&downs>=3&&downs<=ups*1.3&&ups>=3;
+  let type,desc,rec;
+  if(maxP-minP<30){type='steady';desc=`Steady-state workout — range only ${Math.round(maxP-minP)}W.`;rec='Upload a recovery-valley threshold protocol file.';}
+  else if(hasValleys&&avgSD<50){type='protocol';desc=`Recovery-valley protocol confirmed — ${ups} stages, ${downs} recovery valleys, ${Math.round(durMin)} min.`;rec=null;}
+  else if(ups>=3&&downs<=ups*0.35&&avgSD<28){type='step';desc=`Ascending step test — ${ups} power levels, ${Math.round(durMin)} min.`;rec=null;}
+  else if(downs>ups*0.65&&trans>4&&!hasValleys){type='intervals';desc='Interval workout detected — not a threshold protocol.';rec='Upload a file from the LT1/OGC threshold protocol.';}
+  else{type='unclear';desc='Workout type unclear.';rec='Could not confirm threshold protocol structure.';}
+  return{type,desc,rec,durMin,minP,maxP,ups,downs,avgSD};
+}
+
+// ── STAGE DETECTION ───────────────────────────────────────────────────────────
+function detectStages(records,cp){
+  const allP=records.map(r=>r.power);
+  const sp=allP.map((_,i)=>{const sl=allP.slice(Math.max(0,i-15),Math.min(allP.length,i+15)).filter(v=>v!=null);return sl.length?sl.reduce((a,b)=>a+b,0)/sl.length:null;});
+  const blocks=[];let ss=0;
+  for(let i=30;i<=sp.length;i++){
+    const isLast=i===sp.length;
+    if(!isLast&&sp[i]!=null){
+      const bef=sp.slice(Math.max(0,i-20),i).filter(v=>v!=null);
+      const aft=sp.slice(i,Math.min(sp.length,i+20)).filter(v=>v!=null);
+      if(!bef.length||!aft.length)continue;
+      if(Math.abs(aft.reduce((a,b)=>a+b,0)/aft.length-bef.reduce((a,b)=>a+b,0)/bef.length)<15&&!isLast)continue;
+    }
+    const seg=records.slice(ss,i);
+    if(seg.length<60){if(!isLast)ss=i;continue;}
+    const sp2=seg.map(r=>r.power).filter(v=>v!=null);
+    const sh=seg.map(r=>r.hr).filter(v=>v!=null);
+    if(!sp2.length||!sh.length){if(!isLast)ss=i;continue;}
+    const avgP=sp2.reduce((a,b)=>a+b,0)/sp2.length;
+    if(avgP>cp*0.50){
+      // Use last 40% for stable HR (more reliable than last 60%)
+      const stIdx=Math.floor(seg.length*0.60);
+      const stHRs=seg.slice(stIdx).map(r=>r.hr).filter(v=>v!=null);
+      const stableHR=stHRs.length?Math.round(stHRs.reduce((a,b)=>a+b,0)/stHRs.length):Math.round(sh.reduce((a,b)=>a+b,0)/sh.length);
+      const chunk=Math.max(1,Math.floor(sh.length*0.15));
+      const eHR=sh.slice(0,chunk).reduce((a,b)=>a+b,0)/chunk;
+      const lHR=sh.slice(-chunk).reduce((a,b)=>a+b,0)/chunk;
+      blocks.push({power:Math.round(avgP),pctCP:Math.round(avgP/cp*100),stableHR,drift:parseFloat((lHR-eHR).toFixed(1)),dur:seg.length});
+    }
+    ss=i;
+  }
+  const sorted=blocks.sort((a,b)=>a.power-b.power);
+  const deduped=[];
+  for(const s of sorted){if(!deduped.length||Math.abs(s.power-deduped[deduped.length-1].power)>=12)deduped.push(s);}
+  return deduped;
+}
+
+// ── THRESHOLD ANALYSIS ────────────────────────────────────────────────────────
+// Three-method detection: (1) Slope inflection/D-max, (2) Conconi deflection, (3) %CP fallback
+function analyze(stages,cp,hrRest,hrMax,hrmaxEstimated){
+  if(stages.length<3)return null;
+  const hrr=hrMax&&hrRest?(hrMax-hrRest):0;
+
+  // Compute slope per stage
+  for(let i=1;i<stages.length;i++){
+    const dHR=stages[i].stableHR-stages[i-1].stableHR;
+    const dW=stages[i].power-stages[i-1].power;
+    stages[i].dpw=dW>0?parseFloat((dHR/dW).toFixed(4)):0;
+    stages[i].dhr=dHR;
+  }
+  stages[0].dpw=null; stages[0].dhr=null;
+
+  const deltas=stages.slice(1).map(s=>s.dpw).filter(v=>v!=null&&v>=0);
+  const mean=deltas.reduce((a,b)=>a+b,0)/deltas.length;
+  stages.forEach(s=>{s.mean=mean; s.pctHRR=Math.round((s.stableHR-hrRest)/hrr*100);});
+
+  // ── D-MAX METHOD ──
+  // Find max perpendicular distance from line between stage 2 and last stage
+  const xs=stages.map(s=>s.power), ys=stages.map(s=>s.stableHR);
+  const startI=1; // skip first (often warmup)
+  const x1=xs[startI],y1=ys[startI],xe=xs[stages.length-1],ye=ys[stages.length-1];
+  let dMaxLT1=-1, dMaxScore=0;
+  for(let i=startI+1;i<stages.length-1;i++){
+    const d=Math.abs((ye-y1)*xs[i]-(xe-x1)*ys[i]+xe*y1-ye*x1)/Math.sqrt((ye-y1)**2+(xe-x1)**2);
+    stages[i]._dmaxDist=parseFloat(d.toFixed(3));
+    if(d>dMaxScore){dMaxScore=d;dMaxLT1=i;}
+  }
+
+  // ── CONCONI DEFLECTION ──
+  // The step where slope drops to minimum then rises sharply after
+  let conconiLT1=-1;
+  let minSlopeI=-1, minSlope=9999;
+  for(let i=1;i<stages.length-1;i++){
+    if(stages[i].dpw!=null&&stages[i].dpw<minSlope){minSlope=stages[i].dpw;minSlopeI=i;}
+  }
+  // Check if next step has a large jump
+  if(minSlopeI>0&&minSlopeI<stages.length-1){
+    const nextSlope=stages[minSlopeI+1]?.dpw??0;
+    if(nextSlope>minSlope*2.0){conconiLT1=minSlopeI+1;} // LT1 is AT the step after deflection
+    else{conconiLT1=minSlopeI;}
+  }
+
+  // ── SLOPE INFLECTION ──
+  // First step where slope transitions from below-mean to above-mean
+  let slopeInflection=-1;
+  for(let i=2;i<stages.length-1;i++){
+    if(stages[i-1].dpw!=null&&stages[i].dpw!=null){
+      if(stages[i-1].dpw<mean*0.88&&stages[i].dpw>mean*1.10){slopeInflection=i;break;}
+    }
+  }
+
+  // ── CONSENSUS: pick LT1 ──
+  // Favor agreement between methods; fall back to D-max as most robust
+  let lt1i;
+  const votes=[dMaxLT1,conconiLT1,slopeInflection].filter(v=>v>0);
+  if(votes.length===0){
+    // Pure fallback: %CP range
+    lt1i=stages.findIndex(s=>s.pctCP>=58&&s.pctCP<=74);
+    if(lt1i<0)lt1i=Math.floor(stages.length*0.35);
+  } else if(votes.length===1){
+    lt1i=votes[0];
+  } else {
+    // Average of agreeing votes (within 1 step of each other)
+    const sorted=[...votes].sort((a,b)=>a-b);
+    const span=sorted[sorted.length-1]-sorted[0];
+    if(span<=2){lt1i=Math.round(votes.reduce((a,b)=>a+b,0)/votes.length);}
+    else{lt1i=dMaxLT1>0?dMaxLT1:votes[0];} // Prefer D-max on disagreement
+  }
+  lt1i=Math.max(1,Math.min(lt1i,stages.length-2));
+
+  // ── OGC DETECTION ──
+  // First substantial slope acceleration after LT1
+  let ogci=-1;
+  for(let i=lt1i+1;i<stages.length;i++){
+    if(stages[i].dpw!=null&&stages[i].dpw>mean*1.18){ogci=i;break;}
+  }
+  if(ogci<0){
+    // Fallback: look for maximum slope in upper half
+    let maxSlope=-1;
+    for(let i=lt1i+1;i<stages.length;i++){
+      if(stages[i].dpw!=null&&stages[i].dpw>maxSlope){maxSlope=stages[i].dpw;ogci=i;}
+    }
+  }
+  if(ogci<0){ogci=Math.min(lt1i+2,stages.length-1);}
+
+  // ── CONFIDENCE ──
+  // LT1 confidence: check how many methods agreed and signal strength
+  const lt1MethodsAgree=votes.filter(v=>Math.abs(v-lt1i)<=1).length;
+  const lt1SlopeContrast=stages[lt1i]?.dpw!=null?(stages[Math.min(lt1i+1,stages.length-1)].dpw??0)-(stages[Math.max(lt1i-1,0)].dpw??0):0;
+  let lt1c='moderate';
+  if(lt1MethodsAgree>=2&&Math.abs(lt1SlopeContrast)>0.15)lt1c='high';
+  else if(lt1MethodsAgree<=1&&Math.abs(lt1SlopeContrast)<0.08)lt1c='low';
+
+  const ogcSlopeRatio=stages[ogci]?.dpw!=null&&mean>0?stages[ogci].dpw/mean:1;
+  let ogcc=ogcSlopeRatio>1.25?'high':ogcSlopeRatio>1.05?'moderate':'low';
+
+  // ── CONFIDENCE SCORES (0–100) ──
+  const lt1Score=lt1c==='high'?85:lt1c==='moderate'?62:38;
+  const ogcScore=ogcc==='high'?85:ogcc==='moderate'?62:38;
+
+  // ── DATA QUALITY FLAGS ──
+  const flags=[];
+  const hrAtLast=stages[stages.length-1]?.stableHR??0;
+  const hrAtFirst=stages[0]?.stableHR??0;
+  if(hrAtFirst>hrMax*0.78)flags.push({type:'warn',msg:'Test may have started above LT1 — first stage HR already elevated. Lower starting wattage recommended.'});
+  if(hrAtLast>hrMax*0.94){
+    if(hrmaxEstimated)flags.push({type:'warn',msg:'Final stage HR approached estimated HRmax — confirm true HRmax or reduce max wattage on retest.'});
+    else flags.push({type:'err',msg:'HRmax approached — final stages not aerobically diagnostic. Reduce max wattage on retest.'});
+  }
+  const driftIssues=stages.filter(s=>Math.abs(s.drift)>8);
+  if(driftIssues.length>0)flags.push({type:'warn',msg:`HR drift >8 bpm in ${driftIssues.length} stage(s) (${driftIssues.map(s=>s.power+'W').join(', ')}) — possible incomplete recovery or thermoregulatory drift.`});
+  if(stages.length<5)flags.push({type:'warn',msg:`Only ${stages.length} stages detected — more stages improve threshold precision.`});
+
+  const adi=stages[ogci].power-stages[lt1i].power;
+  stages.forEach((s,i)=>{
+    if(i===lt1i)s.zone='lt1';
+    else if(i===ogci)s.zone='ogc';
+    else if(i>lt1i&&i<ogci)s.zone='buffer';
+    else if(i>ogci)s.zone='near';
+    else s.zone='base';
+  });
+
+  return{lt1:stages[lt1i],ogc:stages[ogci],lt1i,ogci,mean,adi,lt1c,ogcc,lt1Score,ogcScore,flags,stages,cp,hrRest,hrMax,hrmaxEstimated:!!hrmaxEstimated,
+    methods:{dMax:dMaxLT1,conconi:conconiLT1,inflection:slopeInflection}};
+}
+
+// ── RENDER SUMMARY ────────────────────────────────────────────────────────────
+function renderSummary(A){
+  const{lt1,ogc,adi,cp,hrmaxEstimated,hrMax,hrRest}=A;
+  const hrrKnown=hrMax&&hrRest&&hrMax>hrRest;
+  const hrrLabel=hrmaxEstimated?'% HRR (est.)':'% HRR';
+  $('r-lt1w').textContent=lt1?lt1.power+'W':'—';
+  $('r-lt1pct').textContent=lt1?lt1.pctCP+'% of CP':'';
+  $('r-lt1hr').textContent=lt1?lt1.stableHR:'—';
+  $('r-lt1hr-sub').textContent=lt1&&hrrKnown?lt1.pctHRR+'% HRR'+(hrmaxEstimated?' (est.)':''):'bpm';
+  $('r-ogcw').textContent=ogc?ogc.power+'W':'—';
+  $('r-ogcpct').textContent=ogc?ogc.pctCP+'% of CP':'';
+  $('r-ogchr').textContent=ogc?ogc.stableHR:'—';
+  $('r-ogchr-sub').textContent=ogc&&hrrKnown?ogc.pctHRR+'% HRR'+(hrmaxEstimated?' (est.)':''):'bpm';
+  $('r-window').textContent=lt1&&ogc?adi+'W':'—';
+  if(lt1&&ogc){
+    const adiPct=Math.round(adi/cp*100);
+    const rating=adiPct>=25?'wide':adiPct>=18?'moderate':'narrow';
+    $('r-windowsub').textContent=`${adiPct}% CP · ${rating}`;
+  }
+  const name=$('athlete-name').value.trim();
+  const date=$('test-date').value;
+  const p12=parseInt($('p12').value)||null;
+  let meta=[];
+  if(name)meta.push(name);
+  if(date)meta.push(new Date(date+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}));
+  meta.push('CP: '+cp+'W');
+  if(p12&&cp)meta.push('12min/CP: '+(p12/cp).toFixed(3));
+  $('athlete-display').textContent=meta.join(' · ');
+}
+
+// ── RENDER FLAGS ──────────────────────────────────────────────────────────────
+function renderFlags(A){
+  const fr=$('flags-row');
+  fr.innerHTML='';
+  if(!A.flags.length){
+    fr.innerHTML='<span class="flag flag-ok">✓ Protocol quality: clean data</span>';
+    return;
+  }
+  A.flags.forEach(f=>{
+    const cl=f.type==='err'?'flag-err':'flag-warn';
+    const icon=f.type==='err'?'⚠':'!';
+    fr.innerHTML+=`<span class="flag ${cl}">${icon} ${f.msg}</span>`;
+  });
+}
+
+// ── RENDER ZONES ──────────────────────────────────────────────────────────────
+function renderZones(A){
+  const{lt1,ogc,cp,hrRest,hrMax,hrmaxEstimated,stages}=A;
+  const bw=parseFloat($('bw').value)||null;
+  const hrr=hrMax&&hrRest?(hrMax-hrRest):0;
+  const cpPct65=Math.round(cp*0.65);
+
+  // ── HR EXTRAPOLATION (for zones above test range) ──
+  // Fit linear regression on upper stages (above LT1 index) to project HR
+  // Returns {slope, intercept, r2, extrapolate(W)}
+  function buildHrRegression(stages, fromIdx){
+    const pts=stages.slice(fromIdx).filter(s=>s.power&&s.stableHR);
+    if(pts.length<2)return null;
+    const n=pts.length;
+    const sx=pts.reduce((a,s)=>a+s.power,0);
+    const sy=pts.reduce((a,s)=>a+s.stableHR,0);
+    const sxy=pts.reduce((a,s)=>a+s.power*s.stableHR,0);
+    const sxx=pts.reduce((a,s)=>a+s.power*s.power,0);
+    const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);
+    const intercept=(sy-slope*sx)/n;
+    const yMean=sy/n;
+    const ssTot=pts.reduce((a,s)=>a+(s.stableHR-yMean)**2,0);
+    const ssRes=pts.reduce((a,s)=>a+(s.stableHR-(slope*s.power+intercept))**2,0);
+    const r2=ssTot>0?1-ssRes/ssTot:0;
+    return{slope,intercept,r2,extrapolate:w=>Math.round(slope*w+intercept)};
+  }
+
+  // Build regression from LT1 onward (most physiologically relevant zone)
+  const reg=stages&&stages.length>2?buildHrRegression(stages,A.lt1i>0?A.lt1i:0):null;
+
+  // Helper: get HR at a given wattage — measured if in test range, extrapolated if above
+  const maxTestedW=stages&&stages.length?stages[stages.length-1].power:0;
+  function hrAtW(w){
+    if(!w)return{hr:null,est:false};
+    // Check if any stage is close to this wattage
+    const closest=stages&&stages.length?stages.reduce((a,s)=>Math.abs(s.power-w)<Math.abs(a.power-w)?s:a,stages[0]):null;
+    if(closest&&Math.abs(closest.power-w)<=8)return{hr:closest.stableHR,est:false};
+    // Above test range — extrapolate
+    if(reg&&w>maxTestedW){
+      const projected=reg.extrapolate(w);
+      // Cap at hrMax if known, floor at last tested HR
+      const lastHR=stages[stages.length-1].stableHR;
+      const cappedHR=hrMax?Math.min(projected,hrMax):projected;
+      return{hr:Math.max(cappedHR,lastHR),est:true};
+    }
+    if(reg){const projectedFallback=reg.extrapolate(w);return{hr:projectedFallback,est:true};}
+    return{hr:null,est:false};
+  }
+
+  const pct=w=>w?Math.round(w/cp*100):null;
+
+  // Build HR values for each zone boundary using measured data + extrapolation
+  const z1HiHR   = lt1?{hr:lt1.stableHR,est:false}:hrAtW(Math.round(cp*0.72));
+  const z2LoHR   = lt1?{hr:lt1.stableHR,est:false}:hrAtW(Math.round(cp*0.73));
+  const z2HiHR   = ogc?{hr:ogc.stableHR,est:false}:hrAtW(Math.round(cp*0.86));
+  const z3LoHR   = ogc?{hr:ogc.stableHR,est:false}:hrAtW(Math.round(cp*0.87));
+  const z3HiHR   = hrAtW(cp-1);
+  const zcpLoHR  = hrAtW(cp);
+  const zcpHiHR  = hrAtW(Math.round(cp*1.04));
+
+  const hrStr2=(lo,hi)=>{
+    if(!lo.hr&&!hi.hr)return{str:'—',est:false};
+    const loS=lo.hr||'?', hiS=hi&&hi.hr?hi.hr:null;
+    const est=lo.est||!!(hi&&hi.est);
+    const str=hiS?(loS+'–'+hiS+' bpm'):(loS+'+ bpm');
+    return{str:est?str+' *':str,est};
+  };
+
+  const zones=[
+    {key:'zr',label:'ZR',name:'Recovery',
+     wLo:0,wHi:cpPct65-1,pctLo:0,pctHi:pct(cpPct65-1),
+     hr:hrStr2({hr:hrRest,est:false},{hr:lt1?lt1.stableHR-10:null,est:false}),
+     desc:'Active recovery. No aerobic adaptation stimulus. Keep sessions short.'},
+    {key:'z1',label:'Z1',name:'Aerobic Base',
+     wLo:cpPct65,wHi:lt1?lt1.power-1:Math.round(cp*0.72),pctLo:pct(cpPct65),pctHi:lt1?pct(lt1.power-1):72,
+     hr:hrStr2({hr:lt1?lt1.stableHR-12:null,est:false},z1HiHR),
+     desc:'Primary aerobic development. Fat-oxidation dominant. Sustainable for long durations.'},
+    {key:'z2',label:'Z2',name:'Threshold Band',
+     wLo:lt1?lt1.power:Math.round(cp*0.73),wHi:ogc?ogc.power-1:Math.round(cp*0.86),
+     pctLo:lt1?pct(lt1.power):73,pctHi:ogc?pct(ogc.power-1):86,
+     hr:hrStr2(z2LoHR,z2HiHR),
+     desc:'LT1→OGC. Mixed substrate. Target in threshold training; minimize in polarized blocks.'},
+    {key:'z3',label:'Z3',name:'Glycolytic',
+     wLo:ogc?ogc.power:Math.round(cp*0.87),wHi:cp-1,
+     pctLo:ogc?pct(ogc.power):87,pctHi:pct(cp-1),
+     hr:hrStr2(z3LoHR,z3HiHR),
+     desc:'OGC to CP. CHO dominant. High stimulus, high fatigue. Use sparingly.'},
+    {key:'zcp',label:'CP+',name:'Critical Power',
+     wLo:cp,wHi:null,pctLo:100,pctHi:null,
+     hr:hrStr2(zcpLoHR,zcpHiHR),
+     desc:'At or above Critical Power. Maximum intensity. Anaerobic contribution significant.'}
+  ];
+
+  $('zone-cp-label').textContent='CP: '+cp+'W  ·  HRR: '+hrr+' bpm';
+
+  const rows=$('zone-rows');
+  rows.innerHTML='';
+  zones.forEach(z=>{
+    const wStr=z.wHi?z.wLo+'–'+z.wHi+'W':z.wLo+'W+';
+    const hrStr=z.hr?z.hr.str:'—';
+    const hrIsEst=z.hr&&z.hr.est;
+    const wkg=bw&&z.wLo?((z.wLo/bw).toFixed(2)+'–'+(z.wHi?z.wHi/bw:z.wLo/bw).toFixed(2)+' W/kg'):'';
+    const pctStr=z.pctHi?(z.pctLo+'–'+z.pctHi+'% CP'):(z.pctLo+'%+ CP');
+    rows.innerHTML+=`
+      <div class="zr zr-${z.key}">
+        <div class="zr-bar"></div>
+        <div class="zr-name">${z.label} · ${z.name}</div>
+        <div class="zr-range">${wStr}</div>
+        <div class="zr-pct">${pctStr}</div>
+        <div class="zr-hr">${hrStr}${wkg?' · '+wkg:''}</div>
+        <div class="zr-desc">${z.desc}</div>
+      </div>`;
+  });
+  // Expose hrAtW on the analysis object for use in PDF export
+  if(_analysis)_analysis._hrAtW=hrAtW;
+
+  // Show footnote if any zone used extrapolated HR
+  const anyEst=zones.some(z=>z.hr&&z.hr.est);
+  const fn=$('zone-footnote');
+  if(fn)fn.style.display=anyEst?'block':'none';
+
+  // All zone variables needed for block prescription table
+  const bt_subLT1lo=Math.round(cp*0.55);
+  const bt_subLT1hi=lt1?lt1.power:Math.round(cp*0.72);
+  const bt_z1Lo=cpPct65;
+  const bt_z1Hi=lt1?lt1.power:Math.round(cp*0.72);
+  const bt_z1Span=bt_z1Hi-bt_z1Lo;
+  const bt_lowZ1hi=Math.round(bt_z1Lo+bt_z1Span/3);
+  const bt_midZ1hi=Math.round(bt_z1Lo+bt_z1Span*2/3);
+  const bt_z2Lo=lt1?lt1.power:Math.round(cp*0.72);
+  const bt_z2Hi=ogc?ogc.power:Math.round(cp*0.87);
+  const bt_z2Span=bt_z2Hi-bt_z2Lo;
+  const bt_lowZ2hi=Math.round(bt_z2Lo+bt_z2Span/3);
+  const bt_midZ2hi=Math.round(bt_z2Lo+bt_z2Span*2/3);
+  const bt_z3Lo=ogc?ogc.power:Math.round(cp*0.87);
+  const bt_z3Span=cp-bt_z3Lo;
+  const bt_lowZ3hi=Math.round(bt_z3Lo+bt_z3Span/3);
+  const bt_midZ3hi=Math.round(bt_z3Lo+bt_z3Span*2/3);
+  const bt_ssLo=Math.round(cp*((ogc?ogc.pctCP/100:0.87)-0.02));
+  const bt_ssHi=Math.round(cp*((ogc?ogc.pctCP/100:0.87)+0.02));
+  const bt_cpPlusLo=Math.round(cp*1.04);
+  const bt_cpPlusHi=Math.round(cp*1.06);
+  const bt_wpct=w=>Math.round(w/cp*100);
+
+  // Build and store block prescription table
+  _blockTableHTML=buildBlockTable(cp,bt_subLT1lo,bt_subLT1hi,bt_z1Lo,bt_z1Hi,bt_lowZ1hi,bt_midZ1hi,bt_z2Lo,bt_z2Hi,bt_lowZ2hi,bt_midZ2hi,bt_z3Lo,bt_lowZ3hi,bt_midZ3hi,bt_ssLo,bt_ssHi,bt_cpPlusLo,bt_cpPlusHi,bt_wpct);
+}
+
+function buildBlockTable(cp,subLT1lo,subLT1hi,z1Lo,z1Hi,lowZ1hi,midZ1hi,z2Lo,z2Hi,lowZ2hi,midZ2hi,z3Lo,lowZ3hi,midZ3hi,ssLo,ssHi,cpPlusLo,cpPlusHi,wpct){
+  var W=subLT1lo+'\u2013'+(subLT1hi-1)+'W / 55\u2013'+wpct(subLT1hi-1)+'% CP';
+  var rows=[
+    ['Base / Durability','Aerobic dev.','90\u201395% sub-LT1','5\u201310% intensity',
+     '<span class="zp zp-z1">High-Z1: '+midZ1hi+'\u2013'+(z1Hi-1)+'W / '+wpct(midZ1hi)+'\u2013'+wpct(z1Hi-1)+'% CP</span> <span class="zp zp-z2">Low-Z2: '+z2Lo+'\u2013'+(lowZ2hi-1)+'W / '+wpct(z2Lo)+'\u2013'+wpct(lowZ2hi-1)+'% CP</span>',
+     'LT1'],
+    ['Build / TH','Threshold dev.','75\u201380% sub-LT1','20\u201325% intensity',
+     '<span class="zp zp-ss">Sweet Spot: '+ssLo+'\u2013'+ssHi+'W / '+wpct(ssLo)+'\u2013'+wpct(ssHi)+'% CP</span> <span class="zp zp-cp">CP+: '+cpPlusLo+'\u2013'+cpPlusHi+'W / 104\u2013106% CP</span>',
+     'OGC + CP'],
+    ['Build / TH (TTE)','Time to exhaustion','75\u201380% sub-LT1','20\u201325% intensity',
+     '<span class="zp zp-ss">Sweet Spot: '+ssLo+'\u2013'+ssHi+'W / '+wpct(ssLo)+'\u2013'+wpct(ssHi)+'% CP</span><br><span>Progressive duration + reduced recovery</span>',
+     'TTE at sub-CP'],
+    ['Aerobic Expansion','OGC development','75\u201380% sub-LT1','20\u201325% intensity',
+     '<span class="zp zp-z2">Full Z2: '+z2Lo+'\u2013'+(z2Hi-1)+'W / '+wpct(z2Lo)+'\u2013'+wpct(z2Hi-1)+'% CP</span> <span class="zp zp-ss">Sweet Spot: '+ssLo+'\u2013'+ssHi+'W / '+wpct(ssLo)+'\u2013'+wpct(ssHi)+'% CP</span><br><span>Long Z2 build + Sweet Spot session + long ride Z2 finish</span>',
+     'OGC \u2191'],
+    ['VO2 Max','Engine size','75\u201380% sub-LT1','20\u201325% intensity',
+     '<span class="zp zp-vo2">pVO2 Max intervals</span><br><span><a href="https://qt2systems.com/pages/qt2-0-vo2-max-intervals-tool-bike" target="_blank">qt2systems.com/pages/qt2-0-vo2-max-intervals-tool-bike</a></span>',
+     'pVO2 Max'],
+    ['Specificity','Race expression','75\u201380% sub-LT1','20\u201325% intensity',
+     'IM (High-Z1/Low-Z2): '+midZ1hi+'\u2013'+(lowZ2hi-1)+'W / '+wpct(midZ1hi)+'\u2013'+wpct(lowZ2hi-1)+'% CP<br>70.3 (Mid/High-Z2): '+lowZ2hi+'\u2013'+z2Hi+'W / '+wpct(lowZ2hi)+'\u2013'+wpct(z2Hi)+'% CP<br>Olympic (Mid/High-Z3): '+lowZ3hi+'\u2013'+cp+'W / '+wpct(lowZ3hi)+'\u2013100% CP<br>Leadville (Mid-Z1/LT1): '+midZ1hi+'\u2013'+z1Hi+'W / '+wpct(midZ1hi)+'\u2013'+wpct(z1Hi)+'% CP<br>Cycling/MTB: all systems, athlete-specific',
+     'Race-specific'],
+    ['Rebuild / Reset','Recovery block','100% sub-LT1','No intensity',
+     '<span>Low-Z1 and below ('+subLT1lo+'\u2013'+(lowZ1hi-1)+'W / 55\u2013'+wpct(lowZ1hi-1)+'% CP). Mid-Z1 ('+lowZ1hi+'\u2013'+(midZ1hi-1)+'W / '+wpct(lowZ1hi)+'\u2013'+wpct(midZ1hi-1)+'% CP) sparingly at block end only.</span>',
+     'Recovery']
+  ];
+  var out='<div class="qt2-block-table"><table><thead><tr><th>Block</th><th>TSS split</th><th>Sub-LT1 base</th><th>Intensity focus</th><th>Target</th></tr></thead><tbody>';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    out+='<tr><td><strong>'+r[0]+'</strong><br><span>'+r[1]+'</span></td>';
+    out+='<td>'+r[2]+'<br><span>'+r[3]+'</span></td>';
+    out+='<td><span class="zp zp-z1">'+subLT1lo+'\u2013'+(subLT1hi-1)+'W</span><br><span>55\u2013'+wpct(subLT1hi-1)+'% CP</span></td>';
+    out+='<td>'+r[4]+'</td>';
+    out+='<td><strong>'+r[5]+'</strong></td></tr>';
+  }
+  out+='</tbody></table></div>';
+  return out;
+}
+
+// ── RENDER CONFIDENCE ─────────────────────────────────────────────────────────
+function getConfGuidance(score){
+  if(score>=75)return{label:'Reliable',text:'Use as-is for zone prescription and training block planning.'};
+  if(score>=50)return{label:'Usable — verify',text:'Proceed with caution. Validate with a follow-up test or lactate sample at this wattage before committing to a full training block.'};
+  if(score>=30)return{label:'Preliminary only',text:'Treat as an estimate. The HR curve did not show a clean inflection. Retest with 8–10 min stage durations, and confirm the athlete started below LT1.'};
+  return{label:'Unreliable — retest',text:'Do not use for zone prescription. Check protocol: verify stage duration was sufficient, starting wattage was sub-LT1, and HR reached steady state each stage.'};
+}
+
+function renderConf(A){
+  const{lt1Score,ogcScore,lt1c,ogcc,methods,lt1i,ogci}=A;
+  const mStr=`D-max: Stage ${methods.dMax>0?methods.dMax:'—'} · Conconi: Stage ${methods.conconi>0?methods.conconi:'—'} · Inflection: Stage ${methods.inflection>0?methods.inflection:'—'}`;
+  const lt1Color=lt1c==='high'?'var(--lt1)':lt1c==='moderate'?'var(--warn)':'var(--danger)';
+  const ogcColor=ogcc==='high'?'var(--lt1)':ogcc==='moderate'?'var(--warn)':'var(--danger)';
+  const lt1g=getConfGuidance(lt1Score);
+  const ogcg=getConfGuidance(ogcScore);
+  const slopeRatio=A.stages[ogci]?.dpw!=null&&A.mean>0?(A.stages[ogci].dpw/A.mean).toFixed(2):'—';
+  $('conf-row').innerHTML=`
+    <div class="conf-card">
+      <div class="conf-label">LT1 detection confidence</div>
+      <div class="conf-bar-track"><div class="conf-bar-fill" style="width:${lt1Score}%;background:${lt1Color}"></div></div>
+      <div class="conf-detail">${lt1Score}% · ${lt1c} · Stage ${lt1i+1} · ${mStr}</div>
+      <div class="conf-guidance conf-guidance-${lt1Score>=75?'high':lt1Score>=50?'moderate':lt1Score>=30?'low':'vlow'}">
+        <strong>${lt1g.label}:</strong> ${lt1g.text}
+      </div>
+    </div>
+    <div class="conf-card">
+      <div class="conf-label">OGC detection confidence</div>
+      <div class="conf-bar-track"><div class="conf-bar-fill" style="width:${ogcScore}%;background:${ogcColor}"></div></div>
+      <div class="conf-detail">${ogcScore}% · ${ogcc} · Stage ${ogci+1} · slope ${slopeRatio}× mean</div>
+      <div class="conf-guidance conf-guidance-${ogcScore>=75?'high':ogcScore>=50?'moderate':ogcScore>=30?'low':'vlow'}">
+        <strong>${ogcg.label}:</strong> ${ogcg.text}
+      </div>
+    </div>`;
+}
+
+// ── RENDER CHARTS ─────────────────────────────────────────────────────────────
+let charts={};
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={};}
+function renderCharts(A){
+  destroyCharts();
+  const{stages,mean}=A;
+  const zC=z=>z==='lt1'?'#1D9E75':z==='ogc'?'#C17D22':z==='buffer'?'rgba(29,158,117,.5)':z==='base'?'#2a477f':'#6a6865';
+  const ptC=stages.map(s=>zC(s.zone));
+  const grid='rgba(255,255,255,0.04)',tick='#68645f';
+  const tf={family:"'IBM Plex Mono'",size:9};
+  const tt={backgroundColor:'#161618',borderColor:'rgba(255,255,255,.08)',borderWidth:1,titleColor:'#e8e6e1',bodyColor:'#9b9790',titleFont:{family:"'IBM Plex Mono'",size:10},bodyFont:{family:"'IBM Plex Mono'",size:9},padding:8};
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tt},scales:{x:{grid:{color:grid},ticks:{color:tick,font:tf}},y:{grid:{color:grid},ticks:{color:tick,font:tf}}}};
+  
+  charts.hr=new Chart($('c-hr').getContext('2d'),{
+    type:'line',
+    data:{labels:stages.map(s=>s.power+'W'),datasets:[
+      {
+        data:stages.map(s=>s.stableHR),
+        borderColor:'rgba(74,127,212,0.55)',
+        backgroundColor:'rgba(42,71,127,0.06)',
+        fill:true,borderWidth:2,tension:0.35,
+        pointBackgroundColor:ptC,
+        pointBorderColor:'rgba(255,255,255,0.55)',
+        pointRadius:7,pointHoverRadius:9,pointBorderWidth:1.5,
+        pointStyle:'circle',
+        segment:{borderColor:ctx=>'rgba(74,127,212,0.45)'}
+      }
+    ]},
+    options:{...base,
+      plugins:{...base.plugins,tooltip:{...tt,callbacks:{label:ctx=>{const s=stages[ctx.dataIndex];const hrrPart=hrrKnownAI?' ('+s.pctHRR+'% HRR'+(hrmaxEstimated?' est.':'')+')':'';return[s.stableHR+' bpm'+hrrPart,'zone: '+s.zone+(s._dmaxDist?' · D-max: '+s._dmaxDist:'')];}}}},
+      scales:{...base.scales,
+        y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' bpm'},
+          grid:{color:'rgba(74,127,212,0.06)'}},
+        x:{...base.scales.x,grid:{color:'rgba(74,127,212,0.04)'}}
+      }}
+  });
+  
+  const dpws=stages.map(s=>s.dpw!=null?parseFloat(s.dpw.toFixed(4)):0);
+  charts.delta=new Chart($('c-delta').getContext('2d'),{
+    type:'bar',
+    data:{labels:stages.map(s=>s.power+'W'),datasets:[
+      {data:dpws,backgroundColor:ptC,borderWidth:0,borderRadius:2},
+      {data:stages.map(()=>parseFloat(mean.toFixed(4))),type:'line',borderColor:'rgba(120,120,110,.35)',borderDash:[4,3],borderWidth:1,pointRadius:0,backgroundColor:'transparent'}
+    ]},
+    options:{...base,
+      plugins:{...base.plugins,tooltip:{...tt,callbacks:{label:ctx=>ctx.datasetIndex===0?ctx.parsed.y.toFixed(4)+' bpm/W':'mean: '+mean.toFixed(4)}}},
+      scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v.toFixed(3)},min:0}}}
+  });
+}
+
+// ── RENDER TABLE ──────────────────────────────────────────────────────────────
+function renderTable(A){
+  const{stages,mean,hrmaxEstimated,hrMax,hrRest}=A;
+  const hrrKnown=hrMax&&hrRest&&hrMax>hrRest;
+  const thHrr=$('th-hrr');
+  if(thHrr){
+    if(!hrrKnown)thHrr.textContent='HR';
+    else if(hrmaxEstimated)thHrr.textContent='% HRR (est.)';
+    else thHrr.textContent='% HRR';
+  }
+  const bw=parseFloat($('bw').value)||null;
+  const tags={
+    lt1:'<span class="badge b-lt1">LT1</span>',
+    ogc:'<span class="badge b-ogc">OGC</span>',
+    near:'<span class="badge b-near">Z3</span>',
+    buffer:'<span class="badge b-buf">Z2</span>',
+    base:'<span class="badge b-base">Z1</span>'
+  };
+  const tbody=$('tbl-body');tbody.innerHTML='';
+  stages.forEach((s,i)=>{
+    const rc=s.zone==='lt1'?'rl':s.zone==='ogc'?'ro':'';
+    const dhr=s.dhr!=null?(s.dhr>=0?'+':'')+s.dhr:'—';
+    const dpwStr=s.dpw!=null?s.dpw.toFixed(4):'—';
+    const vm=s.dpw==null?'<span class="av">—</span>':s.dpw<mean*0.85?'<span class="fl">↓ flat</span>':s.dpw>mean*1.15?'<span class="st">↑ steep</span>':'<span class="av">— avg</span>';
+    const dc=Math.abs(s.drift)>8?'dw':'dok';
+    const wkg=bw?(s.power/bw).toFixed(2):'—';
+    const hrrCell=hrrKnown?(s.pctHRR+'%'+(hrmaxEstimated?'*':'')):'—';
+    tbody.innerHTML+=`<tr class="${rc}"><td>${i+1}</td><td>${s.power}W</td><td>${s.pctCP}%</td><td>${wkg}</td><td>${s.stableHR} bpm</td><td>${hrrCell}</td><td>${dhr}</td><td>${dpwStr}</td><td>${vm}</td><td class="${dc}">${s.drift>0?'+':''}${s.drift}${Math.abs(s.drift)>8?' ⚠':''}</td><td>${tags[s.zone]||''}</td></tr>`;
+  });
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+async function getAI(A){
+  $('ai-loading').style.display='flex';
+  $('ai-body').style.display='none';
+  $('ai-error').style.display='none';
+  _aiDone=false;_aiText='';
+  const pdfBtn=$('pdf-btn');
+  if(pdfBtn){pdfBtn.style.opacity='0.4';pdfBtn.title='Wait for AI analysis';}
+
+  const{lt1,ogc,stages,mean,adi,lt1c,ogcc,cp,hrRest,hrMax,hrmaxEstimated,flags,methods}=A;
+  const hrrKnownAI=hrMax&&hrRest&&hrMax>hrRest;
+  const hrmaxNote=!hrMax?'HRmax unknown — omit all HRR% references':hrmaxEstimated?`HRmax is ESTIMATED at ${hrMax} bpm using Tanaka formula (208 − 0.7×age) — label all HRR% as approximate`:`HRmax is MEASURED at ${hrMax} bpm`;
+  const adiPct=lt1&&ogc?Math.round(adi/cp*100):0;
+  const driftIssues=stages.filter(s=>Math.abs(s.drift)>8);
+  const athleteName=$('athlete-name').value.trim()||'the athlete';
+  const p12=parseInt($('p12').value)||null;
+  const bw=parseFloat($('bw').value)||null;
+  const testDate=$('test-date').value;
+  const cpPct65=Math.round(cp*0.65);
+  const subLT1lo=Math.round(cp*0.55);
+  const subLT1hi=lt1?lt1.power:Math.round(cp*0.72);
+
+  // ── ZONE THIRDS (for block prescription) ──
+  // Z1 thirds: 65%CP to LT1
+  const z1Lo=cpPct65, z1Hi=lt1?lt1.power:Math.round(cp*0.72);
+  const z1Span=z1Hi-z1Lo;
+  const lowZ1hi=Math.round(z1Lo+z1Span/3);
+  const midZ1hi=Math.round(z1Lo+z1Span*2/3);
+  // Z2 thirds: LT1 to OGC
+  const z2Lo=lt1?lt1.power:Math.round(cp*0.72), z2Hi=ogc?ogc.power:Math.round(cp*0.87);
+  const z2Span=z2Hi-z2Lo;
+  const lowZ2hi=Math.round(z2Lo+z2Span/3);
+  const midZ2hi=Math.round(z2Lo+z2Span*2/3);
+  // Z3 thirds: OGC to CP
+  const z3Lo=ogc?ogc.power:Math.round(cp*0.87);
+  const z3Span=cp-z3Lo;
+  const lowZ3hi=Math.round(z3Lo+z3Span/3);
+  const midZ3hi=Math.round(z3Lo+z3Span*2/3);
+  // Sweet Spot: OGC ±2% CP
+  const ssLo=Math.round(cp*(ogc?ogc.pctCP/100-0.02:0.85));
+  const ssHi=Math.round(cp*(ogc?ogc.pctCP/100+0.02:0.89));
+  // CP+ intervals
+  const cpPlusLo=Math.round(cp*1.04), cpPlusHi=Math.round(cp*1.06);
+  // % CP helpers
+  const wpct=w=>Math.round(w/cp*100);
+
+  // ── ZONE RANGES STRING for prompt ──
+  const zoneRanges=lt1&&ogc?
+    `ZR: <${cpPct65}W | Z1: ${cpPct65}–${lt1.power-1}W | Z2: ${lt1.power}–${ogc.power-1}W | Z3: ${ogc.power}–${cp-1}W | ≥CP: ${cp}W+`:'Zones: not calculated';
+
+  const stageLines=stages.map((s,i)=>{
+    const hrrStr=hrrKnownAI?` (${s.pctHRR}% HRR${hrmaxEstimated?' est.':''})`:'' ;
+    return `Stage ${i+1}: ${s.power}W (${s.pctCP}% CP)${bw?' / '+(s.power/bw).toFixed(2)+'W/kg':''}, HR ${s.stableHR} bpm${hrrStr}, drift ${s.drift>0?'+':''}${s.drift} bpm, zone: ${s.zone}${s.dpw!=null?`, Δ/W: ${s.dpw.toFixed(4)} (${s.dpw<mean*0.85?'FLAT':s.dpw>mean*1.15?'STEEP':'avg'})`:''}${s._dmaxDist?' D-max:'+s._dmaxDist:''}`;
+  }).join('\n');
+
+  const flagLines=flags.length?flags.map(f=>f.msg).join('\n'):'None';
+  const methodLines=`D-max → Stage ${methods.dMax>0?methods.dMax:'—'} | Conconi → Stage ${methods.conconi>0?methods.conconi:'—'} | Slope inflection → Stage ${methods.inflection>0?methods.inflection:'—'}`;
+
+  const prompt=`You are an expert endurance performance coach at QT2 Systems. Analyze this threshold test and produce a structured coaching report in exactly 4 paragraphs. No bullet points. No headers. Reference the athlete by first name only throughout (e.g. 'Tim' not 'Tim Snow'). Every sentence must contain specific numbers from this athlete's data.
+
+═══════════════════════════════════════════════
+QT2.0 TERMINOLOGY — use these exactly, never substitute
+═══════════════════════════════════════════════
+LT1 = Lactate Threshold 1 (aerobic threshold): the intensity where lactate first rises meaningfully above baseline. Fat oxidation is dominant below this point.
+OGC = Oxidative-Glycolytic Crossover: the intensity where carbohydrate becomes the primary fuel and glycolytic contribution begins to dominate. Always write "OGC" or "Oxidative-Glycolytic Crossover" — never "LT2", "FTP", "threshold", or any other substitute.
+Critical Power (CP): the highest power that can be sustained without progressive fatigue accumulation.
+
+═══════════════════════════════════════════════
+QT2.0 ZONE FRAMEWORK — always use these labels with specific watt ranges
+═══════════════════════════════════════════════
+ZR (Recovery): below ${cpPct65}W (below 65% CP)
+Z1 (Aerobic Base): ${cpPct65}–${z1Hi-1}W (65% CP → LT1) — steady-state aerobic development zone
+  Low-Z1:  ${z1Lo}–${lowZ1hi-1}W (${wpct(z1Lo)}–${wpct(lowZ1hi-1)}% CP)
+  Mid-Z1:  ${lowZ1hi}–${midZ1hi-1}W (${wpct(lowZ1hi)}–${wpct(midZ1hi-1)}% CP)
+  High-Z1: ${midZ1hi}–${z1Hi-1}W (${wpct(midZ1hi)}–${wpct(z1Hi-1)}% CP)
+Z2 (Tempo): ${z2Lo}–${z2Hi-1}W (LT1 → OGC) — the aerobic threshold band
+  Low-Z2:  ${z2Lo}–${lowZ2hi-1}W (${wpct(z2Lo)}–${wpct(lowZ2hi-1)}% CP)
+  Mid-Z2:  ${lowZ2hi}–${midZ2hi-1}W (${wpct(lowZ2hi)}–${wpct(midZ2hi-1)}% CP)
+  High-Z2: ${midZ2hi}–${z2Hi-1}W (${wpct(midZ2hi)}–${wpct(z2Hi-1)}% CP)
+Z3 (Threshold): ${z3Lo}–${cp-1}W (OGC → CP)
+  Low-Z3:  ${z3Lo}–${lowZ3hi-1}W (${wpct(z3Lo)}–${wpct(lowZ3hi-1)}% CP)
+  Mid-Z3:  ${lowZ3hi}–${midZ3hi-1}W (${wpct(lowZ3hi)}–${wpct(midZ3hi-1)}% CP)
+  High-Z3: ${midZ3hi}–${cp-1}W (${wpct(midZ3hi)}–${wpct(cp-1)}% CP)
+Sweet Spot: ${ssLo}–${ssHi}W (OGC ±2% CP = ${wpct(ssLo)}–${wpct(ssHi)}% CP)
+CP+ Intervals: ${cpPlusLo}–${cpPlusHi}W (104–106% CP) — short, high-intensity
+Sub-LT1 work (all aerobic base training): ${subLT1lo}–${subLT1hi-1}W (55% CP → LT1)
+
+═══════════════════════════════════════════════
+ATHLETE DATA
+═══════════════════════════════════════════════
+ATHLETE: ${athleteName}
+DATE: ${testDate||'not specified'}
+CP: ${cp}W | Rest HR: ${hrRest} | ${hrrKnownAI?'Max HR: '+hrMax+(hrmaxEstimated?' (est.)':' (measured)')+' | HRR: '+(hrMax-hrRest)+' bpm':'Max HR: not provided'}${bw?' | BW: '+bw+'kg | CP/kg: '+(cp/bw).toFixed(2)+'W/kg':''}
+${p12?'12-min power: '+p12+'W (12min/CP: '+(p12/cp).toFixed(3)+')\n':''}
+LT1: ${lt1?lt1.power+'W ('+lt1.pctCP+'% CP), HR '+lt1.stableHR+' bpm, confidence: '+lt1c:'not identified'}
+OGC: ${ogc?ogc.power+'W ('+ogc.pctCP+'% CP), HR '+ogc.stableHR+' bpm, confidence: '+ogcc:'not identified'}
+Aerobic window (LT1→OGC): ${lt1&&ogc?adi+'W ('+adiPct+'% CP)':'unknown'}
+Mean Δ/W: ${mean.toFixed(4)} bpm/W
+Detection methods: ${methodLines}
+
+STAGES:
+${stageLines}
+
+PROTOCOL FLAGS: ${flagLines}
+NOTE ON ZONE HR: All test stages are sub-CP. HR ranges for Z3 and CP+ zones are projected from upper-stage linear regression, not directly measured. Identify these as estimates if referenced.
+DRIFT: ${driftIssues.length?driftIssues.map(s=>s.power+'W: '+(s.drift>0?'+':'')+s.drift+' bpm').join(', '):'None'}
+HRMAX NOTE: ${hrmaxNote}
+
+═══════════════════════════════════════════════
+QT2.0 BLOCK PERIODIZATION — knowledge base for paragraph 3
+═══════════════════════════════════════════════
+CORE PRINCIPLE: 75–80% of weekly training stress (TSS) targets sub-LT1 work (${subLT1lo}–${subLT1hi-1}W). The remaining 20–25% defines the block's intensity focus — which threshold we are aiming to move, and how.
+
+The 7 QT2.0 block types, with this athlete's specific wattage targets:
+
+1. BASE/DURABILITY (exception block)
+   Goal: Build aerobic durability and general fitness. Primary target: LT1.
+   Distribution: 90–95% sub-LT1 (${subLT1lo}–${subLT1hi-1}W), 5–10% intensity focus.
+   Intensity focus: High-Z1 (${midZ1hi}–${z1Hi-1}W) and Low-Z2 (${z2Lo}–${lowZ2hi-1}W).
+
+2. BUILD/TH (Threshold Development)
+   Goal: Shift Z3 upward — move both OGC and CP higher. Primary targets: OGC and CP.
+   Distribution: 75–80% sub-LT1, 20–25% intensity focus.
+   Intensity focus: Sweet Spot intervals (${ssLo}–${ssHi}W) and CP+ intervals (${cpPlusLo}–${cpPlusHi}W).
+
+3. BUILD/TH (TTE — Time to Exhaustion)
+   Goal: Extend durability at sub-CP intensity. Make the ability to sustain sub-CP power more "sturdy". Primary target: Time to Exhaustion.
+   Distribution: 75–80% sub-LT1, 20–25% intensity focus.
+   Intensity focus: Sweet Spot intervals (${ssLo}–${ssHi}W) with progressively longer durations and/or reduced recovery between efforts.
+
+4. AEROBIC EXPANSION
+   Goal: Push OGC higher by driving Type IIA muscle fibers to express oxidatively at greater wattages. Primary target: OGC.
+   Distribution: 75–80% sub-LT1, 20–25% intensity focus.
+   Intensity focus: Systematic pressure across the entire Z2 range (${z2Lo}–${z2Hi-1}W) plus Sweet Spot (${ssLo}–${ssHi}W).
+   Weekly structure: (a) one long interval session building through Low-Z2 into Mid-Z2 (${z2Lo}–${midZ2hi-1}W); (b) one Sweet Spot interval session (${ssLo}–${ssHi}W); (c) the long ride finishes with a significant portion building progressively through the full Z2 range (${z2Lo}–${z2Hi-1}W).
+
+5. VO2 MAX
+   Goal: Expand the overall size of the aerobic engine. Primary target: Power at VO2 Max (pVO2 Max).
+   Distribution: 75–80% sub-LT1, 20–25% intensity focus.
+   Intensity focus: Athlete-specific intervals targeting time at VO2 Max, derived from CP, pVO2 Max, and W' using the QT2 VO2 Max Intervals Tool (qt2systems.com/pages/qt2-0-vo2-max-intervals-tool-bike). Direct the coach to this tool for specific interval prescription.
+
+6. SPECIFICITY
+   Goal: Not building fitness — maximizing race-specific expression of current fitness. Primary target: race-relevant intensity range.
+   Distribution: 75–80% sub-LT1, 20–25% intensity focus.
+   Intensity focus by race distance:
+   - IRONMAN: Mid-Z1 through Low-Z2 (${lowZ1hi}–${lowZ2hi-1}W, ${wpct(lowZ1hi)}–${wpct(lowZ2hi-1)}% CP)
+   - 70.3: Mid-Z2 through OGC (${lowZ2hi}–${z2Hi}W, ${wpct(lowZ2hi)}–${wpct(z2Hi)}% CP)
+   - Olympic: Mid-Z3 through CP (${lowZ3hi}–${cp}W, ${wpct(lowZ3hi)}–100% CP)
+   - Leadville/Unbound and similar: Mid-Z1 through LT1 (${lowZ1hi}–${z1Hi}W, ${wpct(lowZ1hi)}–${wpct(z1Hi)}% CP)
+   - Traditional cycling / MTB: all systems, weighted toward athlete-specific weaknesses and specialties.
+
+7. REBUILD/RESET
+   Goal: Active recovery only. No fitness building. Primary aim: maintain freshness and prepare to return to structured training.
+   Distribution: All training below Mid-Z1 (below ${midZ1hi-1}W). Small amounts of Mid-Z1 (${lowZ1hi}–${midZ1hi-1}W) used sparingly toward the end of the block only.
+
+═══════════════════════════════════════════════
+OUTPUT INSTRUCTIONS — 4 paragraphs, in this exact order
+═══════════════════════════════════════════════
+PARAGRAPH 1 — LT1 SIGNAL:
+Describe what the LT1 detection showed for this athlete. Which stage, what power, what HR. What the slope pattern looked like across the stages leading up to it. What this means physiologically — framing LT1 as the upper boundary of fat-oxidation-dominant work and the ceiling of Z1. Speak to the quality of the signal and what it tells us about this athlete's current aerobic base.
+
+PARAGRAPH 2 — OGC SIGNAL:
+Describe what the OGC detection showed. Which stage, what power, what HR. What the slope acceleration looked like. What this means for fuel utilization and intensity control — framing OGC as where carbohydrate flux begins to dominate and sustainable aerobic work ends. Comment on the width of the aerobic window (LT1→OGC in watts and % CP) and what it implies about the athlete's current aerobic development.
+
+CRITICAL FORMATTING RULES:
+1. Never use markdown formatting of any kind — no **bold**, no *italic*, no __underline__, no #headers. Plain text only.
+2. When referencing any intensity, zone, or power target anywhere in the output, always state both the watt range AND the % CP — never one without the other. Example: 'Low-Z2 (206–213W / 78–81% CP)' not just '206–213W' or just '78–81% CP'.
+3. In the bullet list for paragraph 3, each bullet point MUST start on its own new line beginning with the • character. Do not run bullets together in a single paragraph.
+
+PARAGRAPH 3 — BLOCK PRESCRIPTION INTRO (one sentence only):
+Write exactly ONE sentence of plain prose. The sentence should connect the athlete's aerobic window width (${adi}W / ${adiPct}% CP) to training context and note that the block prescription table below outlines the specific watt targets for each training phase. Do not write anything else for paragraph 3. Do not list blocks, do not use bullets, do not describe the blocks. One sentence only — the table is generated automatically.
+
+[TABLE GENERATED BY JAVASCRIPT - DO NOT OUTPUT]
+
+PARAGRAPH 4 — DATA QUALITY AND PROTOCOL:
+Assess the quality of this test. Was the HR response clean? Were any flags triggered? What does the confidence score tell us? Give one concrete, specific recommendation for improving the next test protocol — different starting wattage, stage duration, HR ceiling, or something else based on what the data showed.`;
+
+  try{
+    const PROXY_URL='https://6h6t7ripacjmoxgy6ncp4uvmpu0cjkqm.lambda-url.us-east-1.on.aws/';
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out after 90s')),90000));
+    const fetch_=fetch(PROXY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2500,messages:[{role:'user',content:prompt}]})});
+    const resp=await Promise.race([fetch_,timeout]);
+    const data=await resp.json();
+    if(!resp.ok)throw new Error((data.error&&data.error.message)||'API error '+resp.status);
+    const txt=(data.content&&data.content.find(b=>b.type==='text'))||{text:''};
+    const resultText=txt.text||'';
+    _aiText=resultText;_aiDone=true;
+    $('ai-loading').style.display='none';
+    $('ai-body').style.display='block';
+    // Render prose paragraphs and bullet lists
+    // Strip markdown bold/italic
+    const cleanText = resultText
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/•\s*/g, '\n• ');
+
+    // Split on double newline, but keep HTML blocks intact
+    const aiHtml = cleanText.split('\n\n').filter(p=>p.trim()).map((block,idx)=>{
+      const t = block.trim();
+      // Inject block table after paragraph 3 intro (index 2)
+      const tableInject=(idx===2&&_blockTableHTML)?'<div class="block-table-wrap">'+_blockTableHTML+'</div>':'';
+      // Pass HTML blocks through directly
+      if(t.startsWith('<div class="qt2-block-table"') || t.startsWith('<table')){
+        return t;
+      }
+      // Bullet list
+      const lines = t.split('\n').filter(l=>l.trim());
+      const hasBullets = lines.some(l=>l.trim().startsWith('•')||(l.trim().startsWith('-')&&l.trim().length>2));
+      if(hasBullets){
+        let out='';let inList=false;
+        for(const line of lines){
+          const isBullet=line.trim().startsWith('•')||(line.trim().startsWith('-')&&line.trim().length>2);
+          if(isBullet){
+            if(!inList){out+='<ul class="ai-list">';inList=true;}
+            out+='<li>'+line.trim().replace(/^[•\-]\s*/,'')+'</li>';
+          }else{
+            if(inList){out+='</ul>';inList=false;}
+            if(line.trim())out+='<p>'+line.trim()+'</p>';
+          }
+        }
+        if(inList)out+='</ul>';
+        return out+tableInject;
+      }
+      return '<p>'+t+'</p>'+tableInject;
+    }).join('');
+    $('ai-body').innerHTML='<div class="ai-text">'+aiHtml+'</div>';
+  }catch(err){
+    $('ai-loading').style.display='none';
+    $('ai-error').style.display='block';
+    $('ai-error').textContent=err.message.includes('Timed out')?'Analysis timed out. Try again.':'Analysis failed: '+err.message;
+  }finally{
+    if(pdfBtn){pdfBtn.style.opacity='1';pdfBtn.title='';}
+  }
+}
+
+// ── FILE HANDLER ──────────────────────────────────────────────────────────────
+function handleFile(file){
+  if(!file)return;
+  if(!file.name.toLowerCase().match(/\.fit$/i)){
+    showDiag('err','Unsupported file','<p>Expected a <strong>.fit</strong> file. Got: <strong>'+file.name.split('.').pop()+'</strong></p>');return;
+  }
+  $('diag').style.display='none';$('results').style.display='none';
+  setStatus('Reading FIT file...');
+  const cp=parseInt($('cp').value)||263;
+  const hrRest=parseInt($('hrrest').value)||48;
+  const hrmaxResult=getHrmax();
+  const hrMax=hrmaxResult.val||178;
+  const hrmaxEstimated=hrmaxResult.estimated;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      setStatus('Parsing FIT binary...');
+      const records=parseFIT(e.target.result);
+      if(!records.length){hideStatus();showDiag('err','No data','<p>No HR/power records found in file.</p>');return;}
+      setStatus('Classifying workout type...');
+      const wk=classify(records,cp);
+      if(wk.type==='no_data'){hideStatus();showDiag('err','No usable data','<p>No power or HR data found.</p>');return;}
+      if(wk.type!=='protocol'&&wk.type!=='step'){
+        hideStatus();
+        showDiag('warn','Wrong workout type','<p>'+wk.desc+'</p>'+(wk.rec?'<p>'+wk.rec+'</p>':'')+statsHTML(wk));return;
+      }
+      setStatus('Detecting stages...');
+      const stages=detectStages(records,cp);
+      if(stages.length<3){
+        hideStatus();showDiag('warn','Too few stages','<p>Only <strong>'+stages.length+' stage(s)</strong> isolated.</p>'+statsHTML(wk));return;
+      }
+      setStatus('Analyzing thresholds...');
+      const A=analyze(stages,cp,hrRest,hrMax,hrmaxEstimated);
+      if(!A){hideStatus();showDiag('err','Analysis failed','<p>Insufficient stage data for threshold detection.</p>');return;}
+      _analysis=A;
+      hideStatus();
+      showDiag('ok',(wk.type==='protocol'?'Recovery-valley protocol':'Step test')+' confirmed — '+stages.length+' stages','<p>'+wk.desc+'</p>'+statsHTML(wk));
+      $('results').style.display='block';
+      renderSummary(A);
+      renderFlags(A);
+      renderZones(A);
+      renderConf(A);
+      renderCharts(A);
+      renderTable(A);
+      await getAI(A);
+    }catch(err){
+      hideStatus();showDiag('err','Parse error','<p><strong>'+err.message+'</strong></p>');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function setStatus(msg){const s=$('status-bar');s.style.display='flex';$('status-text').textContent=msg;}
+function hideStatus(){$('status-bar').style.display='none';}
+function showDiag(level,title,html){
+  const d=$('diag');d.style.display='block';
+  const ic=$('diag-icon');ic.className='diag-icon di-'+level;ic.textContent=level==='ok'?'✓':level==='warn'?'!':'✕';
+  $('diag-title').className='dt-'+level;$('diag-title').textContent=title;
+  $('diag-body').innerHTML=html;
+}
+function statsHTML(w){return`<div class="diag-stats"><div class="ds"><div class="ds-l">Duration</div><div class="ds-v">${Math.round(w.durMin)} min</div></div><div class="ds"><div class="ds-l">Power range</div><div class="ds-v">${Math.round(w.minP)}–${Math.round(w.maxP)}W</div></div><div class="ds"><div class="ds-l">Stages</div><div class="ds-v">${w.ups}</div></div><div class="ds"><div class="ds-l">Recoveries</div><div class="ds-v">${w.downs}</div></div></div>`;}
+
+const dz=$('drop-zone'),fi=$('fit-file');
+fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+
+// ── PDF EXPORT ────────────────────────────────────────────────────────────────
+function exportPDF(){
+  const btn=$('pdf-btn');
+  btn.textContent='Generating...';btn.disabled=true;
+  if(!window.jspdf||!window.jspdf.jsPDF){btn.innerHTML='PDF library not loaded';btn.disabled=false;return;}
+  try{
+    const{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=210,M=16,cW=W-M*2;let y=M;
+    const light=_pdfLight;
+
+    // QT2 Brand palette (default) vs light mode toggle
+    // Brand: deep navy with white text -- matches qt2systems.com
+    let BG=light?[255,255,255]:[5,10,18];          // page bg
+    let BG2=light?[248,248,246]:[10,16,26];         // card/section bg
+    let BG3=light?[240,240,238]:[15,22,36];         // subtle inset
+    let BG_HDR=light?[0,60,111]:[0,60,111];         // header band -- always QT2 deep navy
+    let BG_FTR=light?[0,60,111]:[0,60,111];         // footer band -- always QT2 deep navy
+    let BG_ACCENT=light?[32,78,153]:[32,78,153];    // section accent -- QT2 mid blue
+    let TEXT=light?[20,20,18]:[220,228,242];
+    let TEXT_HDR=[255,255,255];                     // always white on navy header
+    let MUTED=light?[100,98,95]:[88,108,140];
+    let LT1=light?[15,110,86]:[26,170,128];
+    let OGC=light?[140,85,15]:[193,125,34];
+    let ACCENT=light?[32,78,153]:[74,127,212];
+    let DANGER=light?[170,40,40]:[217,79,78];
+    let WARN=light?[160,100,15]:[201,132,32];
+    let ROWLT1=light?[225,245,236]:[15,38,28];
+    let ROWOGC=light?[252,243,220]:[38,28,8];
+    let ROWBASE=light?[248,248,246]:[10,16,26];
+    let THEAD=light?[0,60,111]:[0,60,111];          // always brand navy for table header
+    let THEAD_TEXT=[255,255,255];                   // always white in table header
+
+    // ── PAGE BG ──
+    doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');
+
+    // ── HEADER BAND -- QT2 deep navy, full width ──
+    const hdrH=32;  // tighter header -- logo is 20mm tall with 4mm padding each side
+    doc.setFillColor(...BG_HDR);doc.rect(0,0,210,hdrH,'F');
+    // Subtle diagonal texture line (matches brand page feel)
+    doc.setDrawColor(255,255,255,0.06);
+
+    // Logo -- white version on navy
+    // Logo occupies M→M+36, y 5→23 (18px tall). Title vertically centered in header (hdrH=38).
+    const titleText='QT2.0  LT1 / Oxidative-Glycolytic Threshold Analysis Report';
+    if(_logoDataUrl){
+      try{
+        // White PNG logo renders directly on navy -- no background box needed
+        doc.addImage(_logoDataUrl,'PNG',M,4,36,20);
+      }catch(e){
+        doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+        doc.text('QT2',M+6,14,{align:'center'});
+        doc.setFontSize(6);doc.text('SYSTEMS',M+6,18,{align:'center'});
+      }
+      // Title vertically centered against logo (logo: top=4, height=20, center=14mm)
+      const logoTop=4, logoH=20;
+      const logoCenterY=logoTop+logoH/2;  // = 14mm
+      doc.setFontSize(12.5);doc.setFont('helvetica','bold');doc.setTextColor(...TEXT_HDR);
+      doc.text(titleText,M+40,logoCenterY+2);  // +2 for text baseline offset
+    }else{
+      doc.setFontSize(12.5);doc.setFont('helvetica','bold');doc.setTextColor(...TEXT_HDR);
+      doc.text(titleText,M,hdrH/2+3);
+    }
+    // Thin accent line below header
+    doc.setFillColor(...BG_ACCENT);doc.rect(0,hdrH,210,1.5,'F');
+    y=hdrH+5;
+
+    // Athlete bar
+    const name=$('athlete-name').value.trim()||'--';
+    const dateVal=$('test-date').value;
+    const dateStr=dateVal?new Date(dateVal+'T12:00:00').toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}):'--';
+    const cp=parseInt($('cp').value)||263;
+    const p12=parseInt($('p12').value)||null;
+    const bw=parseFloat($('bw').value)||null;
+
+    // Athlete bar: brand accent bg in brand mode, neutral in light mode
+    doc.setFillColor(...BG_ACCENT);doc.rect(M,y,cW,13,'F');
+    const athlTextCol=light?[255,255,255]:TEXT_HDR;
+    const athlSubCol=light?[200,220,245]:[160,190,225];
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(...athlTextCol);doc.text(name,M+3,y+5.5);
+    doc.setFont('helvetica','normal');doc.setTextColor(...athlSubCol);doc.text('Test: '+dateStr,M+3,y+10);
+    const hrmaxPDF=_analysis?_analysis.hrMax:parseInt($('hrmax').value)||null;
+    const hrmaxEstPDF=_analysis?_analysis.hrmaxEstimated:_hrmaxIsEstimated;
+    const hrMaxStr=hrmaxPDF?(hrmaxEstPDF?hrmaxPDF+' (est.)':String(hrmaxPDF)):' --';
+    doc.setTextColor(...athlTextCol);
+    doc.text('CP: '+cp+'W'+(p12?' | 12min/CP: '+(p12/cp).toFixed(3):'')+(bw?' | '+bw+'kg':''),W-M-3,y+5.5,{align:'right'});
+    doc.setTextColor(...athlSubCol);
+    doc.text('Resting HR: '+$('hrrest').value+' bpm  |  Max HR: '+hrMaxStr+' bpm',W-M-3,y+10,{align:'right'});
+    y+=17;
+
+    if(_analysis){
+      const A=_analysis;
+
+      // Summary cards
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...MUTED);
+      doc.text('SUMMARY',M,y+3);y+=5;
+      const cards=[
+        {l:'LT1 POWER',v:A.lt1?A.lt1.power+'W':'--',s:A.lt1?A.lt1.pctCP+'% CP':'',c:LT1},
+        {l:'LT1 HR',v:A.lt1?A.lt1.stableHR+' bpm':'--',s:A.lt1?A.lt1.pctHRR+'% HRR':'',c:LT1},
+        {l:'OGC POWER',v:A.ogc?A.ogc.power+'W':'--',s:A.ogc?A.ogc.pctCP+'% CP':'',c:OGC},
+        {l:'OGC HR',v:A.ogc?A.ogc.stableHR+' bpm':'--',s:A.ogc?A.ogc.pctHRR+'% HRR':'',c:OGC},
+        {l:'AEROBIC WINDOW',v:A.lt1&&A.ogc?A.adi+'W':'--',s:A.lt1&&A.ogc?Math.round(A.adi/cp*100)+'% CP':'',c:ACCENT},
+      ];
+      const cw5=(cW-4*3)/5;
+      cards.forEach((c,i)=>{
+        const cx=M+i*(cw5+3);
+        doc.setFillColor(...BG2);doc.rect(cx,y,cw5,17,'F');
+        doc.setFontSize(5.5);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(c.l,cx+2,y+4.5);
+        doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(...c.c);doc.text(c.v,cx+2,y+11.5);
+        doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(c.s,cx+2,y+15.5);
+      });
+      y+=21;
+
+      // Zone prescription
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...MUTED);
+      doc.text('TRAINING ZONE PRESCRIPTION',M,y+3);y+=5;
+      const cpPct65=Math.round(cp*0.65);
+      const pdfPct=(lo,hi)=>hi?(Math.round(lo/cp*100)+'\u2013'+Math.round(hi/cp*100)+'% CP'):(Math.round(lo/cp*100)+'%+ CP');
+        const zData=[
+          {l:'ZR',n:'Recovery',w:'<'+cpPct65+'W',pct:'<65% CP',h:'--',c:[80,100,130]},
+          {l:'Z1',n:'Aerobic Base',w:cpPct65+'\u2013'+(A.lt1?A.lt1.power-1:Math.round(cp*0.72))+'W',pct:pdfPct(cpPct65,A.lt1?A.lt1.power-1:Math.round(cp*0.72)),h:A.lt1?A.lt1.stableHR-12+'\u2013'+A.lt1.stableHR+' bpm':'--',c:ACCENT},
+          {l:'Z2',n:'Threshold Band',w:(A.lt1?A.lt1.power:Math.round(cp*0.73))+'\u2013'+(A.ogc?A.ogc.power-1:Math.round(cp*0.86))+'W',pct:pdfPct(A.lt1?A.lt1.power:Math.round(cp*0.73),A.ogc?A.ogc.power-1:Math.round(cp*0.86)),h:A.lt1&&A.ogc?A.lt1.stableHR+'\u2013'+A.ogc.stableHR+' bpm':'--',c:LT1},
+          {l:'Z3',n:'Glycolytic',w:(A.ogc?A.ogc.power:Math.round(cp*0.87))+'\u2013'+(cp-1)+'W',pct:pdfPct(A.ogc?A.ogc.power:Math.round(cp*0.87),cp-1),h:(()=>{const lo=A.ogc?A.ogc.stableHR:null;const hiObj=A._hrAtW?A._hrAtW(cp-1):null;if(!lo)return'--';if(hiObj&&hiObj.hr)return lo+'\u2013'+hiObj.hr+' bpm'+(hiObj.est?' *':'');return lo+'+ bpm';})(),c:OGC},
+          {l:'CP+',n:'Crit. Power+',w:cp+'W+',pct:'100%+ CP',h:(()=>{const loObj=A._hrAtW?A._hrAtW(cp):null;if(loObj&&loObj.hr&&!isNaN(loObj.hr))return loObj.hr+'+ bpm'+(loObj.est?' *':'');return'--';})(),c:DANGER}
+        ];
+      const zw=(cW-4*3)/5;
+      zData.forEach((z,i)=>{
+          const zx=M+i*(zw+3);
+          const zh=26;
+          doc.setFillColor(...BG2);doc.rect(zx,y,zw,zh,'F');
+          // Top color bar
+          doc.setFillColor(...z.c);doc.rect(zx,y,zw,2.5,'F');
+          // Zone label (abbreviated)
+          doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...z.c);
+          // Fit label to zone card width
+          const fullLabel=z.l+' '+z.n;
+          const maxW=zw-4;
+          const labelLines=doc.splitTextToSize(fullLabel,maxW);
+          doc.text(labelLines[0],zx+2,y+6.5);
+          // Watts
+          doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...TEXT);
+          doc.text(z.w,zx+2,y+13);
+          // % CP
+          doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(...ACCENT);
+          doc.text(z.pct,zx+2,y+18);
+          // HR
+          doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);
+          doc.text(z.h||'--',zx+2,y+22.5);
+        });
+        y+=30;
+
+      // Charts
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...ACCENT);
+      doc.text('HR RESPONSE & SLOPE ANALYSIS',M,y+3);y+=5;
+      const chartH=44;
+      const hrC=document.getElementById('c-hr');
+      const dC=document.getElementById('c-delta');
+      if(hrC){try{doc.setFillColor(...BG2);doc.rect(M,y,cW*0.58,chartH,'F');doc.addImage(hrC.toDataURL('image/png',1.0),'PNG',M+1,y+1,cW*0.58-2,chartH-2);}catch(e){}}
+      if(dC){try{doc.setFillColor(...BG2);doc.rect(M+cW*0.58+2,y,cW*0.42-2,chartH,'F');doc.addImage(dC.toDataURL('image/png',1.0),'PNG',M+cW*0.58+3,y+1,cW*0.42-4,chartH-2);}catch(e){}}
+      y+=chartH+5;
+
+      // Stage table
+      doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...ACCENT);
+      doc.text('STAGE BREAKDOWN',M,y+3);y+=5;
+      const cols=[{h:'#',w:6},{h:'Power',w:14},{h:'%CP',w:11},{h:'Stable HR',w:18},{h:'%HRR',w:12},{h:'HRd',w:12},{h:'d/W',w:15},{h:'vs mean',w:15},{h:'Drift',w:12},{h:'Zone',w:22}];
+      const totW=cols.reduce((a,c)=>a+c.w,0);const sc=cW/totW;
+      const scols=cols.map(c=>({...c,w:c.w*sc}));
+      doc.setFillColor(...THEAD);doc.rect(M,y,cW,5.5,'F');
+      let cx2=M;
+      scols.forEach(c=>{doc.setFontSize(5);doc.setFont('helvetica','bold');doc.setTextColor(...THEAD_TEXT);doc.text(c.h,cx2+1.5,y+4);cx2+=c.w;});
+      y+=5.5;
+      A.stages.forEach((s,i)=>{
+        const isL=s.zone==='lt1',isO=s.zone==='ogc';
+        if(isL)doc.setFillColor(...ROWLT1);else if(isO)doc.setFillColor(...ROWOGC);else doc.setFillColor(...ROWBASE);
+        doc.rect(M,y,cW,5.5,'F');
+        const dhr=s.dhr!=null?(s.dhr>=0?'+':'')+s.dhr:'--';
+        const vm=s.dpw==null?'--':s.dpw<A.mean*0.85?'flat':s.dpw>A.mean*1.15?'steep':'avg';
+        const vals=[String(i+1),s.power+'W',s.pctCP+'%',s.stableHR+' bpm',s.pctHRR+'%',dhr,s.dpw!=null?s.dpw.toFixed(3):'--',vm,(s.drift>0?'+':'')+s.drift+(Math.abs(s.drift)>8?' !':''),s.zone.toUpperCase()];
+        cx2=M;
+        vals.forEach((v,vi)=>{
+          const col=isL?LT1:isO?OGC:TEXT;
+          doc.setFontSize(5.5);doc.setFont('helvetica',isL||isO?'bold':'normal');doc.setTextColor(...col);
+          doc.text(v,cx2+1.5,y+4);cx2+=scols[vi].w;
+        });
+        y+=5.5;
+      });
+      y+=5;
+      if(_analysis&&_analysis.hrmaxEstimated){
+        doc.setFontSize(6);doc.setFont('helvetica','italic');doc.setTextColor(...MUTED);
+        doc.text('* HRR% based on estimated HRmax (Tanaka formula: 208 - 0.7 x age). Obtain measured HRmax for greater precision.',M,y+3);
+        y+=7;
+      }
+
+      // ── CONFIDENCE SECTION IN PDF ──
+      if(_analysis){
+        const A2=_analysis;
+        if(y>230){doc.addPage();doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');y=M;}
+        doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...ACCENT);
+        doc.text('DETECTION CONFIDENCE',M,y+3);y+=6;
+
+        const cHalf=(cW-4)/2;
+        const confItems=[
+          {label:'LT1 Detection Confidence',score:A2.lt1Score,level:A2.lt1c,stage:A2.lt1i+1,
+           col:A2.lt1Score>=75?LT1:A2.lt1Score>=50?WARN:DANGER},
+          {label:'OGC Detection Confidence',score:A2.ogcScore,level:A2.ogcc,stage:A2.ogci+1,
+           col:A2.ogcScore>=75?LT1:A2.ogcScore>=50?WARN:DANGER}
+        ];
+
+        confItems.forEach((ci,idx)=>{
+          const cx=M+(idx*(cHalf+4));
+          const cardH=32;
+          doc.setFillColor(...BG2);doc.rect(cx,y,cHalf,cardH,'F');
+          // Left accent stripe
+          doc.setFillColor(...ci.col);doc.rect(cx,y,2.5,cardH,'F');
+          // Label
+          doc.setFontSize(5.5);doc.setFont('helvetica','bold');doc.setTextColor(...ci.col);
+          doc.text(ci.label,cx+5,y+5);
+          // Score + level
+          doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(...ci.col);
+          doc.text(ci.score+'%',cx+5,y+12.5);
+          // Measure width at score font size before switching
+          const scoreW=doc.getTextWidth(ci.score+'%');
+          doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);
+          doc.text(' | '+ci.level+' | Stage '+ci.stage,cx+5+scoreW+1,y+12);
+          // Progress bar track
+          doc.setFillColor(...BG3);doc.rect(cx+5,y+15,cHalf-10,3,'F');
+          // Progress bar fill
+          doc.setFillColor(...ci.col);doc.rect(cx+5,y+15,(cHalf-10)*(ci.score/100),3,'F');
+          // Guidance text
+          const guidance=ci.score>=75?'Reliable -- use for zone prescription and training planning.':ci.score>=50?'Usable with caution. Validate with a follow-up test at this wattage.':ci.score>=30?'Preliminary only. Retest with 8-10 min stages; confirm sub-LT1 start.':'Do not use for zone prescription. Review protocol and retest.';
+          doc.setFontSize(6);doc.setFont('helvetica','italic');doc.setTextColor(...MUTED);
+          const glines=doc.splitTextToSize(guidance,cHalf-12);
+          glines.slice(0,2).forEach((l,li)=>doc.text(l,cx+5,y+21.5+li*3.8));
+        });
+        y+=38;
+
+        // Method line
+        const m2=A2.methods;
+        doc.setFontSize(5.5);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);
+        doc.text('Methods | D-max: Stage '+(m2.dMax>0?m2.dMax:'--')+' | Conconi: Stage '+(m2.conconi>0?m2.conconi:'--')+' | Slope inflection: Stage '+(m2.inflection>0?m2.inflection:'--'),M,y+3);
+        y+=8;
+      }
+
+      // AI text
+      const aiText=_aiText||($('ai-body')&&$('ai-body').style.display!=='none'?$('ai-body').innerText.trim():'');
+      if(aiText){
+        if(y>200){doc.addPage();doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');y=M;}
+        doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...ACCENT);
+
+        doc.text('AI COACHING INTERPRETATION',M,y+3);
+        doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(...ACCENT);
+        doc.text('Claude | QT2 Systems',W-M,y+3,{align:'right'});
+        y+=7;
+        doc.setFillColor(...BG2);
+        // Strip HTML table from AI text for PDF (table already rendered as PDF zone section)
+        const strippedAI=aiText.replace(/<div class="qt2-block-table"[\s\S]*?<\/div>/g,'[See Training Zone Prescription table above]').replace(/<[^>]+>/g,'');
+        // Clean unicode chars that jsPDF can't render properly
+        const cleanForPDF=t=>{
+          let s=String(t)
+            .replace(/[\u2018\u2019\u201a]/g,"'")
+            .replace(/[\u201c\u201d\u201e]/g,'"')
+            .replace(/[\u2013\u2014\u2015\u2212]/g,'-')
+            .replace(/\u2026/g,'...')
+            .replace(/\u00d7/g,'x')
+            .replace(/\u0394/g,'D')
+            .replace(/[\u2190-\u21ff]/g,'')
+            .replace(/[\u2500-\u257f]/g,'')
+            .replace(/[^\x09\x0a\x0d\x20-\x7e]/g,'');
+          return s;
+        }
+        const paras=strippedAI.split('\n').filter(p=>p.trim()).map(cleanForPDF);
+        let ty=y+3;
+        doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...TEXT);
+        paras.forEach(para=>{
+          // Extra safety pass — ensure helvetica can render every char
+          const safePara=para.trim().replace(/[^\x20-\x7e\n]/g,'');
+          const lines=doc.splitTextToSize(safePara,cW-6);
+          const bh=lines.length*4.2+3;
+          if(ty+bh>285){doc.addPage();doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');doc.setFillColor(...BG2);ty=M+3;}
+          lines.forEach(line=>{doc.text(line,M+3,ty);ty+=4.2;});
+          ty+=2.5;
+        });
+        y=ty+2;
+
+        // ── BLOCK PRESCRIPTION TABLE -- after AI coaching text ──
+        // Add new page if not enough room for table (7 rows x ~10mm + header)
+        // Calculate approximate table height: header(7) + 7 rows avg ~13mm each = ~98mm
+          const approxTableH=7+(7*13)+6;
+          if(y+approxTableH>278){
+            doc.addPage();
+            doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');
+            y=M+3;
+          }
+        // ── BLOCK PRESCRIPTION TABLE IN PDF -- matches UI table styling ──
+        if(_blockTableHTML&&_analysis){
+          const A2=_analysis;
+          const pCP=A2.cp;
+          const pLT1=A2.lt1?A2.lt1.power:Math.round(pCP*0.72);
+          const pOGC=A2.ogc?A2.ogc.power:Math.round(pCP*0.87);
+          const pSub1=Math.round(pCP*0.55);
+          const pSubHi=pLT1-1;
+          const pZ1Lo=Math.round(pCP*0.65);
+          const pZ1Hi=pLT1-1;
+          const pZ1Span=pZ1Hi-pZ1Lo;
+          const pLowZ1hi=Math.round(pZ1Lo+pZ1Span/3);
+          const pMidZ1lo=Math.round(pZ1Lo+pZ1Span/3);
+          const pHighZ1lo=Math.round(pZ1Lo+pZ1Span*2/3);
+          const pZ2Lo=pLT1;
+          const pZ2Hi=pOGC-1;
+          const pZ2Span=pZ2Hi-pZ2Lo;
+          const pLowZ2hi=Math.round(pZ2Lo+pZ2Span/3);
+          const pMidZ2lo=Math.round(pZ2Lo+pZ2Span/3);
+          const pMidZ2hi=Math.round(pZ2Lo+pZ2Span*2/3);
+          const pZ3Lo=pOGC;
+          const pZ3Span=pCP-pZ3Lo;
+          const pMidZ3lo=Math.round(pZ3Lo+pZ3Span/3);
+          const pHighZ3lo=Math.round(pZ3Lo+pZ3Span*2/3);
+          const pSSlo=Math.round(pCP*(pOGC/pCP-0.02));
+          const pSShi=Math.round(pCP*(pOGC/pCP+0.02));
+          const pCPplo=Math.round(pCP*1.04),pCPphi=Math.round(pCP*1.06);
+          const pw=w=>Math.round(w/pCP*100);
+          // Helper: clean string for jsPDF (ASCII only)
+          const cl=s=>String(s).replace(/[\u0080-\uFFFF]/g,'').replace(/\u2013|\u2014/g,'-').replace(/\u00b7|\u00d7/g,' ').replace(/[^\x0a\x20-\x7E]/g,'');
+
+          y+=4;
+          doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...MUTED);
+          doc.text('BLOCK PRESCRIPTION',M,y+3);y+=6;
+
+          // Column config: [x, width]
+          const pcols=[
+            {x:M,      w:40, label:'Block'},
+            {x:M+40,   w:24, label:'TSS split'},
+            {x:M+64,   w:32, label:'Sub-LT1 base'},
+            {x:M+96,   w:58, label:'Intensity focus'},
+            {x:M+154,  w:cW-154, label:'Target'},
+          ];
+
+          // Header
+          doc.setFillColor(...THEAD);
+          doc.rect(M,y,cW,7,'F');
+          doc.setFontSize(5.5);doc.setFont('helvetica','bold');doc.setTextColor(...THEAD_TEXT);
+          pcols.forEach(c=>doc.text(c.label,c.x+2,y+4.5));
+          y+=7;
+
+          // Row data -- all ASCII
+          const subBase=cl(pSub1+'-'+(pSubHi)+'W / 55-'+pw(pSubHi)+'% CP');
+          const pRows=[
+            {block:'Base/Durability', sub:'Aerobic dev.',
+             tss:'90-95% sub-LT1', tssSub:'5-10% intensity',
+             focus:cl('High-Z1: '+pHighZ1lo+'-'+pZ1Hi+'W / '+pw(pHighZ1lo)+'-'+pw(pZ1Hi)+'% CP|Low-Z2: '+pZ2Lo+'-'+pLowZ2hi+'W / '+pw(pZ2Lo)+'-'+pw(pLowZ2hi)+'% CP'),
+             focusColor:ACCENT, target:'LT1', targetColor:LT1},
+            {block:'Build/TH', sub:'Threshold dev.',
+             tss:'75-80% sub-LT1', tssSub:'20-25% intensity',
+             focus:cl('Sweet Spot: '+pSSlo+'-'+pSShi+'W / '+pw(pSSlo)+'-'+pw(pSShi)+'% CP|CP+: '+pCPplo+'-'+pCPphi+'W / 104-106% CP'),
+             focusColor:OGC, target:'OGC + CP', targetColor:OGC},
+            {block:'Build/TH (TTE)', sub:'Time to exhaustion',
+             tss:'75-80% sub-LT1', tssSub:'20-25% intensity',
+             focus:cl('Sweet Spot: '+pSSlo+'-'+pSShi+'W / '+pw(pSSlo)+'-'+pw(pSShi)+'% CP  (progressive duration, reduced recovery)'),
+             focusColor:OGC, target:'TTE at sub-CP', targetColor:OGC},
+            {block:'Aerobic Expansion', sub:'OGC development',
+             tss:'75-80% sub-LT1', tssSub:'20-25% intensity',
+             focus:cl('Full Z2: '+pZ2Lo+'-'+pZ2Hi+'W / '+pw(pZ2Lo)+'-'+pw(pZ2Hi)+'% CP|Sweet Spot: '+pSSlo+'-'+pSShi+'W / '+pw(pSSlo)+'-'+pw(pSShi)+'% CP'),
+             focusColor:LT1, target:'OGC (up)', targetColor:LT1},
+            {block:'VO2 Max', sub:'Engine size',
+             tss:'75-80% sub-LT1', tssSub:'20-25% intensity',
+             focus:'pVO2 Max intervals',
+             focusSub:'qt2systems.com/pages/qt2-0-vo2-max-intervals-tool-bike',
+             focusSubURL:'https://qt2systems.com/pages/qt2-0-vo2-max-intervals-tool-bike',
+             focusColor:ACCENT, target:'pVO2 Max', targetColor:ACCENT},
+            {block:'Specificity', sub:'Race expression',
+             tss:'75-80% sub-LT1', tssSub:'20-25% intensity',
+             focus:cl('IM: High-Z1/Low-Z2 '+pHighZ1lo+'-'+pLowZ2hi+'W / '+pw(pHighZ1lo)+'-'+pw(pLowZ2hi)+'% CP|70.3: Mid/High-Z2 '+pMidZ2lo+'-'+pZ2Hi+'W / '+pw(pMidZ2lo)+'-'+pw(pZ2Hi)+'% CP|Oly: Mid/High-Z3 '+pMidZ3lo+'-'+pCP+'W / '+pw(pMidZ3lo)+'-100% CP|Leadville: Mid-Z1/LT1 '+pMidZ1lo+'-'+pLT1+'W / '+pw(pMidZ1lo)+'-'+pw(pLT1)+'% CP'),
+             focusColor:MUTED, target:'Race-specific', targetColor:MUTED},
+            {block:'Rebuild/Reset', sub:'Recovery block',
+             tss:'100% sub-LT1', tssSub:'No intensity',
+             focus:cl('Low-Z1 and below ('+pSub1+'-'+(pLowZ1hi-1)+'W / 55-'+pw(pLowZ1hi-1)+'% CP)|Mid-Z1 ('+pMidZ1lo+'-'+(pHighZ1lo-1)+'W / '+pw(pMidZ1lo)+'-'+pw(pHighZ1lo-1)+'% CP) sparingly at block end only.'),
+             focusColor:MUTED, target:'Recovery', targetColor:MUTED},
+          ];
+
+          pRows.forEach((r,ri)=>{
+            // Page break check before each row
+            const testSegs=r.focus.split('|');
+            let testH=0;testSegs.forEach(s=>{testH+=Math.ceil(s.length/28)*3.6;});
+            const testRowH=Math.max(12,testH+(r.focusSub?3.6:0)+5);
+            if(y+testRowH>278){
+              doc.addPage();
+              doc.setFillColor(...BG);doc.rect(0,0,210,297,'F');
+              y=M+3;
+              doc.setFillColor(...THEAD);doc.rect(M,y,cW,7,'F');
+              doc.setFontSize(5.5);doc.setFont('helvetica','bold');doc.setTextColor(...THEAD_TEXT);
+              pcols.forEach(c=>doc.text(c.label,c.x+2,y+4.5));
+              y+=7;
+            }
+            // Measure focus text height
+            // Calculate row height based on all focus segments
+            const focusSegs=r.focus.split('|');
+            let totalFocusLines=0;
+            focusSegs.forEach(seg=>{totalFocusLines+=doc.splitTextToSize(seg.trim(),56).length;});
+            const extraH=r.focusSub?3.6:0;
+            const rowH=Math.max(12,totalFocusLines*3.6+extraH+5);
+            const focusLines=doc.splitTextToSize(r.focus,56);
+            // Row bg
+            doc.setFillColor(...(ri%2===0?BG2:BG3));
+            doc.rect(M,y,cW,rowH,'F');
+            // Left accent bar
+            doc.setFillColor(...r.targetColor);
+            doc.rect(M,y,1.5,rowH,'F');
+            // Block name
+            doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...TEXT);
+            doc.text(r.block,pcols[0].x+3,y+4);
+            doc.setFontSize(5);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);
+            doc.text(r.sub,pcols[0].x+3,y+7.5);
+            // TSS
+            doc.setFontSize(5.5);doc.setFont('helvetica','normal');doc.setTextColor(...TEXT);
+            doc.text(r.tss,pcols[1].x+2,y+4);
+            doc.setFontSize(5);doc.setTextColor(...MUTED);
+            doc.text(r.tssSub,pcols[1].x+2,y+7.5);
+            // Sub-LT1 base
+            doc.setFontSize(5.5);doc.setTextColor(...ACCENT);
+            doc.text(cl(pSub1+'-'+pSubHi+'W'),pcols[2].x+2,y+4);
+            doc.setFontSize(5);doc.setTextColor(...MUTED);
+            doc.text(cl('55-'+pw(pSubHi)+'% CP'),pcols[2].x+2,y+7.5);
+            // Intensity focus — split on \n, render each line separately
+            doc.setFontSize(5.5);doc.setFont('helvetica','normal');doc.setTextColor(...r.focusColor);
+            const focusSegments=r.focus.split('|');
+            let fY=y+4;
+            focusSegments.forEach(seg=>{
+              const segLines=doc.splitTextToSize(seg.trim(),56);
+              doc.text(segLines,pcols[3].x+2,fY);
+              fY+=segLines.length*3.6;
+            });
+            // Optional sub-line with hyperlink
+            if(r.focusSub){
+              doc.setFontSize(5);doc.setTextColor(...ACCENT);
+              if(r.focusSubURL){
+                doc.textWithLink(r.focusSub,pcols[3].x+2,fY,{url:r.focusSubURL});
+              }else{
+                doc.text(r.focusSub,pcols[3].x+2,fY);
+              }
+              fY+=3.6;
+            }
+            // Target
+            doc.setFontSize(6);doc.setFont('helvetica','bold');doc.setTextColor(...r.targetColor);
+            doc.text(r.target,pcols[4].x+2,y+rowH/2+2);
+            y+=rowH;
+          });
+          // Bottom border
+          doc.setDrawColor(...ACCENT);doc.setLineWidth(0.3);
+          doc.line(M,y,M+cW,y);
+          y+=6;
+        }
+
+      }
+    }
+
+    // ── FOOTER -- QT2 brand navy band on every page ──
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      // Top accent stripe
+      doc.setFillColor(...BG_ACCENT);doc.rect(0,283,210,1,'F');
+      // Footer band
+      doc.setFillColor(...BG_FTR);doc.rect(0,284,210,13,'F');
+      doc.setFontSize(6);doc.setFont('helvetica','normal');doc.setTextColor(160,190,225);
+      doc.text('QT2 Systems  |  LT1/OGC Threshold Analysis Report',M,290.5);
+      doc.text('Page '+i+' of '+pages,W-M,290.5,{align:'right'});
+    }
+
+    const safeName=($('athlete-name').value.trim()||'athlete').replace(/\s+/g,'_');
+    const safeDate=($('test-date').value||new Date().toISOString().split('T')[0]).replace(/-/g,'');
+    doc.save('QT2_Threshold_'+safeName+'_'+safeDate+'.pdf');
+  }catch(err){
+    console.error('PDF error:',err);
+  }finally{
+    btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M3 12h10M8 3v7M5 7l3 3 3-3"/></svg> Export PDF';
+    btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>

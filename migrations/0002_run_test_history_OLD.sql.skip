@@ -1,0 +1,96 @@
+-- Migration: Add run test history tables
+-- Created: 2026-04-13
+-- Description: Create 6 tables to store run calculator test history
+
+-- 1. Critical Speed (Run) Test History
+CREATE TABLE IF NOT EXISTS run_cs_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  cs_seconds_per_mile REAL,
+  d_prime_meters REAL,
+  test_data TEXT,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_cs_history_user_date ON run_cs_history(user_id, test_date DESC);
+
+-- 2. Best Effort Pace Test History
+CREATE TABLE IF NOT EXISTS run_best_effort_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  cs_seconds_per_mile REAL,
+  d_prime_meters REAL,
+  intervals_data TEXT,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_best_effort_history_user_date ON run_best_effort_history(user_id, test_date DESC);
+
+-- 3. Run Pace Zones Test History
+CREATE TABLE IF NOT EXISTS run_pace_zones_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  cs_seconds_per_mile REAL,
+  zones_data TEXT,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_pace_zones_history_user_date ON run_pace_zones_history(user_id, test_date DESC);
+
+-- 4. VO2 Max Intervals (Run) Test History
+CREATE TABLE IF NOT EXISTS run_vo2_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  cs_seconds_per_mile REAL,
+  d_prime_meters REAL,
+  vvo2max_seconds_per_mile REAL,
+  protocol_data TEXT,
+  durability TEXT,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_vo2_history_user_date ON run_vo2_history(user_id, test_date DESC);
+
+-- 5. CHO Burn (Run) Test History
+CREATE TABLE IF NOT EXISTS run_cho_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  duration_minutes REAL,
+  pace_seconds_per_mile REAL,
+  weight_kg REAL,
+  total_calories REAL,
+  cho_grams REAL,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_cho_history_user_date ON run_cho_history(user_id, test_date DESC);
+
+-- 6. Run Power (CP) Test History (for run power meters)
+CREATE TABLE IF NOT EXISTS run_power_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  test_date DATETIME NOT NULL,
+  cp_watts REAL,
+  w_prime REAL,
+  test_data TEXT,
+  source TEXT DEFAULT 'calculator',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_run_power_history_user_date ON run_power_history(user_id, test_date DESC);

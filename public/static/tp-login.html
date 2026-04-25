@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrainingPeaks Login - Angela Coach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            padding: 40px;
+        }
+        .logo {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background: #667eea;
+            border: none;
+            padding: 12px;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <div class="logo"><i class="fas fa-brain"></i></div>
+            <h2>Angela Coaching Engine</h2>
+            <p class="text-muted">Connect your TrainingPeaks account</p>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>One-Time Setup:</strong> Enter your TrainingPeaks credentials to connect your coach account.
+        </div>
+
+        <form id="loginForm">
+            <div class="mb-3">
+                <label class="form-label"><i class="fas fa-envelope me-2"></i>TrainingPeaks Email</label>
+                <input type="email" class="form-control" id="email" required placeholder="your@email.com">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><i class="fas fa-lock me-2"></i>TrainingPeaks Password</label>
+                <input type="password" class="form-control" id="password" required placeholder="••••••••">
+                <small class="form-text text-muted">Your password is sent directly to TrainingPeaks and never stored</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+                <i class="fas fa-sign-in-alt me-2"></i>Connect to TrainingPeaks
+            </button>
+        </form>
+
+        <div id="loading" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Connecting to TrainingPeaks...</p>
+        </div>
+
+        <div id="result"></div>
+
+        <hr class="my-4">
+        <div class="text-center">
+            <a href="/static/coach" class="text-decoration-none text-muted">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Show loading
+            document.getElementById('loginForm').classList.add('d-none');
+            document.getElementById('loading').classList.remove('d-none');
+
+            try {
+                const response = await fetch('/api/tp-login-direct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                document.getElementById('loading').classList.add('d-none');
+
+                if (response.ok && result.success) {
+                    document.getElementById('result').innerHTML = `
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle"></i> Connected!</h5>
+                            <p>${result.message}</p>
+                            <p class="mb-0 small">Redirecting...</p>
+                        </div>
+                    `;
+                    setTimeout(() => {
+                        window.location.href = '/static/coach';
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Connection failed');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('loginForm').classList.remove('d-none');
+                document.getElementById('result').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Error</h6>
+                        <p class="mb-0">${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

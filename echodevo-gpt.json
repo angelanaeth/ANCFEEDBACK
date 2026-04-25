@@ -1,0 +1,339 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Echodevo Coach API",
+    "description": "AI-powered endurance coaching with TrainingPeaks and Intervals.icu integration. Provides CTL/ATL/TSB analysis, stress state classification, and automated training recommendations.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://3000-i8mf68r87mlc4fo6mi2yb-c07dda5e.sandbox.novita.ai",
+      "description": "Sandbox server"
+    },
+    {
+      "url": "https://echodevo-coach.pages.dev",
+      "description": "Production server (update after deployment)"
+    }
+  ],
+  "paths": {
+    "/api/gpt/athlete-data": {
+      "post": {
+        "operationId": "getAthleteData",
+        "summary": "Get athlete training data and metrics",
+        "description": "Fetches comprehensive athlete data including CTL, ATL, TSB, workouts, and wellness metrics from TrainingPeaks or Intervals.icu",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "description": "Athlete ID (TrainingPeaks ID or Intervals.icu ID with 'i' prefix)"
+                  },
+                  "dataSource": {
+                    "type": "string",
+                    "enum": ["trainingpeaks", "intervals"],
+                    "default": "intervals",
+                    "description": "Data source to use"
+                  }
+                },
+                "required": ["athleteId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Athlete data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dataSource": {
+                      "type": "string"
+                    },
+                    "athlete": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" }
+                      }
+                    },
+                    "metrics": {
+                      "type": "object",
+                      "properties": {
+                        "ctl": { "type": "number", "description": "Chronic Training Load (42-day)" },
+                        "atl": { "type": "number", "description": "Acute Training Load (7-day)" },
+                        "tsb": { "type": "number", "description": "Training Stress Balance" }
+                      }
+                    },
+                    "stressState": {
+                      "type": "object",
+                      "properties": {
+                        "state": { "type": "string", "enum": ["Compromised", "Overreached", "Productive Fatigue", "Recovered", "Detraining"] },
+                        "intensity": { "type": "number" },
+                        "recommendation": { "type": "string" }
+                      }
+                    },
+                    "workouts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "date": { "type": "string" },
+                          "name": { "type": "string" },
+                          "tss": { "type": "number" },
+                          "duration": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/recommend": {
+      "post": {
+        "operationId": "generateRecommendation",
+        "summary": "Generate training recommendation",
+        "description": "Generates intelligent training recommendations based on current stress state, block type, and training history using Echodevo's coaching algorithms",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "description": "Athlete ID"
+                  },
+                  "blockType": {
+                    "type": "string",
+                    "enum": ["base_durability", "build_th", "vo2_max", "specificity", "hybrid", "rebuild"],
+                    "description": "Current training block type"
+                  },
+                  "currentWeekTSS": {
+                    "type": "number",
+                    "description": "Current week's total TSS"
+                  },
+                  "subjectiveMetrics": {
+                    "type": "object",
+                    "properties": {
+                      "soreness": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] },
+                      "mood": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] },
+                      "sleep": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] },
+                      "hrv": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] },
+                      "motivation": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] },
+                      "lifeStress": { "type": "string", "enum": ["No Issue", "Minor Issue", "Major Issue", "Unknown"] }
+                    }
+                  },
+                  "keyWorkoutCompletion": {
+                    "type": "string",
+                    "enum": ["fully_completed_rpe_low", "fully_completed_as_intended", "hit_or_miss_but_mostly_hit", "hit_or_miss_but_mostly_miss", "missed_multiple"],
+                    "description": "How well key workouts were completed this week"
+                  }
+                },
+                "required": ["athleteId", "blockType", "currentWeekTSS"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Training recommendation generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athleteId": { "type": "string" },
+                    "currentMetrics": {
+                      "type": "object",
+                      "properties": {
+                        "ctl": { "type": "number" },
+                        "atl": { "type": "number" },
+                        "tsb": { "type": "number" }
+                      }
+                    },
+                    "stressState": { "type": "string" },
+                    "recommendation": { "type": "string" },
+                    "weeklyTSS": { "type": "number" },
+                    "loadChange": { "type": "string" },
+                    "weeklyPlan": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "day": { "type": "number" },
+                          "dayName": { "type": "string" },
+                          "tss": { "type": "number" },
+                          "description": { "type": "string" }
+                        }
+                      }
+                    },
+                    "reasoning": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/post-workout": {
+      "post": {
+        "operationId": "postWorkout",
+        "summary": "Post planned workout",
+        "description": "Creates a planned workout in TrainingPeaks or Intervals.icu calendar",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "description": "Athlete ID"
+                  },
+                  "dataSource": {
+                    "type": "string",
+                    "enum": ["trainingpeaks", "intervals"],
+                    "description": "Platform to post to"
+                  },
+                  "workout": {
+                    "type": "object",
+                    "properties": {
+                      "date": { "type": "string", "format": "date", "description": "Workout date (YYYY-MM-DD)" },
+                      "title": { "type": "string", "description": "Workout title" },
+                      "description": { "type": "string", "description": "Detailed workout description with intervals, zones, etc." },
+                      "tss": { "type": "number", "description": "Planned Training Stress Score" },
+                      "duration": { "type": "number", "description": "Duration in minutes" },
+                      "type": { "type": "string", "enum": ["bike", "run", "swim"], "description": "Sport type" },
+                      "intensity": { "type": "string", "enum": ["easy", "moderate", "hard", "very_hard"], "description": "Intensity level" }
+                    },
+                    "required": ["date", "title", "tss", "duration", "type"]
+                  }
+                },
+                "required": ["athleteId", "dataSource", "workout"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Workout posted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "dataSource": { "type": "string" },
+                    "workoutId": { "type": "string" },
+                    "workout": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/analyze-week": {
+      "post": {
+        "operationId": "analyzeWeek",
+        "summary": "Analyze completed training week",
+        "description": "Analyzes the past week's training compliance, stress balance changes, and provides recommendations for the upcoming week",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "athleteId": {
+                    "type": "string",
+                    "description": "Athlete ID"
+                  },
+                  "dataSource": {
+                    "type": "string",
+                    "enum": ["trainingpeaks", "intervals"],
+                    "default": "intervals"
+                  }
+                },
+                "required": ["athleteId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Week analysis completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athleteId": { "type": "string" },
+                    "weekSummary": {
+                      "type": "object",
+                      "properties": {
+                        "totalTSS": { "type": "number" },
+                        "plannedTSS": { "type": "number" },
+                        "compliance": { "type": "number", "description": "Percentage of planned TSS completed" },
+                        "workoutsCompleted": { "type": "number" },
+                        "workoutsPlanned": { "type": "number" }
+                      }
+                    },
+                    "metricsChange": {
+                      "type": "object",
+                      "properties": {
+                        "ctlChange": { "type": "number" },
+                        "atlChange": { "type": "number" },
+                        "tsbChange": { "type": "number" }
+                      }
+                    },
+                    "stressStateTransition": {
+                      "type": "object",
+                      "properties": {
+                        "previous": { "type": "string" },
+                        "current": { "type": "string" }
+                      }
+                    },
+                    "recommendations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "nextWeekGuidance": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authenticated access (optional for public endpoints)"
+      }
+    }
+  }
+}

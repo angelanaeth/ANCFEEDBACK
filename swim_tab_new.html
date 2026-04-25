@@ -1,0 +1,156 @@
+      <!-- SWIM TAB -->
+      <div class="tab-pane fade show active" id="swim" role="tabpanel">
+        
+        <!-- CSS Metric -->
+        <div class="metric-card">
+          <div class="metric-label">Critical Swim Speed (CSS)</div>
+          <div class="metric-value" id="cssValue">--:--</div>
+          <div class="metric-source" id="cssSource">per 100m • Not set</div>
+        </div>
+
+        <!-- CSS Test History -->
+        <div class="data-table-container mb-3">
+          <div class="data-table-header">
+            <h3>CSS Test History</h3>
+            <p>Track all CSS tests over time</p>
+            <button class="btn btn-sm btn-primary" onclick="addManualCSSTest()">
+              <i class="fas fa-plus me-1"></i>Add Manual Test
+            </button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Date</th>
+                <th style="width: 100px;">T200 Time</th>
+                <th style="width: 100px;">T400 Time</th>
+                <th style="width: 100px;">CSS</th>
+                <th style="width: 100px;">Source</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cssTestHistoryBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted" style="padding: 32px;">
+                  No CSS tests recorded yet. Use the <a href="#" onclick="openToolkit('swim'); return false;">Swim Toolkit</a> to perform a CSS test.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CSS Input Form (collapsed by default after tests exist) -->
+        <div class="data-table-container mb-3" id="cssEditForm">
+          <div class="data-table-header">
+            <h3>Quick CSS Update</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div class="form-group" style="max-width: 300px;">
+              <label class="form-label">CSS Pace (MM:SS per 100m)</label>
+              <input type="text" class="form-control" id="cssInput" placeholder="e.g., 1:30">
+              <div class="form-hint">Format: M:SS (e.g., 1:30 for 90 seconds)</div>
+            </div>
+            <button class="btn btn-primary" onclick="saveCSS()">Save CSS</button>
+            <button class="btn" onclick="openToolkit('swim')">Open Toolkit</button>
+          </div>
+        </div>
+
+        <!-- Swim Interval Pacing History -->
+        <div class="data-table-container mb-3">
+          <div class="data-table-header">
+            <h3>Swim Interval Pacing History</h3>
+            <p>Saved interval pacing calculations</p>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Date</th>
+                <th>CSS Input</th>
+                <th>Zones</th>
+                <th style="width: 100px;">Source</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="swimIntervalHistoryBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted" style="padding: 32px;">
+                  No interval pacing saved yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- CHO Burn History -->
+        <div class="data-table-container mb-3">
+          <div class="data-table-header">
+            <h3>CHO Burn (Swim) History</h3>
+            <p>Carbohydrate burn calculations</p>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Date</th>
+                <th>Weight</th>
+                <th>Intensity</th>
+                <th>Duration</th>
+                <th>Carb Burn/hr</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="swimCHOHistoryBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted" style="padding: 32px;">
+                  No CHO burn tests saved yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Swim Pace Zones (Current) -->
+        <div class="data-table-container">
+          <div class="data-table-header">
+            <h3>Current Swim Pace Zones</h3>
+            <p>Pace zones calculated from current CSS</p>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 60px;">Zone</th>
+                <th>Name</th>
+                <th>Low</th>
+                <th>High</th>
+                <th style="width: 100px;">% CSS</th>
+              </tr>
+            </thead>
+            <tbody id="swimZonesBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted" style="padding: 32px;">
+                  No zones defined. Use Toolkit to calculate.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Swim Tools -->
+        <div class="card bg-light mt-3">
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <a href="#" onclick="openToolkit('swim'); return false;" class="btn btn-warning w-100">
+                  <i class="fas fa-calculator me-2"></i>Open Swim Toolkit
+                </a>
+                <small class="text-muted d-block mt-1">Calculate CSS, pace zones, swim intervals</small>
+              </div>
+              <div class="col-md-6">
+                <a href="#" onclick="openSwimPlanner(); return false;" class="btn btn-primary w-100">
+                  <i class="fas fa-swimmer me-2"></i>Swim Planner
+                </a>
+                <small class="text-muted d-block mt-1">Plan workouts based on your CSS</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>

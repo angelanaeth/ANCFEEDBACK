@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VO₂ Max Interval Prescriber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /*
+   * ── STICKY HEADER OFFSET ────────────────────────────────────────────────
+   * Set --header-h to match your Shopify theme's sticky header height.
+   * Common values: 60px (minimal), 72px (standard), 80px (tall).
+   * Adjust this one variable and everything below updates automatically.
+   * ────────────────────────────────────────────────────────────────────── */
+  :root { --header-h: 70px; }
+
+  html { scroll-padding-top: var(--header-h); }
+
+  /*
+   * ── DAWN THEME OVERRIDES ────────────────────────────────────────────────
+   * Targeted to Dawn + Appstle.
+   * --header-h: set this to your Dawn header's rendered height.
+   * To find it: DevTools → inspect <sticky-header> → check offsetHeight.
+   * Common Dawn values: 56px (slim), 72px (standard), 80px (with promo bar).
+   * ────────────────────────────────────────────────────────────────────── */
+
+  /* Force entire page dark */
+  html,
+  body,
+  body.template-page,
+  .color-scheme-1,
+  .color-background-1 {
+    background: #0a0c0f !important;
+    background-color: #0a0c0f !important;
+    color: #e2e8f0 !important;
+  }
+
+  /* Dawn's main content wrapper and page section */
+  main#MainContent,
+  .shopify-section,
+  .page-width,
+  section.main-page-title,
+  .template-page .page-width {
+    background: #0a0c0f !important;
+    background-color: #0a0c0f !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide Dawn's auto-generated page <h1> title block */
+  .main-page-title,
+  .page-title,
+  section.main-page-title,
+  .template-page > .page-width > h1,
+  main#MainContent > .shopify-section:first-child h1 {
+    display: none !important;
+  }
+
+  /* Dawn sticky header offset — matches --header-h variable */
+  sticky-header,
+  .header-wrapper {
+    z-index: 100;
+  }
+
+  /* Prevent Dawn's section top/bottom padding from adding white gaps */
+  .shopify-section-group-header-group + #MainContent > .shopify-section,
+  .template-page .shopify-section {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body {
+    background: #0a0c0f;
+    font-family: 'Barlow', sans-serif;
+    color: #e2e8f0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── EDGE-TO-EDGE BREAKOUT ── */
+  /* Pulls the app outside Shopify's content container on all sides */
+  #vo2-app {
+    background: #0a0c0f;
+    min-height: 100vh;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    /* Offset top content so sticky header doesn't overlap */
+    padding-top: var(--header-h);
+    /* Smooth scroll lands below header */
+    scroll-margin-top: var(--header-h);
+  }
+
+  /* ── PAGE TITLE ── */
+  .page-title-block {
+    background: #0d1017;
+    border-bottom: 1px solid #1e2530;
+    padding: 32px 24px 28px;
+  }
+
+  .page-title-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+  }
+
+  .page-title-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #475569;
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  @media (min-width: 640px) {
+    .page-title-block { padding: 36px 40px 32px; }
+    .page-title-main { font-size: 36px; }
+  }
+
+  /* ── INPUT SECTION ── */
+  .input-section {
+    padding: 28px 24px;
+    border-bottom: 1px solid #1e2530;
+    background: #0d1017;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .input-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #64748b;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .input-field {
+    background: #131820;
+    border: 1px solid #1e2d3d;
+    border-radius: 4px;
+    color: #f1f5f9;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .input-field:focus { border-color: #3b82f6; }
+
+  .prescribe-btn {
+    width: 100%;
+    background: #3b82f6;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+  }
+  .prescribe-btn:hover { background: #2563eb; }
+  .prescribe-btn:active { background: #1d4ed8; }
+
+  .error-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #f97316;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ── RESULTS ── */
+  .results { padding: 24px; display: none; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: #0f1520;
+    border: 1px solid #1e2530;
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .stat-card.wide { grid-column: span 2; }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #475569;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1;
+  }
+
+  .stat-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #475569;
+    margin-top: 4px;
+  }
+
+  /* ── PROFILE CARD ── */
+  .profile-card {
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    border: 1px solid;
+  }
+
+  .profile-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .profile-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+
+  .profile-text {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .profile-note {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+    font-weight: 300;
+    margin-top: 6px;
+  }
+
+  /* ── TABS ── */
+  .workout-tabs {
+    display: flex;
+    border-bottom: 1px solid #1e2530;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #475569;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    color: #f1f5f9;
+    border-bottom-color: #3b82f6;
+  }
+
+  /* ── WORKOUT CARD ── */
+  .workout-card {
+    background: #0f1520;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .workout-header {
+    padding: 20px 20px 20px;
+    border-bottom: 1px solid #1e2530;
+    background: #0d1117;
+  }
+
+  .workout-protocol {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #3b82f6;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .workout-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.02em;
+  }
+
+  .workout-goal {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .workout-badges {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .structure-badge {
+    display: inline-block;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #93c5fd;
+    padding: 7px 12px;
+  }
+
+  .tss-badge {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    background: rgba(234,179,8,0.1);
+    border: 1px solid rgba(234,179,8,0.3);
+    border-radius: 4px;
+    padding: 7px 14px;
+  }
+
+  .tss-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fbbf24;
+    line-height: 1;
+  }
+
+  .tss-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #92400e;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── WORKOUT BODY ── */
+  .workout-body { padding: 0; }
+
+  .body-section {
+    padding: 20px;
+    border-bottom: 1px solid #1e2530;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #475569;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid #131820;
+    gap: 12px;
+  }
+
+  .detail-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  .detail-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #e2e8f0;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .flag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 11px;
+    color: #f97316;
+    line-height: 1.5;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+  }
+
+  /* ── PRIMER BOX ── */
+  .primer-box {
+    background: rgba(59,130,246,0.06);
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 5px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+
+  .primer-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #3b82f6;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .primer-step {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #93c5fd;
+    padding: 2px 0;
+    line-height: 1.5;
+  }
+
+  .primer-cost {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #475569;
+    margin-top: 6px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeUp 0.4s ease both; }
+
+  /* ── DESKTOP OVERRIDES ── */
+  @media (min-width: 640px) {
+    .input-section { padding: 32px 40px; }
+    .input-grid { grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; margin-bottom: 0; }
+    .prescribe-btn { width: auto; margin-top: 0; }
+    .results { padding: 32px 40px; }
+    .stats-row { grid-template-columns: repeat(5, 1fr); }
+    .stat-card.wide { grid-column: span 1; }
+    .workout-header { padding: 24px 28px; }
+    .workout-name { font-size: 24px; }
+    .workout-body-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .body-section { border-bottom: none; border-right: 1px solid #1e2530; }
+    .body-section:last-child { border-right: none; border-bottom: none; }
+    .tab-btn { font-size: 13px; padding: 12px 24px; }
+    .structure-badge { font-size: 13px; }
+    .detail-val { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="vo2-app">
+
+  <!-- Title -->
+  <div class="page-title-block">
+    <div class="page-title-main">QT2.0 VO₂ Max Interval Calculator <span style="color:#f1f5f9;">(Bike)</span></div>
+    <div class="page-title-sub">Enter CP · W’ · pVO₂max to generate two precision-designed interval sets</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-section">
+    <div class="input-grid">
+      <div class="input-group">
+        <label class="input-label">Critical Power (W)</label>
+        <input class="input-field" type="number" inputmode="numeric" id="inp-cp" placeholder="263">
+      </div>
+      <div class="input-group">
+        <label class="input-label">W' (Joules)</label>
+        <input class="input-field" type="number" inputmode="numeric" id="inp-wp" placeholder="15640">
+      </div>
+      <div class="input-group">
+        <label class="input-label">pVO₂max (W)</label>
+        <input class="input-field" type="number" inputmode="numeric" id="inp-pvo2" placeholder="338">
+      </div>
+      <button class="prescribe-btn" id="prescribe-btn">Prescribe</button>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results"></div>
+
+</div>
+
+<script>
+// ── DAWN HEADER HEIGHT AUTO-DETECT ───────────────────────────────────────────
+// Reads the actual rendered height of Dawn's sticky-header element and sets
+// --header-h so the tool content clears it perfectly on all screen sizes.
+(function() {
+  function setHeaderOffset() {
+    var h = 0;
+    // Dawn uses a <sticky-header> custom element
+    var stickyEl = document.querySelector('sticky-header');
+    if (stickyEl) {
+      h = stickyEl.offsetHeight;
+    } else {
+      // Fallback: try common Dawn header wrappers
+      var fallback = document.querySelector('.header-wrapper') ||
+                     document.querySelector('header.header') ||
+                     document.querySelector('#shopify-section-header');
+      if (fallback) h = fallback.offsetHeight;
+    }
+    if (h > 0) {
+      document.documentElement.style.setProperty('--header-h', h + 'px');
+    }
+  }
+  // Run on load and on resize (header can change height on mobile)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setHeaderOffset);
+  } else {
+    setHeaderOffset();
+  }
+  window.addEventListener('resize', setHeaderOffset);
+})();
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+
+function roundToQuarter(s) { return Math.round(s / 15) * 15; }
+
+function fmtDur(s) {
+  if (s < 60) return s + 's';
+  var m = Math.floor(s / 60), r = s % 60;
+  return r === 0 ? m + ':00' : m + ':' + (r < 10 ? '0' : '') + r;
+}
+
+function fmtW(w, cp) {
+  return w + 'W (' + Math.round((w / cp) * 100) + '% CP)';
+}
+
+function roundW(w) { return Math.round(w / 5) * 5; }
+
+function segTSS(w, dur, cp) {
+  var IF = w / cp;
+  return (dur / 3600) * IF * IF * 100;
+}
+
+function calcTSS(segs, cp) {
+  return Math.round(segs.reduce(function(a, s) { return a + segTSS(s.w, s.d, cp); }, 0));
+}
+
+function gapColor(gap) {
+  if (gap < 50) return '#f97316';
+  if (gap <= 90) return '#eab308';
+  return '#22c55e';
+}
+
+function profileBg(type) {
+  if (type === 'compressed') return 'rgba(249,115,22,0.08)';
+  if (type === 'moderate') return 'rgba(234,179,8,0.08)';
+  return 'rgba(34,197,94,0.08)';
+}
+
+// ── PRESCRIBE ────────────────────────────────────────────────────────────────
+
+function prescribe(cp, wprime, pvo2) {
+  var burnRate = pvo2 - cp;
+  var timeToEx = Math.round(wprime / burnRate);
+  var maxRepDur = roundToQuarter(Math.floor((0.35 * wprime) / burnRate));
+  var gap = burnRate;
+
+  // Profile
+  var profileType, profileLabel, profileDesc;
+  if (gap < 50) {
+    profileType = 'compressed';
+    profileLabel = 'Compressed Profile';
+    profileDesc = 'Only ' + gap + 'W separates your ceiling from your roof. VO\u2082 work and threshold work are nearly the same physiological session. The priority is widening this gap over time by raising CP.';
+  } else if (gap <= 90) {
+    profileType = 'moderate';
+    profileLabel = 'Moderate Profile';
+    profileDesc = 'A ' + gap + 'W gap gives reasonable design flexibility. Both classic repeats and micro-interval structures are viable depending on kinetic profile.';
+  } else {
+    profileType = 'wide';
+    profileLabel = 'Wide Profile';
+    profileDesc = 'A ' + gap + 'W gap means substantial anaerobic machinery above CP. Classic longer repeats are viable. Risk is using W\u2019 to power through intervals rather than driving VO\u2082 stimulus.';
+  }
+
+  var wPrimeLabel = wprime < 10000 ? 'Small Tank' : wprime < 18000 ? 'Moderate Tank' : 'Large Tank';
+  var wPrimeNote = wprime < 10000
+    ? 'Small W\u2019 means rep duration must be tightly controlled. The W\u2019 budget is the primary design constraint.'
+    : wprime < 18000
+    ? 'Moderate W\u2019. Solid design flexibility but still requires disciplined pacing on early reps.'
+    : 'Large W\u2019. Athlete has significant anaerobic buffer \u2014 risk is masking poor VO\u2082 stimulus with anaerobic contribution.';
+
+  // ── W1 ──
+  var w1;
+  var w1Intensity = roundW(cp + burnRate * 0.85);
+  var w1BurnRate = w1Intensity - cp;
+
+  if (maxRepDur >= 180) {
+    var repDur = roundToQuarter(Math.min(300, maxRepDur));
+    var wSpent = Math.round(w1BurnRate * repDur);
+    var wPct = Math.round((wSpent / wprime) * 100);
+    var reps = repDur >= 240 ? 4 : 5;
+    var recDur = repDur;
+    var recovW = roundW(cp * 0.65);
+    var segs = [];
+    for (var i = 0; i < reps; i++) { segs.push({w: w1Intensity, d: repDur}); segs.push({w: recovW, d: recDur}); }
+    var tss1 = calcTSS(segs, cp);
+    w1 = {
+      name: 'Classic VO\u2082 Repeats', subtitle: 'Ceiling-Limited Protocol',
+      goal: 'Maximize sustained time between ceiling and roof with controlled W\u2019 spend per rep.',
+      structure: reps + ' \u00d7 ' + fmtDur(repDur) + ' @ ' + fmtW(w1Intensity, cp), tss: tss1,
+      details: [
+        ['Work Interval', fmtDur(repDur) + ' @ ' + fmtW(w1Intensity, cp)],
+        ['W\u2019 Spend / Rep', wSpent.toLocaleString() + ' J (' + wPct + '% of W\u2019)'],
+        ['Recovery', fmtDur(recDur) + ' @ ' + fmtW(recovW, cp)],
+        ['Total Reps', '' + reps],
+        ['Total Work Time', Math.round(reps * repDur / 60) + ' min'],
+        ['Set TSS', '\u007e' + tss1]
+      ],
+      progression: ['Add reps first: +1 rep per block', 'Tighten recovery by 30s', 'Raise intensity by 5W only when quality holds'],
+      cues: ['HR ramps reps 1\u20132, plateaus reps 3+', 'Breathing dominant over leg burn by rep 3', 'Power holds within 5\u20138W across all reps', 'Does NOT require 2 days to recover'],
+      flags: ['Power collapse after rep 2 \u2192 intensity too high, reduce by 10W', 'HR never climbs \u2192 recovery too long, tighten by 30s', '\u2018Legs only\u2019 sensation \u2192 likely anaerobic, not VO\u2082 stimulus']
+    };
+  } else if (maxRepDur >= 60) {
+    var repDur2 = roundToQuarter(Math.min(maxRepDur, 90));
+    var wSpent2 = Math.round(w1BurnRate * repDur2);
+    var wPct2 = Math.round((wSpent2 / wprime) * 100);
+    var recovW2 = roundW(cp * 0.6);
+    var segs2 = [];
+    for (var j = 0; j < 8; j++) { segs2.push({w: w1Intensity, d: repDur2}); segs2.push({w: recovW2, d: repDur2}); }
+    var tss1b = calcTSS(segs2, cp);
+    w1 = {
+      name: 'Short Power Repeats', subtitle: 'Ceiling-Limited Protocol',
+      goal: 'Accumulate time near pVO\u2082max through repetition. Early reps warm up kinetics; back half delivers the stimulus.',
+      structure: '8 \u00d7 ' + fmtDur(repDur2) + ' @ ' + fmtW(w1Intensity, cp), tss: tss1b,
+      details: [
+        ['Work Interval', fmtDur(repDur2) + ' @ ' + fmtW(w1Intensity, cp)],
+        ['W\u2019 Spend / Rep', wSpent2.toLocaleString() + ' J (' + wPct2 + '% of W\u2019)'],
+        ['Recovery', fmtDur(repDur2) + ' @ ' + fmtW(recovW2, cp) + ' (1:1)'],
+        ['Total Reps', '8'],
+        ['Total Work Time', Math.round(8 * repDur2 / 60) + ' min'],
+        ['Set TSS', '\u007e' + tss1b]
+      ],
+      progression: ['Add reps: 6 \u2192 8 \u2192 10', 'Tighten recovery to 0.75:1', 'Raise intensity by 3\u20135W only when full set is clean'],
+      cues: ['Progressive HR climb across reps 1\u20135', 'Reps 6\u20138 feel aerobically maximal', 'Breathing becomes dominant in back half', 'First 2 reps feel manageable \u2014 that\u2019s correct'],
+      flags: ['Collapse before rep 6 \u2192 W\u2019 budget too aggressive, reduce intensity 5W', 'Session feels sprint-like throughout \u2192 intensity too far above pVO\u2082max', 'No respiratory stress \u2192 reps too short or recovery too long']
+    };
+  } else {
+    var recovW3 = roundW(cp * 0.6);
+    var wSpent3 = Math.round(w1BurnRate * 45);
+    var wPct3 = Math.round((wSpent3 / wprime) * 100);
+    var segs3 = [];
+    for (var k = 0; k < 10; k++) { segs3.push({w: w1Intensity, d: 45}); segs3.push({w: recovW3, d: 45}); }
+    var tss1c = calcTSS(segs3, cp);
+    w1 = {
+      name: 'Ultra-Short Repeats', subtitle: 'Ceiling-Limited Protocol',
+      goal: 'W\u2019 is very small \u2014 use high-density short efforts to accumulate aerobic stress without single large W\u2019 draws.',
+      structure: '10 \u00d7 45s @ ' + fmtW(w1Intensity, cp), tss: tss1c,
+      details: [
+        ['Work Interval', '45s @ ' + fmtW(w1Intensity, cp)],
+        ['W\u2019 Spend / Rep', wSpent3.toLocaleString() + ' J (' + wPct3 + '% of W\u2019)'],
+        ['Recovery', '45s @ ' + fmtW(recovW3, cp)],
+        ['Total Reps', '10'],
+        ['Total Work Time', '7:30'],
+        ['Set TSS', '\u007e' + tss1c]
+      ],
+      progression: ['Add reps to 12, then 14', 'Tighten recovery to 30s', 'Raise intensity in 3W increments only'],
+      cues: ['Respiratory stress should arrive by rep 4\u20135', 'Power should hold evenly across all reps', 'HR should be pinned high by rep 6+'],
+      flags: ['Early collapse \u2192 reduce intensity', 'No respiratory drive \u2192 shorten recovery', 'Session feels anaerobic \u2192 intensity likely too high for this W\u2019']
+    };
+  }
+
+  // ── W2 ──
+  var primerI = roundW(cp + burnRate * 0.4);
+  var primerDur = 360;
+  var primerRecDur = 180;
+  var primerRecW = roundW(cp * 0.6);
+  var primerCost = Math.round((primerI - cp) * primerDur);
+  var primerRecon = Math.round(wprime * 0.22);
+  var netWp = Math.round(wprime - primerCost + primerRecon);
+
+  var microOnI = roundW(cp + burnRate * 0.78);
+  var microOffW = roundW(cp * 0.7);
+  var microOnBurn = microOnI - cp;
+  var setCycles = gap < 50 ? 8 : 10;
+  var microCycleNet = Math.round(microOnBurn * 30 * 1.18);
+  var setCost = Math.round(microCycleNet * setCycles * 0.85);
+  var sets = netWp > setCost * 2.5 ? 3 : 2;
+  var setDur = setCycles * 45;
+  var betweenW = roundW(cp * 0.6);
+
+  var w2segs = [
+    {w: primerI, d: primerDur},
+    {w: primerRecW, d: primerRecDur}
+  ];
+  for (var s = 0; s < sets; s++) {
+    for (var c = 0; c < setCycles; c++) {
+      w2segs.push({w: microOnI, d: 30});
+      w2segs.push({w: microOffW, d: 15});
+    }
+    if (s < sets - 1) w2segs.push({w: betweenW, d: 240});
+  }
+  var tss2 = calcTSS(w2segs, cp);
+
+  var w2 = {
+    name: 'Primer + Micro-Intervals', subtitle: 'Kinetics-Limited Protocol',
+    goal: 'Pre-load VO\u2082 with the primer so the athlete arrives at rep 1 already elevated. Micro-intervals sustain that state without large single W\u2019 draws.',
+    structure: sets + ' sets \u00d7 ' + fmtDur(setDur) + ' (' + fmtDur(30) + ' @ ' + fmtW(microOnI, cp) + ' / ' + fmtDur(15) + ' @ ' + fmtW(microOffW, cp) + ')',
+    tss: tss2,
+    primer: {
+      steps: [
+        fmtDur(primerDur) + ' @ ' + fmtW(primerI, cp) + ' \u2014 controlled W\u2019 draw to elevate VO\u2082',
+        fmtDur(primerRecDur) + ' easy @ ' + fmtW(primerRecW, cp) + ' \u2014 partial W\u2019 reconstitution',
+        'Begin main set'
+      ],
+      cost: '\u007e' + primerCost.toLocaleString() + ' J gross / \u007e' + (primerCost - primerRecon).toLocaleString() + ' J net after recovery'
+    },
+    details: [
+      ['On Interval', '30s @ ' + fmtW(microOnI, cp)],
+      ['Off Interval', '15s @ ' + fmtW(microOffW, cp)],
+      ['Set Duration', fmtDur(setDur) + ' (\u007e' + setCycles + ' cycles)'],
+      ['Between Sets', '4:00 easy @ ' + fmtW(betweenW, cp)],
+      ['Total Sets', '' + sets],
+      ['Set TSS', '\u007e' + tss2]
+    ],
+    progression: [
+      sets === 2 ? '2 sets \u2192 3 sets' : '3 sets \u2192 extend to 3 \u00d7 8:00',
+      'Shorten between-set recovery to 3:00',
+      'Extend set duration before raising intensity'
+    ],
+    cues: [
+      'Breathing stress arrives in first 2 min of set 1 \u2014 that\u2019s the primer working',
+      '15s off should feel like \u2018almost not enough\u2019 \u2014 breathing doesn\u2019t fully reset',
+      'HR should be pinned high from the first on-interval of set 2',
+      'Athlete reports aerobic maximal effort, not leg-destroying'
+    ],
+    flags: [
+      'Breathing stress never arrives \u2192 primer underdone, increase by 5W or extend by 1:00',
+      'Collapse mid-set 1 \u2192 primer overdone, reduce by 5W or shorten by 1:00',
+      '\u2018Legs only\u2019 sensation \u2192 on-interval intensity too high, reduce by 5W'
+    ]
+  };
+
+  return { burnRate, timeToEx, maxRepDur, gap, profileType, profileLabel, profileDesc, wPrimeLabel, wPrimeNote, w1, w2 };
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+
+function el(tag, attrs, children) {
+  var e = document.createElement(tag);
+  if (attrs) Object.keys(attrs).forEach(function(k) {
+    if (k === 'className') e.className = attrs[k];
+    else if (k === 'style') Object.assign(e.style, attrs[k]);
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  });
+  if (children) {
+    (Array.isArray(children) ? children : [children]).forEach(function(c) {
+      if (c == null) return;
+      e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+  }
+  return e;
+}
+
+function renderWorkout(w, cp, isW2) {
+  var card = el('div', {className: 'workout-card fade-in'});
+
+  // Header
+  var header = el('div', {className: 'workout-header'});
+  header.appendChild(el('div', {className: 'workout-protocol'}, w.subtitle));
+  header.appendChild(el('div', {className: 'workout-name'}, w.name));
+  header.appendChild(el('div', {className: 'workout-goal'}, w.goal));
+  var badges = el('div', {className: 'workout-badges'});
+  badges.appendChild(el('div', {className: 'structure-badge'}, w.structure));
+  var tssBadge = el('div', {className: 'tss-badge'});
+  tssBadge.appendChild(el('span', {className: 'tss-value'}, '\u007e' + w.tss));
+  tssBadge.appendChild(el('span', {className: 'tss-label'}, 'TSS'));
+  badges.appendChild(tssBadge);
+  header.appendChild(badges);
+  card.appendChild(header);
+
+  // Body
+  var body = el('div', {className: 'workout-body'});
+  var inner = el('div', {className: 'workout-body-inner'});
+
+  // Left col
+  var left = el('div', {className: 'body-section'});
+
+  if (isW2 && w.primer) {
+    var pBox = el('div', {className: 'primer-box'});
+    pBox.appendChild(el('div', {className: 'primer-label'}, 'Primer Protocol'));
+    w.primer.steps.forEach(function(s) {
+      pBox.appendChild(el('div', {className: 'primer-step'}, '\u2192 ' + s));
+    });
+    pBox.appendChild(el('div', {className: 'primer-cost'}, 'Net W\u2019 cost: ' + w.primer.cost));
+    left.appendChild(pBox);
+  }
+
+  left.appendChild(el('div', {className: 'section-label'}, 'Interval Details'));
+  w.details.forEach(function(d) {
+    var row = el('div', {className: 'detail-row'});
+    row.appendChild(el('span', {className: 'detail-key'}, d[0]));
+    row.appendChild(el('span', {className: 'detail-val'}, d[1]));
+    left.appendChild(row);
+  });
+
+  left.appendChild(el('div', {style: {marginTop: '20px'}}));
+  left.appendChild(el('div', {className: 'section-label'}, 'Progression'));
+  w.progression.forEach(function(p) {
+    var li = el('div', {className: 'list-item'});
+    var dot = el('span', {className: 'dot', style: {background: '#3b82f6'}});
+    li.appendChild(dot);
+    li.appendChild(document.createTextNode(p));
+    left.appendChild(li);
+  });
+
+  // Right col
+  var right = el('div', {className: 'body-section'});
+  right.appendChild(el('div', {className: 'section-label'}, 'Green Lights \u2014 Session Working'));
+  w.cues.forEach(function(c) {
+    var li = el('div', {className: 'list-item'});
+    li.appendChild(el('span', {className: 'dot', style: {background: '#22c55e'}}));
+    li.appendChild(document.createTextNode(c));
+    right.appendChild(li);
+  });
+
+  right.appendChild(el('div', {style: {marginTop: '18px'}}));
+  right.appendChild(el('div', {className: 'section-label'}, 'Red Flags \u2014 Adjust If You See'));
+  w.flags.forEach(function(f) {
+    var li = el('div', {className: 'flag-item'});
+    li.appendChild(el('span', {className: 'dot', style: {background: '#f97316', marginTop: '5px'}}));
+    li.appendChild(document.createTextNode(f));
+    right.appendChild(li);
+  });
+
+  inner.appendChild(left);
+  inner.appendChild(right);
+  body.appendChild(inner);
+  card.appendChild(body);
+  return card;
+}
+
+function renderResults(data) {
+  var container = document.getElementById('results');
+  container.innerHTML = '';
+  container.style.display = 'block';
+
+  var gc = gapColor(data.gap);
+
+  // Stats row
+  var statsRow = el('div', {className: 'stats-row fade-in'});
+  var stats = [
+    {label: 'Burn Rate', value: data.burnRate, unit: 'J/sec above CP'},
+    {label: 'Time to Exhaustion', value: data.timeToEx + 's', unit: 'at pVO\u2082max'},
+    {label: 'Max Rep Duration', value: fmtDur(data.maxRepDur), unit: '\u226435% W\u2019 spend'},
+    {label: 'Ceiling \u2192 Roof Gap', value: data.gap + 'W', unit: data.wPrimeLabel, color: gc},
+    {label: 'W\u2019 Budget / Rep', value: (Math.round(data.maxRepDur * data.burnRate * 0.35 / 100) * 100).toLocaleString() + ' J', unit: 'usable per rep'}
+  ];
+  stats.forEach(function(s, i) {
+    var card = el('div', {className: 'stat-card' + (i === 2 ? ' wide' : '')});
+    card.appendChild(el('div', {className: 'stat-label'}, s.label));
+    card.appendChild(el('div', {className: 'stat-value', style: {color: s.color || '#f1f5f9'}}, '' + s.value));
+    card.appendChild(el('div', {className: 'stat-unit'}, s.unit));
+    statsRow.appendChild(card);
+  });
+  container.appendChild(statsRow);
+
+  // Profile card
+  var pCard = el('div', {className: 'profile-card fade-in', style: {background: profileBg(data.profileType), borderColor: gc + '40'}});
+  var badges = el('div', {className: 'profile-badges'});
+  var b1 = el('span', {className: 'profile-badge', style: {background: gc + '20', color: gc}}, data.profileLabel);
+  var b2 = el('span', {className: 'profile-badge', style: {background: 'rgba(100,116,139,0.15)', color: '#94a3b8'}}, data.wPrimeLabel);
+  badges.appendChild(b1); badges.appendChild(b2);
+  pCard.appendChild(badges);
+  pCard.appendChild(el('div', {className: 'profile-text'}, data.profileDesc));
+  pCard.appendChild(el('div', {className: 'profile-note'}, data.wPrimeNote));
+  container.appendChild(pCard);
+
+  // Tabs
+  var tabs = el('div', {className: 'workout-tabs'});
+  var tabLabels = ['Workout 1 \u2014 Ceiling', 'Workout 2 \u2014 Kinetics'];
+  var activeTab = 0;
+  var wktArea = el('div', {className: 'fade-in'});
+
+  function showTab(idx) {
+    activeTab = idx;
+    tabBtns.forEach(function(b, i) {
+      b.className = 'tab-btn' + (i === idx ? ' active' : '');
+    });
+    wktArea.innerHTML = '';
+    wktArea.appendChild(renderWorkout(idx === 0 ? data.w1 : data.w2, null, idx === 1));
+  }
+
+  var tabBtns = tabLabels.map(function(label, idx) {
+    var btn = el('button', {className: 'tab-btn' + (idx === 0 ? ' active' : ''), onClick: function() { showTab(idx); }}, label);
+    tabs.appendChild(btn);
+    return btn;
+  });
+
+  container.appendChild(tabs);
+  showTab(0);
+  container.appendChild(wktArea);
+}
+
+// ── WIRE UP ───────────────────────────────────────────────────────────────────
+
+document.getElementById('prescribe-btn').addEventListener('click', function() {
+  var cp   = parseFloat(document.getElementById('inp-cp').value);
+  var wp   = parseFloat(document.getElementById('inp-wp').value);
+  var pvo2 = parseFloat(document.getElementById('inp-pvo2').value);
+  var errEl = document.getElementById('error-msg');
+
+  function showErr(msg) { errEl.textContent = '\u26a0 ' + msg; errEl.style.display = 'block'; }
+  function clearErr()   { errEl.style.display = 'none'; }
+
+  if (!cp || !wp || !pvo2) { showErr('All three values are required.'); return; }
+  if (pvo2 <= cp)           { showErr('pVO\u2082max must be greater than CP.'); return; }
+  if (wp < 1000)            { showErr('W\u2019 should be in joules (e.g. 15640, not 15.6).'); return; }
+  clearErr();
+
+  var data = prescribe(cp, wp, pvo2);
+  renderResults(data);
+  document.getElementById('results').scrollIntoView({behavior: 'smooth', block: 'start'});
+});
+
+// Allow Enter key to trigger
+['inp-cp','inp-wp','inp-pvo2'].forEach(function(id) {
+  document.getElementById(id).addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('prescribe-btn').click();
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<div class="modal fade" id="trainingStressModal" tabindex="-1" aria-labelledby="trainingStressModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trainingStressModalLabel">Training Stress Recommendation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="trainingStressForm">
+                    <!-- Sport Type Selection -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sport Type</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="sport_type" id="sport_bike" value="bike"
+                                checked>
+                            <label class="btn btn-outline-primary" for="sport_bike">Bike</label>
+
+                            <input type="radio" class="btn-check" name="sport_type" id="sport_run" value="run">
+                            <label class="btn btn-outline-primary" for="sport_run">Run</label>
+                        </div>
+                    </div>
+
+                    <!-- Block Type -->
+                    <div class="mb-3">
+                        <label for="block_type" class="form-label fw-bold">Block Type</label>
+                        <select class="form-select" id="block_type" name="block_type" required>
+                            <option value="">Select Block Type</option>
+                            <option value="base_durability">Base/Durability</option>
+                            <option value="build_th">Build/TH</option>
+                            <option value="vo2_max">Vo2 Max</option>
+                            <option value="specificity">Specificity</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </div>
+
+                    <!-- Read-only Metrics -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">CTL (Coming Sunday)</label>
+                            <input type="text" class="form-control bg-light" id="ctl_value" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">ATL (Coming Sunday)</label>
+                            <input type="text" class="form-control bg-light" id="atl_value" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Mid-week TSB</label>
+                            <input type="text" class="form-control bg-light" id="wtsb_value" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Key Workouts -->
+                    <div class="mb-3">
+                        <label for="key_workouts" class="form-label fw-bold">Key Workouts</label>
+                        <select class="form-select" id="key_workouts" name="key_workouts" required>
+                            <option value="">Select Option</option>
+                            <option value="fully_completed_rpe_low">Fully completed, RPE low</option>
+                            <option value="fully_completed_as_intended">Fully completed as intended</option>
+                            <option value="hit_or_miss_but_mostly_hit">Hit or miss, but mostly hit</option>
+                            <option value="hit_or_miss_but_mostly_miss">Hit or miss, but mostly miss</option>
+                            <option value="missed_multiple">Missed multiple</option>
+                        </select>
+                    </div>
+
+                    <!-- Subjective Metrics Row 1 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="soreness" class="form-label fw-bold">Soreness</label>
+                            <select class="form-select" id="soreness" name="soreness" required>
+                                <option value="">Select Option</option>
+                                <option value="no_issue">No Issue</option>
+                                <option value="minor_issue">Minor Issue</option>
+                                <option value="major_issue">Major Issue</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="mood_irritability" class="form-label fw-bold">Mood/Irritability</label>
+                            <select class="form-select" id="mood_irritability" name="mood_irritability" required>
+                                <option value="">Select Option</option>
+                                <option value="no_issue">No Issue</option>
+                                <option value="minor_issue">Minor Issue</option>
+                                <option value="major_issue">Major Issue</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Subjective Metrics Row 2 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="sleep" class="form-label fw-bold">Sleep</label>
+                            <select class="form-select" id="sleep" name="sleep" required>
+                                <option value="">Select Option</option>
+                                <option value="no_issue">No Issue</option>
+                                <option value="minor_issue">Minor Issue</option>
+                                <option value="major_issue">Major Issue</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="hrv_rhr" class="form-label fw-bold">HRV/RHR</label>
+                            <select class="form-select" id="hrv_rhr" name="hrv_rhr" required>
+                                <option value="">Select Option</option>
+                                <option value="no_issue">No Issue</option>
+                                <option value="minor_issue">Minor Issue</option>
+                                <option value="major_issue">Major Issue</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Subjective Metrics Row 3 -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="motivation" class="form-label fw-bold">Motivation</label>
+                            <select class="form-select" id="motivation" name="motivation" required>
+                                <option value="">Select Option</option>
+                                <option value="no_issue">No Issue</option>
+                                <option value="minor_issue">Minor Issue</option>
+                                <option value="major_issue">Major Issue</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="life_stress" class="form-label fw-bold">Life Stress</label>
+                            <select class="form-select" id="life_stress" name="life_stress" required>
+                                <option value="">Select Option</option>
+                                <option value="minimal">Minimal (calm, vacation)</option>
+                                <option value="normal">Normal baseline</option>
+                                <option value="moderate">Moderate (work/family/travel fatigue)</option>
+                                <option value="high">High (crisis, lack of control)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Orthopedic Flags (Run only) -->
+                    <div class="mb-3" id="orthopedic_flags_container" style="display: none;">
+                        <label for="orthopedic_flags" class="form-label fw-bold">Orthopedic Flags (Run only)</label>
+                        <select class="form-select" id="orthopedic_flags" name="orthopedic_flags">
+                            <option value="">Select Option</option>
+                            <option value="no_pain_no_issues">No pain, no issues</option>
+                            <option value="mild_tightness_or_soreness">Mild tightness or soreness</option>
+                            <option value="new_pain_persistent_niggles_limping_limbo">
+                                New pain, persistent niggles, limping, limbo
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="mt-4" style="display: none;">
+                        <hr>
+                        <h6 class="fw-bold mb-3">Results</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <strong>Recommendation for Next Week:</strong>
+                                    <p class="mb-0 mt-2" id="recommendation_text"></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <strong>Training Load Change:</strong>
+                                    <p class="mb-0 mt-2">
+                                        <span id="percentage_change" class="fs-4"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    Analysis Period: <span id="analysis_dates"></span><br>
+                                    Overall Score: <span id="overall_score"></span> |
+                                    Echo Estimate: <span id="echo_estimate"></span>
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Echo Estimate Adjustment Section -->
+                        <div class="mt-4 p-3 border rounded bg-light">
+                            <h6 class="fw-bold mb-3">Step 2: Adjust Echo Estimate (Optional)</h6>
+                            <div class="row align-items-end mb-3">
+                                <div class="col-md-6">
+                                    <label for="custom_echo_estimate" class="form-label">
+                                        Echo Estimate Value <small class="text-muted">(Calculated: <span
+                                                id="original_echo_value"></span>)</small>
+                                    </label>
+                                    <input type="number" class="form-control" id="custom_echo_estimate"
+                                        placeholder="Enter custom value or use calculated">
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-primary w-100" id="calculateTssRangeBtn">
+                                        Calculate Training Stress Range
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- TSS Range Results -->
+                            <div id="tssRangeSection" style="display: none;">
+                                <div class="alert alert-primary mb-3">
+                                    <strong>Recommended Training Stress for Next Week:</strong>
+                                    <p class="mb-0 mt-2 fs-5">
+                                        <span id="tss_range_display" class="fw-bold"></span>
+                                    </p>
+                                    <small class="text-muted">
+                                        Based on Echo Estimate: <span id="used_echo_value"></span>
+                                    </small>
+                                </div>
+
+                                <!-- Step 3: Post Workout Section -->
+                                <div class="p-3 border rounded bg-white">
+                                    <h6 class="fw-bold mb-3">Step 3: Post Workout for Next Week</h6>
+                                    <p class="text-muted small mb-3">
+                                        <strong>Block Type:</strong> <span id="current_block_type_display"></span> |
+                                        <strong>Sport:</strong> <span id="current_sport_type_display"></span>
+                                    </p>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="workout_tss" class="form-label fw-bold">TSS Value</label>
+                                            <select class="form-select" id="workout_tss" required>
+                                                <option value="">Select TSS</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="workout_frequency" class="form-label fw-bold">Frequency</label>
+                                            <select class="form-select" id="workout_frequency" required disabled>
+                                                <option value="">Select TSS first</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="workout_intensity" class="form-label fw-bold">Intensity</label>
+                                            <select class="form-select" id="workout_intensity" required disabled>
+                                                <option value="">Select TSS first</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="workout_date" class="form-label fw-bold">Start Date</label>
+                                            <input type="date" class="form-control" id="workout_date" required>
+                                        </div>
+                                    </div>
+
+                                    <button type="button" class="btn btn-success w-100" id="postWorkoutBtn" disabled>
+                                        Post Workout
+                                    </button>
+
+                                    <!-- Workout Post Response -->
+                                    <div id="workoutPostResponse" class="mt-3" style="display: none;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div id="loadingSpinner" class="text-center mt-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Calculating recommendation...</p>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="errorAlert" class="alert alert-danger mt-3" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="calculateBtn">Calculate Recommendation</button>
+            </div>
+        </div>
+    </div>
+</div>

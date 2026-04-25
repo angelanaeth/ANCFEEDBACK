@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QT2.0 VO₂ Max Interval Calculator (Run)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /*
+   * ── HEADER DETECTION + OFFSET ───────────────────────────────────────────
+   * --header-h is set dynamically by JS below (reads actual sticky-header
+   * offsetHeight at runtime). The 70px default is a safe fallback.
+   * If Appstle or another app injects the header outside the template,
+   * padding-top on #run-app pushes content below it automatically.
+   * ────────────────────────────────────────────────────────────────────── */
+  :root { --header-h: 70px; }
+  html {
+    scroll-padding-top: var(--header-h);
+    background: #0a0c0f;
+  }
+
+  body {
+    background: #0a0c0f !important;
+    font-family: 'Barlow', sans-serif;
+    color: #e2e8f0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Force dark background on all Dawn/Appstle wrappers */
+  html, body,
+  body.template-page,
+  .color-scheme-1,
+  .color-background-1,
+  main#MainContent,
+  .shopify-section,
+  .page-width {
+    background: #0a0c0f !important;
+    background-color: #0a0c0f !important;
+  }
+
+  /* Remove Dawn section spacing */
+  main#MainContent,
+  .shopify-section {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hide page title if it somehow renders */
+  .main-page-title,
+  section.main-page-title,
+  .page-title {
+    display: none !important;
+  }
+
+  #run-app {
+    background: #0a0c0f;
+    min-height: 100vh;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    margin-left: -50vw;
+    /* padding-top uses the JS-detected header height.
+       If header is injected by Appstle, this clears it.
+       If template excludes header entirely, JS sets this to 0. */
+    padding-top: var(--header-h);
+  }
+
+  /* ── TITLE ── */
+  .title-block {
+    background: #0d1017;
+    border-bottom: 1px solid #1e2530;
+    padding: 32px 24px 28px;
+  }
+  .title-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+  }
+  .title-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #475569;
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── INPUTS ── */
+  .input-section {
+    padding: 28px 24px;
+    border-bottom: 1px solid #1e2530;
+    background: #0d1017;
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .input-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .input-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #64748b;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Pace input — two fields side by side */
+  .pace-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #131820;
+    border: 1px solid #1e2d3d;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .pace-input-wrap:focus-within { border-color: #3b82f6; }
+
+  .pace-field {
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    padding: 10px 0 10px 12px;
+    outline: none;
+    width: 52px;
+    -webkit-appearance: none;
+  }
+
+  .pace-sep {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    color: #475569;
+    padding: 0 4px;
+    user-select: none;
+  }
+
+  .pace-field-sec {
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    padding: 10px 12px 10px 0;
+    outline: none;
+    width: 48px;
+    -webkit-appearance: none;
+  }
+
+  .pace-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #475569;
+    padding: 0 10px 0 4px;
+    white-space: nowrap;
+    align-self: center;
+    letter-spacing: 0.06em;
+  }
+
+  .input-field {
+    background: #131820;
+    border: 1px solid #1e2d3d;
+    border-radius: 4px;
+    color: #f1f5f9;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    padding: 10px 12px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .input-field:focus { border-color: #3b82f6; }
+
+  /* ── DURABILITY TOGGLE ── */
+  .durability-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #131820;
+    border: 1px solid #1e2d3d;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .dur-btn {
+    flex: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 11px 8px;
+    border: none;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid #1e2d3d;
+  }
+  .dur-btn:last-child { border-right: none; }
+  .dur-btn.active-std {
+    background: rgba(34,197,94,0.12);
+    color: #22c55e;
+  }
+  .dur-btn.active-dur {
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+  }
+
+  .prescribe-btn {
+    width: 100%;
+    background: #3b82f6;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 13px 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .prescribe-btn:hover { background: #2563eb; }
+
+  .error-msg {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #f97316;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ── RESULTS ── */
+  .results { padding: 24px; display: none; }
+
+  /* ── STATS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: #0f1520;
+    border: 1px solid #1e2530;
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #475569;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1;
+  }
+  .stat-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #475569;
+    margin-top: 4px;
+  }
+
+  /* ── PROFILE CARD ── */
+  .profile-card {
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    border: 1px solid;
+  }
+  .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .profile-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+  .profile-text { font-size: 13px; color: #94a3b8; line-height: 1.6; font-weight: 300; }
+  .profile-note { font-size: 12px; color: #64748b; line-height: 1.6; font-weight: 300; margin-top: 6px; }
+
+  /* ── DURABILITY NOTICE ── */
+  .dur-notice {
+    border-radius: 5px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .dur-notice.standard {
+    background: rgba(34,197,94,0.07);
+    border: 1px solid rgba(34,197,94,0.2);
+    color: #86efac;
+  }
+  .dur-notice.durable {
+    background: rgba(59,130,246,0.07);
+    border: 1px solid rgba(59,130,246,0.2);
+    color: #93c5fd;
+  }
+
+  /* ── TABS ── */
+  .workout-tabs {
+    display: flex;
+    border-bottom: 1px solid #1e2530;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #475569;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn.active { color: #f1f5f9; border-bottom-color: #3b82f6; }
+
+  /* ── WORKOUT CARD ── */
+  .workout-card {
+    background: #0f1520;
+    border: 1px solid #1e2530;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .workout-header {
+    padding: 20px;
+    border-bottom: 1px solid #1e2530;
+    background: #0d1117;
+  }
+  .workout-protocol {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: #3b82f6;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .workout-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.02em;
+  }
+  .workout-goal {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  /* ── RANGE BADGES ── */
+  .range-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .range-card {
+    border-radius: 5px;
+    padding: 12px 14px;
+    border: 1px solid;
+  }
+  .range-card.std {
+    background: rgba(34,197,94,0.07);
+    border-color: rgba(34,197,94,0.25);
+  }
+  .range-card.dur {
+    background: rgba(59,130,246,0.07);
+    border-color: rgba(59,130,246,0.25);
+  }
+  .range-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .range-card.std .range-label { color: #22c55e; }
+  .range-card.dur .range-label { color: #60a5fa; }
+  .range-structure {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #e2e8f0;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .range-tss {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .range-tss-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fbbf24;
+  }
+  .range-tss-lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #92400e;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── BODY SECTIONS ── */
+  .body-section {
+    padding: 20px;
+    border-bottom: 1px solid #1e2530;
+  }
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #475569;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid #131820;
+    gap: 12px;
+  }
+  .detail-key { font-family: 'DM Mono', monospace; font-size: 10px; color: #64748b; flex-shrink: 0; }
+  .detail-val { font-family: 'DM Mono', monospace; font-size: 11px; color: #e2e8f0; font-weight: 500; text-align: right; }
+  .detail-val.range { color: #93c5fd; }
+
+  .list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+
+  .flag-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 11px;
+    color: #f97316;
+    line-height: 1.5;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+  }
+
+  /* ── RUN-SPECIFIC WARNING BOX ── */
+  .run-warning {
+    background: rgba(249,115,22,0.07);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 5px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #fed7aa;
+    line-height: 1.6;
+  }
+  .run-warning-label {
+    font-size: 8px;
+    color: #f97316;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* ── PRIMER BOX ── */
+  .primer-box {
+    background: rgba(59,130,246,0.06);
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 5px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .primer-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: #3b82f6;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .primer-step {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #93c5fd;
+    padding: 2px 0;
+    line-height: 1.5;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in { animation: fadeUp 0.4s ease both; }
+
+  /* ── DESKTOP ── */
+  @media (min-width: 640px) {
+    .title-block { padding: 36px 40px 32px; }
+    .title-main { font-size: 36px; }
+    .input-section { padding: 32px 40px; }
+    .input-row { grid-template-columns: 1fr 1fr 1fr 1fr; margin-bottom: 0; }
+    .input-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .results { padding: 32px 40px; }
+    .stats-row { grid-template-columns: repeat(6, 1fr); }
+    .workout-header { padding: 24px 28px; }
+    .workout-name { font-size: 24px; }
+    .tab-btn { font-size: 13px; padding: 12px 24px; }
+    .body-inner { display: grid; grid-template-columns: 1fr 1fr; }
+    .body-section { border-bottom: none; border-right: 1px solid #1e2530; }
+    .body-section:last-child { border-right: none; }
+    .prescribe-btn { width: auto; }
+    .dur-notice { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="run-app">
+
+  <!-- Title -->
+  <div class="title-block">
+    <div class="title-main">QT2.0 VO₂ Max Interval Calculator <span style="color:#f1f5f9;">(Run)</span></div>
+    <div class="title-sub">CS · D' · vVO₂max → Precision interval design · min:sec per mile</div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="input-section">
+
+    <div style="font-family:'DM Mono',monospace;font-size:9px;color:#475569;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px;">Pace Inputs (min:sec / mile)</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Critical Speed (CS)</label>
+        <div class="pace-input-wrap" id="wrap-cs">
+          <input class="pace-field" type="number" inputmode="numeric" id="cs-min" placeholder="6" min="3" max="20">
+          <span class="pace-sep">:</span>
+          <input class="pace-field-sec" type="number" inputmode="numeric" id="cs-sec" placeholder="30" min="0" max="59">
+          <span class="pace-unit">/mi</span>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">vVO₂max (800m pace)</label>
+        <div class="pace-input-wrap" id="wrap-vvo2">
+          <input class="pace-field" type="number" inputmode="numeric" id="vvo2-min" placeholder="5" min="2" max="15">
+          <span class="pace-sep">:</span>
+          <input class="pace-field-sec" type="number" inputmode="numeric" id="vvo2-sec" placeholder="15" min="0" max="59">
+          <span class="pace-unit">/mi</span>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">D' (meters)</label>
+        <input class="input-field" type="number" inputmode="numeric" id="inp-dp" placeholder="280">
+      </div>
+      <div class="input-group" style="display:flex;flex-direction:column;gap:6px;">
+        <label class="input-label">Athlete Durability</label>
+        <div class="durability-row" id="dur-toggle">
+          <button class="dur-btn active-std" id="btn-std" onclick="setDur('standard')">Standard</button>
+          <button class="dur-btn" id="btn-dur" onclick="setDur('durable')">Durable</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="prescribe-btn" id="prescribe-btn">Prescribe</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results"></div>
+
+</div>
+
+<script>
+// ── HEADER AUTO-DETECT ────────────────────────────────────────────────────────
+(function() {
+  function setH() {
+    var el = document.querySelector('sticky-header') ||
+             document.querySelector('.header-wrapper') ||
+             document.querySelector('header.header') ||
+             document.querySelector('#shopify-section-header');
+    if (el && el.offsetHeight > 0) {
+      document.documentElement.style.setProperty('--header-h', el.offsetHeight + 'px');
+    } else {
+      // No header found — template is correctly excluding it
+      // Set to 0 so no padding is added above the tool
+      document.documentElement.style.setProperty('--header-h', '0px');
+    }
+  }
+  // Run immediately, after DOM ready, and on resize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setH);
+  } else {
+    setH();
+  }
+  // Also run after a short delay to catch Appstle late-injection
+  setTimeout(setH, 500);
+  setTimeout(setH, 1500);
+  window.addEventListener('resize', setH);
+})();
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var durability = 'standard';
+
+function setDur(val) {
+  durability = val;
+  document.getElementById('btn-std').className = 'dur-btn' + (val === 'standard' ? ' active-std' : '');
+  document.getElementById('btn-dur').className = 'dur-btn' + (val === 'durable' ? ' active-dur' : '');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+// Parse min:sec → decimal minutes
+function parsePace(min, sec) {
+  return parseFloat(min) + parseFloat(sec) / 60;
+}
+
+// Pace in min/mile → m/s
+function paceToMs(paceMinMile) {
+  var secPerMile = paceMinMile * 60;
+  return 1609.34 / secPerMile;
+}
+
+// m/s → pace string "m:ss /mi"
+function msToPace(ms) {
+  var secPerMile = 1609.34 / ms;
+  var m = Math.floor(secPerMile / 60);
+  var s = Math.round(secPerMile % 60);
+  if (s === 60) { m++; s = 0; }
+  return m + ':' + (s < 10 ? '0' : '') + s + '/mi';
+}
+
+// Round seconds to nearest 15
+function roundToQ(s) { return Math.round(s / 15) * 15; }
+
+// Format seconds as m:ss or Xs
+function fmtDur(s) {
+  if (s < 60) return s + 's';
+  var m = Math.floor(s / 60), r = s % 60;
+  return r === 0 ? m + ':00' : m + ':' + (r < 10 ? '0' : '') + r;
+}
+
+// rTSS for a segment: rTSS = (dur_sec / 3600) * IF^2 * 100, IF = speed/CS_speed
+function segRTSS(speedMs, durSec, csMs) {
+  var IF = speedMs / csMs;
+  return (durSec / 3600) * IF * IF * 100;
+}
+
+function calcRTSS(segs, csMs) {
+  return Math.round(segs.reduce(function(a, s) { return a + segRTSS(s.v, s.d, csMs); }, 0));
+}
+
+function gapColor(gap) {
+  if (gap < 0.4) return '#f97316';  // < ~24 sec/mile gap
+  if (gap <= 0.8) return '#eab308';
+  return '#22c55e';
+}
+
+function profileBg(type) {
+  if (type === 'compressed') return 'rgba(249,115,22,0.08)';
+  if (type === 'moderate') return 'rgba(234,179,8,0.08)';
+  return 'rgba(34,197,94,0.08)';
+}
+
+// ── PRESCRIBE ────────────────────────────────────────────────────────────────
+
+function prescribe(csMs, dpMeters, vvo2Ms) {
+
+  var burnRate = vvo2Ms - csMs; // m/s above CS at vVO2max
+  var timeToEx = Math.round(dpMeters / burnRate); // seconds to D' exhaustion at vVO2max
+  var gapMs = burnRate; // m/s gap
+  // Gap in sec/mile (how much faster vVO2max is than CS per mile)
+  var csSecMile  = 1609.34 / csMs;
+  var vvo2SecMile = 1609.34 / vvo2Ms;
+  var gapSecMile = Math.round(csSecMile - vvo2SecMile); // positive = vVO2 is faster
+
+  // Max rep duration at ≤35% D' (standard) and ≤45% D' (durable)
+  var maxRepStd = roundToQ(Math.floor((0.35 * dpMeters) / burnRate));
+  var maxRepDur = roundToQ(Math.floor((0.45 * dpMeters) / burnRate));
+
+  // Eccentric caps: std ≤18 min total, durable ≤24 min total
+  var HARD_CAP_STD = 18 * 60;
+  var HARD_CAP_DUR = 24 * 60;
+
+  // Profile classification based on gap in sec/mile
+  var profileType, profileLabel, profileDesc;
+  if (gapSecMile < 45) {
+    profileType = 'compressed';
+    profileLabel = 'Compressed Profile';
+    profileDesc = 'Only ' + gapSecMile + ' sec/mile separates CS from vVO\u2082max. VO\u2082 and threshold running are nearly the same physiological session. Raising CS is the long-term priority.';
+  } else if (gapSecMile <= 90) {
+    profileType = 'moderate';
+    profileLabel = 'Moderate Profile';
+    profileDesc = 'A ' + gapSecMile + ' sec/mile gap gives workable design flexibility. Both classic repeats and micro-interval structures are viable.';
+  } else {
+    profileType = 'wide';
+    profileLabel = 'Wide Profile';
+    profileDesc = 'A ' + gapSecMile + ' sec/mile gap means strong speed above CS. Classic longer repeats are viable. Watch for early anaerobic reliance masking poor VO\u2082 stimulus.';
+  }
+
+  var dpLabel = dpMeters < 150 ? 'Small D\u2019' : dpMeters < 300 ? 'Moderate D\u2019' : 'Large D\u2019';
+  var dpNote = dpMeters < 150
+    ? 'Small D\u2019 means rep duration must be tightly controlled and recovery generous. Eccentric load is the binding constraint at higher rep counts.'
+    : dpMeters < 300
+    ? 'Moderate D\u2019. Solid flexibility but early-rep pacing discipline is critical. Monitor form degradation as a fatigue signal.'
+    : 'Large D\u2019. Athlete has significant anaerobic reserve above CS. Risk is masking VO\u2082 stimulus with anaerobic contribution in early reps.';
+
+  // ── WORKOUT 1: Classic repeats ──────────────────────────────────────────
+
+  // Target intensity: 85% of gap above CS (same logic as bike)
+  var w1SpeedMs = csMs + burnRate * 0.85;
+  var w1BurnRate = w1SpeedMs - csMs;
+  var w1Pace = msToPace(w1SpeedMs);
+  var recSpeedMs = csMs * 0.78; // recovery ~78% of CS
+  var recPace = msToPace(recSpeedMs);
+
+  // Standard prescription
+  var repDurStdRaw = Math.min(maxRepStd, 300);
+  var repDurStd = roundToQ(repDurStdRaw < 60 ? 60 : repDurStdRaw);
+  var dDepletedStd = Math.round(w1BurnRate * repDurStd);
+  var dPctStd = Math.round((dDepletedStd / dpMeters) * 100);
+  // Reps: constrained by both D% and eccentric cap
+  var repsStdUncapped = repDurStd >= 240 ? 4 : repDurStd >= 180 ? 5 : 6;
+  var repsStd = Math.min(repsStdUncapped, Math.floor(HARD_CAP_STD / repDurStd));
+  var recDurStd = repDurStd; // 1:1
+  var segsW1Std = [];
+  for (var i = 0; i < repsStd; i++) {
+    segsW1Std.push({v: w1SpeedMs, d: repDurStd});
+    segsW1Std.push({v: recSpeedMs, d: recDurStd});
+  }
+  var rtssW1Std = calcRTSS(segsW1Std, csMs);
+  var totalHardStd = repsStd * repDurStd;
+
+  // Durable prescription
+  var repDurDurRaw = Math.min(maxRepDur, 300);
+  var repDurDur2 = roundToQ(repDurDurRaw < 60 ? 60 : repDurDurRaw);
+  var dDepletedDur = Math.round(w1BurnRate * repDurDur2);
+  var dPctDur = Math.round((dDepletedDur / dpMeters) * 100);
+  var repsDurUncapped = repDurDur2 >= 240 ? 5 : repDurDur2 >= 180 ? 6 : 8;
+  var repsDur = Math.min(repsDurUncapped, Math.floor(HARD_CAP_DUR / repDurDur2));
+  var recDurDur2 = roundToQ(repDurDur2 * 0.85); // slightly tighter recovery for durable
+  var segsW1Dur = [];
+  for (var j = 0; j < repsDur; j++) {
+    segsW1Dur.push({v: w1SpeedMs, d: repDurDur2});
+    segsW1Dur.push({v: recSpeedMs, d: recDurDur2});
+  }
+  var rtssW1Dur = calcRTSS(segsW1Dur, csMs);
+  var totalHardDur = repsDur * repDurDur2;
+
+  var w1 = {
+    name: 'Classic VO\u2082 Repeats',
+    subtitle: 'Ceiling-Limited Protocol',
+    goal: 'Accumulate sustained time between CS and vVO\u2082max. Controlled D\u2019 spend per rep keeps quality high across the full set.',
+    std: {
+      structure: repsStd + ' \u00d7 ' + fmtDur(repDurStd) + ' @ ' + w1Pace,
+      repDurFmt: fmtDur(repDurStd),
+      recDurFmt: fmtDur(recDurStd),
+      recPace: recPace,
+      reps: repsStd, repDur: repDurStd, recDur: recDurStd,
+      tss: rtssW1Std, totalHard: totalHardStd,
+      dPct: dPctStd
+    },
+    dur: {
+      structure: repsDur + ' \u00d7 ' + fmtDur(repDurDur2) + ' @ ' + w1Pace,
+      repDurFmt: fmtDur(repDurDur2),
+      recDurFmt: fmtDur(recDurDur2),
+      recPace: recPace,
+      reps: repsDur, repDur: repDurDur2, recDur: recDurDur2,
+      tss: rtssW1Dur, totalHard: totalHardDur,
+      dPct: dPctDur
+    },
+    details: [
+      ['Target Pace', w1Pace],
+      ['Recovery Pace', recPace + ' (easy jog)'],
+      ['D\u2019 Spend / Rep (Std)', dDepletedStd.toLocaleString() + ' m (' + dPctStd + '% of D\u2019)'],
+      ['D\u2019 Spend / Rep (Dur)', dDepletedDur.toLocaleString() + ' m (' + dPctDur + '% of D\u2019)'],
+    ],
+    progression: [
+      'Add reps first — never extend rep duration before rep count is stable',
+      'Tighten recovery by 15s only after full set holds pace ±3 sec/mi',
+      'Nudge intensity only when both rep count and recovery are dialed'
+    ],
+    cues: [
+      'HR ramps across reps 1\u20132, plateaus reps 3+',
+      'Breathing dominant over leg burn by rep 3',
+      'Pace holds within \u00b13\u20135 sec/mile rep-to-rep',
+      'Form remains controlled \u2014 no shuffle or collapse in late reps',
+      'Does NOT require 2+ days to recover'
+    ],
+    flags: [
+      'Pace collapse after rep 2 \u2192 intensity too high, add 5 sec/mile',
+      'HR never climbs \u2192 recovery too long or intensity too low',
+      'Form breaks down before final rep \u2192 rep count too high for this athlete today',
+      '\u2018Legs only\u2019 sensation \u2192 likely anaerobic, not VO\u2082 stimulus'
+    ]
+  };
+
+  // ── WORKOUT 2: Primer + micro-intervals ─────────────────────────────────
+
+  var primerSpeedMs = csMs + burnRate * 0.35;
+  var primerPace = msToPace(primerSpeedMs);
+  var primerDur = 300; // 5:00
+  var primerRecDur = 180; // 3:00
+  var primerRecSpeedMs = csMs * 0.72;
+  var primerRecPace = msToPace(primerRecSpeedMs);
+  var primerDCost = Math.round((primerSpeedMs - csMs) * primerDur);
+  var primerRecon = Math.round(dpMeters * 0.20);
+  var netDpAfterPrimer = dpMeters - primerDCost + primerRecon;
+
+  var microOnSpeedMs = csMs + burnRate * 0.75;
+  var microOnPace = msToPace(microOnSpeedMs);
+  var microOnBurn = microOnSpeedMs - csMs;
+  var microOffSpeedMs = csMs * 0.72;
+  var microOffPace = msToPace(microOffSpeedMs);
+  var microOnDur = 30;
+  var microOffDur = 15;
+  var setCycles = gapSecMile < 45 ? 8 : 10;
+  var setDurSec = setCycles * (microOnDur + microOffDur);
+  var betweenSetsDur = 240;
+  var betweenSetsSpeedMs = csMs * 0.72;
+
+  // D' cost per set
+  var setCostD = microOnBurn * microOnDur * setCycles * 0.9;
+
+  // Standard: 2 sets, Durable: 3 sets (constrained by eccentric cap)
+  var setsStd = 2;
+  var setsDur = netDpAfterPrimer > setCostD * 2.5 ? 3 : 2;
+
+  // Build segments for rTSS
+  function buildW2Segs(numSets) {
+    var s = [
+      {v: primerSpeedMs, d: primerDur},
+      {v: primerRecSpeedMs, d: primerRecDur}
+    ];
+    for (var si = 0; si < numSets; si++) {
+      for (var ci = 0; ci < setCycles; ci++) {
+        s.push({v: microOnSpeedMs, d: microOnDur});
+        s.push({v: microOffSpeedMs, d: microOffDur});
+      }
+      if (si < numSets - 1) s.push({v: betweenSetsSpeedMs, d: betweenSetsDur});
+    }
+    return s;
+  }
+
+  var rtssW2Std = calcRTSS(buildW2Segs(setsStd), csMs);
+  var rtssW2Dur = calcRTSS(buildW2Segs(setsDur), csMs);
+  var totalHardW2Std = setsStd * setCycles * microOnDur;
+  var totalHardW2Dur = setsDur * setCycles * microOnDur;
+
+  var w2 = {
+    name: 'Primer + Micro-Intervals',
+    subtitle: 'Kinetics-Limited Protocol',
+    goal: 'Pre-load VO\u2082 via the primer so the athlete arrives at rep 1 already elevated. Micro-intervals sustain that state with minimal individual D\u2019 draws \u2014 critical given running\u2019s slower VO\u2082 kinetics.',
+    primer: {
+      steps: [
+        fmtDur(primerDur) + ' @ ' + primerPace + ' \u2014 controlled D\u2019 draw to elevate VO\u2082',
+        fmtDur(primerRecDur) + ' easy @ ' + primerRecPace + ' \u2014 partial D\u2019 reconstitution',
+        'Begin main set'
+      ],
+      cost: '\u007e' + primerDCost.toLocaleString() + ' m D\u2019 gross / \u007e' + (primerDCost - primerRecon).toLocaleString() + ' m net'
+    },
+    std: {
+      structure: setsStd + ' sets \u00d7 ' + fmtDur(setDurSec) + ' (30s @ ' + microOnPace + ' / 15s easy)',
+      repDurFmt: '30s',
+      recDurFmt: '15s',
+      recPace: microOffPace,
+      betweenSetsFmt: fmtDur(betweenSetsDur),
+      sets: setsStd, tss: rtssW2Std, totalHard: totalHardW2Std
+    },
+    dur: {
+      structure: setsDur + ' sets \u00d7 ' + fmtDur(setDurSec) + ' (30s @ ' + microOnPace + ' / 15s easy)',
+      repDurFmt: '30s',
+      recDurFmt: '15s',
+      recPace: microOffPace,
+      betweenSetsFmt: fmtDur(betweenSetsDur),
+      sets: setsDur, tss: rtssW2Dur, totalHard: totalHardW2Dur
+    },
+    details: [
+      ['On Pace', '30s @ ' + microOnPace],
+      ['Off Pace', '15s @ ' + microOffPace + ' (float)'],
+      ['Set Duration', fmtDur(setDurSec) + ' (\u007e' + setCycles + ' cycles)'],
+      ['Between Sets', fmtDur(betweenSetsDur) + ' easy @ ' + msToPace(betweenSetsSpeedMs)],
+    ],
+    progression: [
+      'Add sets before extending set duration',
+      'Shorten between-set recovery to 3:00 before adding a set',
+      'Extend cycles per set (10 \u2192 12) only when all sets feel aerobically maximal'
+    ],
+    cues: [
+      'Breathing stress arrives by minute 2 of set 1 \u2014 primer is working',
+      '15s float should feel like \u2018almost not enough\u2019 by set 2',
+      'HR pinned high from first effort of set 2',
+      'Athlete reports aerobic maximum, not leg-destroying'
+    ],
+    flags: [
+      'No breathing stress in set 1 \u2192 primer too easy, add 5 sec/mile or extend 1:00',
+      'Collapse mid-set 1 \u2192 primer too hard, back off 5 sec/mile or shorten 1:00',
+      'Pace drifts slow on micro-on \u2192 form fatigue, reduce set count not pace'
+    ]
+  };
+
+  return {
+    csMs, dpMeters, vvo2Ms, burnRate, timeToEx, gapSecMile,
+    maxRepStd, maxRepDur, profileType, profileLabel, profileDesc,
+    dpLabel, dpNote, w1, w2,
+    csPace: msToPace(csMs),
+    vvo2Pace: msToPace(vvo2Ms)
+  };
+}
+
+// ── DOM HELPERS ──────────────────────────────────────────────────────────────
+
+function el(tag, cls, children) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (children) {
+    (Array.isArray(children) ? children : [children]).forEach(function(c) {
+      if (c == null) return;
+      e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+  }
+  return e;
+}
+
+function elS(tag, styles, children) {
+  var e = el(tag, '', children);
+  Object.assign(e.style, styles);
+  return e;
+}
+
+function detailRow(key, val, rangeStyle) {
+  var row = el('div', 'detail-row');
+  row.appendChild(el('span', 'detail-key', key));
+  var v = el('span', rangeStyle ? 'detail-val range' : 'detail-val', val);
+  row.appendChild(v);
+  return row;
+}
+
+function listItem(text, dotColor) {
+  var li = el('div', 'list-item');
+  var dot = el('span', 'dot');
+  dot.style.background = dotColor;
+  li.appendChild(dot);
+  li.appendChild(document.createTextNode(text));
+  return li;
+}
+
+function flagItem(text) {
+  var li = el('div', 'flag-item');
+  var dot = el('span', 'dot');
+  dot.style.background = '#f97316';
+  dot.style.marginTop = '5px';
+  li.appendChild(dot);
+  li.appendChild(document.createTextNode(text));
+  return li;
+}
+
+function rangeCard(type, label, prescription, isW2) {
+  var card = el('div', 'range-card ' + type);
+  card.appendChild(el('div', 'range-label', label));
+
+  // Main structure line
+  card.appendChild(el('div', 'range-structure', prescription.structure));
+
+  // Interval duration
+  var intLine = el('div', 'range-structure');
+  intLine.style.fontSize = '10px';
+  intLine.style.color = '#93c5fd';
+  intLine.style.marginTop = '4px';
+  intLine.textContent = 'Interval: ' + prescription.repDurFmt;
+  card.appendChild(intLine);
+
+  // Recovery duration + pace
+  var recLine = el('div', 'range-structure');
+  recLine.style.fontSize = '10px';
+  recLine.style.color = '#64748b';
+  recLine.textContent = 'Recovery: ' + prescription.recDurFmt + ' @ ' + prescription.recPace;
+  card.appendChild(recLine);
+
+  // Between-sets recovery for W2
+  if (isW2 && prescription.betweenSetsFmt) {
+    var btwLine = el('div', 'range-structure');
+    btwLine.style.fontSize = '10px';
+    btwLine.style.color = '#64748b';
+    btwLine.textContent = 'Between sets: ' + prescription.betweenSetsFmt + ' easy';
+    card.appendChild(btwLine);
+  }
+
+  // Hard running total
+  var hardMin = Math.round(prescription.totalHard / 60 * 10) / 10;
+  var hardLine = el('div', 'range-structure');
+  hardLine.style.color = '#475569';
+  hardLine.style.fontSize = '10px';
+  hardLine.style.marginTop = '4px';
+  hardLine.textContent = 'Hard running: ' + (hardMin % 1 === 0 ? hardMin : hardMin.toFixed(1)) + ' min';
+  card.appendChild(hardLine);
+
+  // rTSS
+  var tssWrap = el('div', 'range-tss');
+  tssWrap.style.marginTop = '6px';
+  var tv = el('span', 'range-tss-val', '\u007e' + prescription.tss);
+  var tl = el('span', 'range-tss-lbl', 'rTSS');
+  tssWrap.appendChild(tv);
+  tssWrap.appendChild(tl);
+  card.appendChild(tssWrap);
+  return card;
+}
+
+function renderWorkout(w, isW2, data) {
+  var card = el('div', 'workout-card fade-in');
+
+  // Header
+  var hdr = el('div', 'workout-header');
+  hdr.appendChild(el('div', 'workout-protocol', w.subtitle));
+  hdr.appendChild(el('div', 'workout-name', w.name));
+  hdr.appendChild(el('div', 'workout-goal', w.goal));
+
+  // Range cards
+  var rr = el('div', 'range-row');
+  rr.appendChild(rangeCard('std', 'Standard (\u226418 min hard)', w.std, isW2));
+  rr.appendChild(rangeCard('dur', 'Durable (\u226424 min hard)', w.dur, isW2));
+  hdr.appendChild(rr);
+  card.appendChild(hdr);
+
+  // Body
+  var bodyOuter = el('div', 'workout-body');
+  var bodyInner = el('div', 'body-inner');
+
+  // Left col
+  var left = el('div', 'body-section');
+
+  // Run-specific eccentric warning
+  var warn = el('div', 'run-warning');
+  warn.appendChild(el('div', 'run-warning-label', 'Eccentric Load — Running Specific'));
+  warn.appendChild(document.createTextNode(
+    'Unlike cycling, running intervals accumulate musculoskeletal stress not captured by D\u2019 math. ' +
+    'Rep count caps (18 / 24 min) are independent of D\u2019 budget. ' +
+    'Form degradation in late reps is a harder stop signal than pace fade.'
+  ));
+  left.appendChild(warn);
+
+  if (isW2 && w.primer) {
+    var pBox = el('div', 'primer-box');
+    pBox.appendChild(el('div', 'primer-label', 'Primer Protocol'));
+    w.primer.steps.forEach(function(s) {
+      pBox.appendChild(el('div', 'primer-step', '\u2192 ' + s));
+    });
+    var pc = el('div', 'primer-step');
+    pc.style.color = '#475569';
+    pc.style.marginTop = '6px';
+    pc.textContent = 'Net D\u2019 cost: ' + w.primer.cost;
+    pBox.appendChild(pc);
+    left.appendChild(pBox);
+  }
+
+  left.appendChild(el('div', 'section-label', 'Interval Details'));
+  w.details.forEach(function(d) { left.appendChild(detailRow(d[0], d[1])); });
+
+  var progDiv = elS('div', {marginTop: '20px'});
+  progDiv.appendChild(el('div', 'section-label', 'Progression'));
+  w.progression.forEach(function(p) { progDiv.appendChild(listItem(p, '#3b82f6')); });
+  left.appendChild(progDiv);
+
+  // Right col
+  var right = el('div', 'body-section');
+  right.appendChild(el('div', 'section-label', 'Green Lights \u2014 Session Working'));
+  w.cues.forEach(function(c) { right.appendChild(listItem(c, '#22c55e')); });
+
+  var flagDiv = elS('div', {marginTop: '18px'});
+  flagDiv.appendChild(el('div', 'section-label', 'Red Flags \u2014 Adjust If You See'));
+  w.flags.forEach(function(f) { flagDiv.appendChild(flagItem(f)); });
+  right.appendChild(flagDiv);
+
+  bodyInner.appendChild(left);
+  bodyInner.appendChild(right);
+  bodyOuter.appendChild(bodyInner);
+  card.appendChild(bodyOuter);
+  return card;
+}
+
+function renderResults(data) {
+  var container = document.getElementById('results');
+  container.innerHTML = '';
+  container.style.display = 'block';
+
+  var gc = gapColor(data.burnRate);
+
+  // Stats
+  var statsRow = el('div', 'stats-row fade-in');
+  [
+    {label: 'CS Pace', value: data.csPace, unit: 'critical speed'},
+    {label: 'vVO\u2082max Pace', value: data.vvo2Pace, unit: '800m anchor'},
+    {label: 'Gap', value: data.gapSecMile + ' sec/mi', unit: 'ceiling \u2192 roof', color: gc},
+    {label: 'Max Rep (Std)', value: fmtDur(data.maxRepStd), unit: '\u226435% D\u2019 spend'},
+    {label: 'Max Rep (Durable)', value: fmtDur(data.maxRepDur), unit: '\u226445% D\u2019 spend'},
+    {label: 'Time to D\u2019 Exhaustion', value: data.timeToEx + 's', unit: 'at vVO\u2082max'}
+  ].forEach(function(s) {
+    var card = el('div', 'stat-card');
+    card.appendChild(el('div', 'stat-label', s.label));
+    var v = el('div', 'stat-value', s.value);
+    if (s.color) v.style.color = s.color;
+    card.appendChild(v);
+    card.appendChild(el('div', 'stat-unit', s.unit));
+    statsRow.appendChild(card);
+  });
+  container.appendChild(statsRow);
+
+  // Profile card
+  var pCard = el('div', 'profile-card fade-in');
+  pCard.style.background = profileBg(data.profileType);
+  pCard.style.borderColor = gc + '40';
+  var badges = el('div', 'profile-badges');
+  var b1 = el('span', 'profile-badge', data.profileLabel);
+  b1.style.background = gc + '20'; b1.style.color = gc;
+  var b2 = el('span', 'profile-badge', data.dpLabel);
+  b2.style.background = 'rgba(100,116,139,0.15)'; b2.style.color = '#94a3b8';
+  badges.appendChild(b1); badges.appendChild(b2);
+  pCard.appendChild(badges);
+  pCard.appendChild(el('div', 'profile-text', data.profileDesc));
+  pCard.appendChild(el('div', 'profile-note', data.dpNote));
+  container.appendChild(pCard);
+
+  // Durability notice
+  var isDur = durability === 'durable';
+  var durBox = el('div', 'dur-notice ' + (isDur ? 'durable' : 'standard'));
+  durBox.textContent = isDur
+    ? '\u25b2 Durable mode: prescriptions show the upper range (up to 24 min hard running). Use for high-mileage athletes with demonstrated resilience at intensity. Both Standard and Durable ranges are shown for reference.'
+    : '\u25e6 Standard mode: prescriptions show the conservative range (\u226418 min hard running). Appropriate for most trained athletes. Both ranges shown \u2014 coach selects based on athlete context.';
+  container.appendChild(durBox);
+
+  // Tabs
+  var tabs = el('div', 'workout-tabs');
+  var wktArea = el('div', 'fade-in');
+  var activeTab = 0;
+  var workouts = [data.w1, data.w2];
+
+  var tabBtns = ['Workout 1 \u2014 Classic Repeats', 'Workout 2 \u2014 Kinetics'].map(function(label, idx) {
+    var btn = el('button', 'tab-btn' + (idx === 0 ? ' active' : ''), label);
+    btn.addEventListener('click', function() {
+      activeTab = idx;
+      tabBtns.forEach(function(b, i) { b.className = 'tab-btn' + (i === idx ? ' active' : ''); });
+      wktArea.innerHTML = '';
+      wktArea.appendChild(renderWorkout(workouts[idx], idx === 1, data));
+    });
+    tabs.appendChild(btn);
+    return btn;
+  });
+
+  container.appendChild(tabs);
+  wktArea.appendChild(renderWorkout(data.w1, false, data));
+  container.appendChild(wktArea);
+}
+
+// ── WIRE UP ───────────────────────────────────────────────────────────────────
+
+document.getElementById('prescribe-btn').addEventListener('click', function() {
+  var csMin  = document.getElementById('cs-min').value;
+  var csSec  = document.getElementById('cs-sec').value;
+  var v2Min  = document.getElementById('vvo2-min').value;
+  var v2Sec  = document.getElementById('vvo2-sec').value;
+  var dp     = parseFloat(document.getElementById('inp-dp').value);
+  var errEl  = document.getElementById('error-msg');
+
+  function showErr(msg) { errEl.textContent = '\u26a0 ' + msg; errEl.style.display = 'block'; }
+  function clearErr()   { errEl.style.display = 'none'; }
+
+  if (!csMin || csSec === '' || !v2Min || v2Sec === '' || !dp) {
+    showErr('All fields are required. Enter pace as min : sec per mile.'); return;
+  }
+  var csPace  = parsePace(csMin, csSec);
+  var vvo2Pace = parsePace(v2Min, v2Sec);
+  if (vvo2Pace >= csPace) {
+    showErr('vVO\u2082max pace must be faster (lower number) than CS pace.'); return;
+  }
+  if (dp < 30 || dp > 1500) {
+    showErr('D\u2019 should be in meters, typically 80\u20131000m for trained runners.'); return;
+  }
+  clearErr();
+
+  var csMs   = paceToMs(csPace);
+  var vvo2Ms = paceToMs(vvo2Pace);
+  var data   = prescribe(csMs, dp, vvo2Ms);
+  renderResults(data);
+  document.getElementById('results').scrollIntoView({behavior: 'smooth', block: 'start'});
+});
+
+// Enter key support
+['cs-min','cs-sec','vvo2-min','vvo2-sec','inp-dp'].forEach(function(id) {
+  document.getElementById(id).addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('prescribe-btn').click();
+  });
+});
+// Auto-advance from minutes to seconds fields
+['cs-min','vvo2-min'].forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    if (this.value.length >= 2) {
+      var next = id === 'cs-min' ? 'cs-sec' : 'vvo2-sec';
+      document.getElementById(next).focus();
+      document.getElementById(next).select();
+    }
+  });
+});
+</script>
+</body>
+</html>

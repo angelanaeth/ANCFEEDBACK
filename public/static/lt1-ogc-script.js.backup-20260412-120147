@@ -1,0 +1,418 @@
+// ========================================
+// LT1/OGC THRESHOLD ANALYSIS CALCULATOR
+// ========================================
+
+// Logo URLs
+const LT1_LOGOS = {
+  echodevo: '', // Will use existing logo
+  anc: 'https://www.genspark.ai/api/files/s/JMmIB9UG',
+  qt2: 'https://www.genspark.ai/api/files/s/WMiO3V5b',
+  ea: 'https://www.genspark.ai/api/files/s/NMxCZX74'
+};
+
+let lt1Analysis = null;
+
+// Initialize LT1/OGC calculator
+function initLT1Calculator() {
+  const dropzone = document.getElementById('lt1-dropzone');
+  const fileInput = document.getElementById('lt1-file-input');
+  const statusDiv = document.getElementById('lt1-status');
+
+  if (!dropzone || !fileInput) return;
+
+  // Click to browse
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  // File input change
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleLT1File(e.target.files[0]);
+    }
+  });
+
+  // Drag and drop
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'var(--qt2-accent)';
+    dropzone.style.background = 'rgba(37,99,235,0.05)';
+  });
+
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.borderColor = 'var(--qt2-border)';
+    dropzone.style.background = 'var(--qt2-bg)';
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'var(--qt2-border)';
+    dropzone.style.background = 'var(--qt2-bg)';
+    
+    if (e.dataTransfer.files.length > 0) {
+      handleLT1File(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+// Handle .FIT file upload
+async function handleLT1File(file) {
+  const statusDiv = document.getElementById('lt1-status');
+  const resultsDiv = document.getElementById('lt1-results');
+
+  if (!file.name.endsWith('.fit')) {
+    showLT1Status('❌ Please upload a .FIT file', 'error');
+    return;
+  }
+
+  showLT1Status('📊 Processing file...', 'processing');
+
+  try {
+    // Read file as ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Parse FIT file (simplified - in production, use FIT SDK)
+    const analysis = await parseLT1FitFile(arrayBuffer);
+    
+    if (analysis) {
+      lt1Analysis = analysis;
+      displayLT1Results(analysis);
+      showLT1Status(`✅ Analysis complete: ${file.name}`, 'success');
+    } else {
+      showLT1Status('❌ Unable to parse file. Please check file format.', 'error');
+    }
+  } catch (error) {
+    console.error('Error processing FIT file:', error);
+    showLT1Status('❌ Error processing file: ' + error.message, 'error');
+  }
+}
+
+// Show status message
+function showLT1Status(message, type) {
+  const statusDiv = document.getElementById('lt1-status');
+  if (!statusDiv) return;
+
+  statusDiv.textContent = message;
+  statusDiv.style.display = 'block';
+  
+  if (type === 'error') {
+    statusDiv.style.background = '#fee2e2';
+    statusDiv.style.borderColor = '#fecaca';
+    statusDiv.style.color = '#b91c1c';
+  } else if (type === 'success') {
+    statusDiv.style.background = '#d1fae5';
+    statusDiv.style.borderColor = '#a7f3d0';
+    statusDiv.style.color = '#065f46';
+  } else {
+    statusDiv.style.background = 'var(--qt2-result-bg)';
+    statusDiv.style.borderColor = 'var(--qt2-result-border)';
+    statusDiv.style.color = 'var(--qt2-muted)';
+  }
+}
+
+// Parse FIT file (simplified version - production should use FIT SDK)
+async function parseLT1FitFile(arrayBuffer) {
+  // This is a placeholder for actual FIT file parsing
+  // In production, you would use easy-fit.js or fit-file-parser library
+  
+  // For demonstration, return mock data
+  const cp = parseInt(document.getElementById('lt1-cp').value) || 263;
+  const hrRest = parseInt(document.getElementById('lt1-hrrest').value) || 48;
+  
+  // Simulate threshold analysis results
+  const lt1Power = Math.round(cp * 0.77); // ~77% of CP
+  const ogcPower = Math.round(cp * 0.85); // ~85% of CP
+  const lt1HR = Math.round(hrRest + 85); // Simulated
+  const ogcHR = Math.round(hrRest + 105); // Simulated
+  
+  return {
+    lt1: {
+      power: lt1Power,
+      hr: lt1HR,
+      percentCP: 77
+    },
+    ogc: {
+      power: ogcPower,
+      hr: ogcHR,
+      percentCP: 85
+    },
+    aerobicWindow: ogcPower - lt1Power,
+    stages: [
+      { num: 1, power: Math.round(cp * 0.50), percentCP: 50, hr: hrRest + 45, percentHRR: 55, hrDelta: 2, zone: 'Recovery' },
+      { num: 2, power: Math.round(cp * 0.65), percentCP: 65, hr: hrRest + 65, percentHRR: 68, hrDelta: 3, zone: 'Z1' },
+      { num: 3, power: lt1Power, percentCP: 77, hr: lt1HR, percentHRR: 78, hrDelta: 4, zone: 'LT1' },
+      { num: 4, power: Math.round(cp * 0.81), percentCP: 81, hr: hrRest + 95, percentHRR: 85, hrDelta: 5, zone: 'Z2' },
+      { num: 5, power: ogcPower, percentCP: 85, hr: ogcHR, percentHRR: 92, hrDelta: 7, zone: 'OGC' },
+      { num: 6, power: Math.round(cp * 0.95), percentCP: 95, hr: hrRest + 120, percentHRR: 98, hrDelta: 9, zone: 'Threshold' }
+    ],
+    cp: cp,
+    hrRest: hrRest
+  };
+}
+
+// Display LT1/OGC results
+function displayLT1Results(analysis) {
+  const resultsDiv = document.getElementById('lt1-results');
+  if (!resultsDiv) return;
+
+  // Show results
+  resultsDiv.style.display = 'block';
+
+  // Update summary cards
+  document.getElementById('lt1-power-val').textContent = analysis.lt1.power;
+  document.getElementById('lt1-hr-val').textContent = analysis.lt1.hr;
+  document.getElementById('ogc-power-val').textContent = analysis.ogc.power;
+  document.getElementById('ogc-hr-val').textContent = analysis.ogc.hr;
+  document.getElementById('aero-window-val').textContent = analysis.aerobicWindow;
+
+  // Display training zones
+  const zonesOutput = document.getElementById('lt1-zones-output');
+  zonesOutput.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+      <div style="padding:12px;background:#f0f9ff;border-left:3px solid #2563eb;border-radius:6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#1e40af;font-weight:600;margin-bottom:4px;">Recovery</div>
+        <div style="font-size:18px;font-weight:700;color:#1e40af;">&lt;${Math.round(analysis.lt1.power * 0.85)} W</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">&lt;${Math.round(analysis.lt1.percentCP * 0.85)}% CP</div>
+      </div>
+      <div style="padding:12px;background:#dcfce7;border-left:3px solid #16a34a;border-radius:6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#15803d;font-weight:600;margin-bottom:4px;">Endurance (Z1)</div>
+        <div style="font-size:18px;font-weight:700;color:#15803d;">${Math.round(analysis.lt1.power * 0.85)}-${analysis.lt1.power} W</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">${Math.round(analysis.lt1.percentCP * 0.85)}-${analysis.lt1.percentCP}% CP</div>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-left:3px solid #b06a14;border-radius:6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#b06a14;font-weight:600;margin-bottom:4px;">Tempo (Z2)</div>
+        <div style="font-size:18px;font-weight:700;color:#b06a14;">${analysis.lt1.power}-${analysis.ogc.power} W</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">${analysis.lt1.percentCP}-${analysis.ogc.percentCP}% CP</div>
+      </div>
+      <div style="padding:12px;background:#fee2e2;border-left:3px solid #dc2626;border-radius:6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#b91c1c;font-weight:600;margin-bottom:4px;">Sweet Spot</div>
+        <div style="font-size:18px;font-weight:700;color:#b91c1c;">${analysis.ogc.power}-${Math.round(analysis.cp * 0.95)} W</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">${analysis.ogc.percentCP}-95% CP</div>
+      </div>
+      <div style="padding:12px;background:#fce7f3;border-left:3px solid #9333ea;border-radius:6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#7e22ce;font-weight:600;margin-bottom:4px;">Threshold</div>
+        <div style="font-size:18px;font-weight:700;color:#7e22ce;">${Math.round(analysis.cp * 0.95)}-${analysis.cp} W</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">95-100% CP</div>
+      </div>
+    </div>
+  `;
+
+  // Populate stage breakdown table
+  const tableBody = document.getElementById('lt1-table-body');
+  tableBody.innerHTML = analysis.stages.map(stage => `
+    <tr>
+      <td>${stage.num}</td>
+      <td>${stage.power}</td>
+      <td>${stage.percentCP}%</td>
+      <td>${stage.hr}</td>
+      <td>${stage.percentHRR}%</td>
+      <td>${stage.hrDelta}</td>
+      <td><span style="padding:2px 6px;border-radius:3px;font-size:11px;font-weight:500;background:rgba(37,99,235,0.1);color:#2563eb;">${stage.zone}</span></td>
+    </tr>
+  `).join('');
+
+  // Initialize charts (if Chart.js is available)
+  if (typeof Chart !== 'undefined') {
+    initLT1Charts(analysis);
+  }
+}
+
+// Initialize Chart.js charts
+function initLT1Charts(analysis) {
+  // Power & HR Progression Chart
+  const powerCtx = document.getElementById('lt1-chart-power');
+  if (powerCtx && !powerCtx._chartInitialized) {
+    powerCtx._chartInitialized = true;
+    new Chart(powerCtx, {
+      type: 'line',
+      data: {
+        labels: analysis.stages.map(s => `Stage ${s.num}`),
+        datasets: [
+          {
+            label: 'Power (W)',
+            data: analysis.stages.map(s => s.power),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.1)',
+            yAxisID: 'y'
+          },
+          {
+            label: 'Heart Rate (bpm)',
+            data: analysis.stages.map(s => s.hr),
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220,38,38,0.1)',
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Power (W)' } },
+          y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'HR (bpm)' }, grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+  }
+
+  // HR Delta Analysis Chart
+  const deltaCtx = document.getElementById('lt1-chart-delta');
+  if (deltaCtx && !deltaCtx._chartInitialized) {
+    deltaCtx._chartInitialized = true;
+    new Chart(deltaCtx, {
+      type: 'bar',
+      data: {
+        labels: analysis.stages.map(s => `Stage ${s.num}`),
+        datasets: [{
+          label: 'HR Delta',
+          data: analysis.stages.map(s => s.hrDelta),
+          backgroundColor: analysis.stages.map(s => 
+            s.hrDelta > 6 ? '#dc2626' : s.hrDelta > 4 ? '#f59e0b' : '#16a34a'
+          )
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'HR Delta (bpm)' } }
+        }
+      }
+    });
+  }
+}
+
+// Export PDF with selected logo
+async function exportLT1PDF() {
+  if (!lt1Analysis) {
+    alert('Please upload and analyze a file first');
+    return;
+  }
+
+  if (typeof jspdf === 'undefined' || !jspdf.jsPDF) {
+    alert('PDF library not loaded. Please refresh the page.');
+    return;
+  }
+
+  const { jsPDF } = jspdf;
+  const doc = new jsPDF();
+  
+  const athleteName = document.getElementById('lt1-athlete-name').value || 'Athlete';
+  const testDate = document.getElementById('lt1-test-date').value || new Date().toISOString().split('T')[0];
+  const logoSelect = document.getElementById('pdf-logo-lt1');
+  const selectedLogo = logoSelect ? logoSelect.value : 'echodevo';
+
+  // Add logo (if URL is available)
+  const logoUrl = LT1_LOGOS[selectedLogo];
+  if (logoUrl) {
+    try {
+      const img = await loadImage(logoUrl);
+      doc.addImage(img, 'PNG', 14, 10, 40, 14);
+    } catch (e) {
+      console.warn('Could not load logo:', e);
+    }
+  }
+
+  // Title
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LT1/OGC Threshold Analysis Report', 14, logoUrl ? 35 : 20);
+  
+  // Athlete info
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Athlete: ${athleteName}`, 14, logoUrl ? 45 : 30);
+  doc.text(`Test Date: ${testDate}`, 14, logoUrl ? 52 : 37);
+  
+  // Summary section
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Threshold Summary', 14, logoUrl ? 65 : 50);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  let yPos = logoUrl ? 73 : 58;
+  doc.text(`LT1 Power: ${lt1Analysis.lt1.power} W (${lt1Analysis.lt1.percentCP}% CP)`, 14, yPos);
+  doc.text(`LT1 Heart Rate: ${lt1Analysis.lt1.hr} bpm`, 14, yPos + 6);
+  doc.text(`OGC Power: ${lt1Analysis.ogc.power} W (${lt1Analysis.ogc.percentCP}% CP)`, 14, yPos + 12);
+  doc.text(`OGC Heart Rate: ${lt1Analysis.ogc.hr} bpm`, 14, yPos + 18);
+  doc.text(`Aerobic Window: ${lt1Analysis.aerobicWindow} W`, 14, yPos + 24);
+
+  // Training zones
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Training Zones', 14, yPos + 38);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  yPos += 46;
+  doc.text(`Recovery: <${Math.round(lt1Analysis.lt1.power * 0.85)} W (<${Math.round(lt1Analysis.lt1.percentCP * 0.85)}% CP)`, 14, yPos);
+  doc.text(`Endurance (Z1): ${Math.round(lt1Analysis.lt1.power * 0.85)}-${lt1Analysis.lt1.power} W (${Math.round(lt1Analysis.lt1.percentCP * 0.85)}-${lt1Analysis.lt1.percentCP}% CP)`, 14, yPos + 6);
+  doc.text(`Tempo (Z2): ${lt1Analysis.lt1.power}-${lt1Analysis.ogc.power} W (${lt1Analysis.lt1.percentCP}-${lt1Analysis.ogc.percentCP}% CP)`, 14, yPos + 12);
+  doc.text(`Sweet Spot: ${lt1Analysis.ogc.power}-${Math.round(lt1Analysis.cp * 0.95)} W (${lt1Analysis.ogc.percentCP}-95% CP)`, 14, yPos + 18);
+  doc.text(`Threshold: ${Math.round(lt1Analysis.cp * 0.95)}-${lt1Analysis.cp} W (95-100% CP)`, 14, yPos + 24);
+
+  // Stage breakdown table
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Stage Breakdown', 14, yPos + 38);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  yPos += 46;
+  doc.text('#', 14, yPos);
+  doc.text('Power', 24, yPos);
+  doc.text('% CP', 44, yPos);
+  doc.text('HR', 64, yPos);
+  doc.text('% HRR', 84, yPos);
+  doc.text('HR Δ', 104, yPos);
+  doc.text('Zone', 124, yPos);
+
+  doc.setFont('helvetica', 'normal');
+  lt1Analysis.stages.forEach((stage, index) => {
+    yPos += 6;
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.text(stage.num.toString(), 14, yPos);
+    doc.text(`${stage.power} W`, 24, yPos);
+    doc.text(`${stage.percentCP}%`, 44, yPos);
+    doc.text(`${stage.hr}`, 64, yPos);
+    doc.text(`${stage.percentHRR}%`, 84, yPos);
+    doc.text(`${stage.hrDelta}`, 104, yPos);
+    doc.text(stage.zone, 124, yPos);
+  });
+
+  // Save PDF
+  doc.save(`LT1-OGC-Analysis_${athleteName.replace(/\s+/g, '-')}_${testDate}.pdf`);
+}
+
+// Helper to load image
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// Initialize when tab is opened
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit for tab system to initialize
+  setTimeout(() => {
+    const tab = document.querySelector('[data-tab="lt1-ogc"]');
+    if (tab) {
+      tab.addEventListener('click', () => {
+        setTimeout(initLT1Calculator, 100);
+      });
+    }
+    // Also init if already on this tab
+    const panel = document.getElementById('tab-lt1-ogc');
+    if (panel && panel.style.display !== 'none') {
+      initLT1Calculator();
+    }
+  }, 500);
+});

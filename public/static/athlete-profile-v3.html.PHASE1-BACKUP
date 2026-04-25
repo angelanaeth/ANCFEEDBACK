@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Athlete Profile - EchoDevo Coach</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border: #e5e7eb;
+      --bg-gray: #f9fafb;
+      --bg-white: #ffffff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background: var(--bg-gray);
+    }
+    
+    .top-bar {
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo-image {
+      height: 180px;
+      width: auto;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .profile-header {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    
+    .profile-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    
+    .tabs {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      display: flex;
+      gap: 0;
+      border-radius: 6px 6px 0 0;
+    }
+    
+    .tab {
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-gray);
+    }
+    
+    .tab.active {
+      color: var(--text-primary);
+      font-weight: 600;
+      background: white;
+      border-bottom: 3px solid var(--primary);
+    }
+    
+    .tab[data-sport="swim"].active {
+      border-bottom-color: #06b6d4;
+      color: #0891b2;
+    }
+    
+    .tab[data-sport="bike"].active {
+      border-bottom-color: #f59e0b;
+      color: #d97706;
+    }
+    
+    .tab[data-sport="run"].active {
+      border-bottom-color: #ef4444;
+      color: #dc2626;
+    }
+    
+    .tab-content {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 24px;
+      border-radius: 0 0 6px 6px;
+    }
+    
+    .tab-pane {
+      display: none;
+    }
+    
+    .tab-pane.show.active {
+      display: block;
+    }
+    
+    .section-box {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .section-header {
+      background: var(--bg-gray);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .section-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-primary);
+    }
+    
+    .section-header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 2px 0 0 0;
+    }
+    
+    .section-body {
+      padding: 18px;
+    }
+    
+    .metric-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .metric-card {
+      background: linear-gradient(135deg, var(--bg-white) 0%, var(--bg-gray) 100%);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px;
+    }
+    
+    .metric-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    
+    .metric-source {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .metric-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .data-table thead {
+      background: var(--bg-gray);
+    }
+    
+    .data-table th {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    
+    .data-table tbody tr:hover {
+      background: var(--bg-gray);
+    }
+    
+    .data-table input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    .data-table input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-white);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn:hover {
+      background: var(--bg-gray);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+    
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .text-muted {
+      color: var(--text-muted);
+    }
+    
+    .mb-3 {
+      margin-bottom: 16px;
+    }
+    
+    .py-4 {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="top-bar">
+    <a href="/static/coach.html">
+      <img src="images/logo.png" alt="EchoDevo" class="logo-image">
+    </a>
+    <div>
+      <button class="btn" onclick="window.location.href='/static/coach.html'">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </button>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <h2 id="athleteName">Loading...</h2>
+      <div class="text-muted">Athlete ID: <span id="athleteId">-</span></div>
+    </div>
+
+    <!-- Sport Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-sport="swim" onclick="switchTab('swim')">
+        <i class="fas fa-swimmer me-2"></i>SWIM
+      </button>
+      <button class="tab" data-sport="bike" onclick="switchTab('bike')">
+        <i class="fas fa-biking me-2"></i>BIKE
+      </button>
+      <button class="tab" data-sport="run" onclick="switchTab('run')">
+        <i class="fas fa-running me-2"></i>RUN
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      
+      <!-- ============================================ -->
+      <!-- SWIM TAB -->
+      <!-- ============================================ -->
+      <div class="tab-pane show active" id="swim-pane">
+        
+        <!-- Test History -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3><i class="fas fa-history me-2"></i>Swim Test History</h3>
+              <p>Record your timed swim tests. CSS and D' are calculated from your tests.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addSwimTestRow()">
+              <i class="fas fa-plus"></i> Add Test
+            </button>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Date</th>
+                  <th style="width: 120px;">Distance (m)</th>
+                  <th style="width: 120px;">Time (MM:SS)</th>
+                  <th>Notes</th>
+                  <th style="width: 80px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="swimTestsBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    No tests recorded. Click "Add Test" to get started.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CSS Results -->
+        <div class="metric-cards">
+          <div class="metric-card">
+            <div class="metric-label">Critical Swim Speed (CSS)</div>
+            <div class="metric-value" id="cssValue">--:--</div>
+            <div class="metric-source">per 100m</div>
+            <div class="metric-date" id="cssDate">Not calculated yet</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">D' (Anaerobic Reserve)</div>
+            <div class="metric-value" id="swimDPrimeValue">---</div>
+            <div class="metric-source">meters</div>
+          </div>
+        </div>
+
+        <!-- Swim Pace Zones -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3>Swim Pace Zones</h3>
+              <p>Training zones based on your CSS</p>
+            </div>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Zone</th>
+                  <th>Name</th>
+                  <th style="width: 120px;">Low (per 100m)</th>
+                  <th style="width: 120px;">High (per 100m)</th>
+                  <th style="width: 100px;">% of CSS</th>
+                </tr>
+              </thead>
+              <tbody id="swimZonesBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Record swim tests above to generate zones
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Toolkit Button -->
+        <div class="section-box" style="background: var(--bg-gray); text-align: center;">
+          <div class="section-body">
+            <button class="btn btn-primary" onclick="openToolkit('swim')" style="padding: 12px 32px;">
+              <i class="fas fa-calculator me-2"></i>Open Swim Toolkit
+            </button>
+            <p class="text-muted mb-0 mt-2" style="font-size: 12px;">Calculate CSS, pace zones, and intervals</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================ -->
+      <!-- BIKE TAB -->
+      <!-- ============================================ -->
+      <div class="tab-pane" id="bike-pane">
+        
+        <!-- Test History -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3><i class="fas fa-history me-2"></i>Bike Test History</h3>
+              <p>Record your power tests. CP and W' are calculated from your tests.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addBikeTestRow()">
+              <i class="fas fa-plus"></i> Add Test
+            </button>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Date</th>
+                  <th style="width: 150px;">Test Type</th>
+                  <th style="width: 120px;">Power (W)</th>
+                  <th>Notes</th>
+                  <th style="width: 80px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bikeTestsBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    No tests recorded. Click "Add Test" to get started.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CP Results -->
+        <div class="metric-cards">
+          <div class="metric-card">
+            <div class="metric-label">Critical Power (CP)</div>
+            <div class="metric-value" id="cpValue">---</div>
+            <div class="metric-source">watts</div>
+            <div class="metric-date" id="cpDate">Not calculated yet</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">W' (Anaerobic Reserve)</div>
+            <div class="metric-value" id="wPrimeValue">---</div>
+            <div class="metric-source">kJ</div>
+          </div>
+        </div>
+
+        <!-- Power Zones -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3>Power Zones</h3>
+              <p>Training zones based on your CP</p>
+            </div>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Zone</th>
+                  <th>Name</th>
+                  <th style="width: 120px;">Low (W)</th>
+                  <th style="width: 120px;">High (W)</th>
+                  <th style="width: 100px;">% of CP</th>
+                </tr>
+              </thead>
+              <tbody id="bikeZonesBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Record power tests above to generate zones
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Toolkit Button -->
+        <div class="section-box" style="background: var(--bg-gray); text-align: center;">
+          <div class="section-body">
+            <button class="btn btn-primary" onclick="openToolkit('bike')" style="padding: 12px 32px;">
+              <i class="fas fa-calculator me-2"></i>Open Bike Toolkit
+            </button>
+            <p class="text-muted mb-0 mt-2" style="font-size: 12px;">Calculate CP, W', power zones, and intervals</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================ -->
+      <!-- RUN TAB -->
+      <!-- ============================================ -->
+      <div class="tab-pane" id="run-pane">
+        
+        <!-- Test History -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3><i class="fas fa-history me-2"></i>Run Test History</h3>
+              <p>Record your timed run tests. CS and D' are calculated from your tests.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addRunTestRow()">
+              <i class="fas fa-plus"></i> Add Test
+            </button>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Date</th>
+                  <th style="width: 120px;">Distance (m)</th>
+                  <th style="width: 120px;">Time (MM:SS)</th>
+                  <th>Notes</th>
+                  <th style="width: 80px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="runTestsBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    No tests recorded. Click "Add Test" to get started.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CS Results -->
+        <div class="metric-cards">
+          <div class="metric-card">
+            <div class="metric-label">Critical Speed (CS)</div>
+            <div class="metric-value" id="csValue">--:--</div>
+            <div class="metric-source">per km</div>
+            <div class="metric-date" id="csDate">Not calculated yet</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">D' (Anaerobic Reserve)</div>
+            <div class="metric-value" id="runDPrimeValue">---</div>
+            <div class="metric-source">meters</div>
+          </div>
+        </div>
+
+        <!-- Pace Zones -->
+        <div class="section-box">
+          <div class="section-header">
+            <div>
+              <h3>Pace Zones</h3>
+              <p>Training zones based on your CS</p>
+            </div>
+          </div>
+          <div class="section-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Zone</th>
+                  <th>Name</th>
+                  <th style="width: 120px;">Low (per km)</th>
+                  <th style="width: 120px;">High (per km)</th>
+                  <th style="width: 100px;">% of CS</th>
+                </tr>
+              </thead>
+              <tbody id="runZonesBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Record run tests above to generate zones
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Toolkit Button -->
+        <div class="section-box" style="background: var(--bg-gray); text-align: center;">
+          <div class="section-body">
+            <button class="btn btn-primary" onclick="openToolkit('run')" style="padding: 12px 32px;">
+              <i class="fas fa-calculator me-2"></i>Open Run Toolkit
+            </button>
+            <p class="text-muted mb-0 mt-2" style="font-size: 12px;">Calculate CS, D', pace zones, and intervals</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let athleteId = null;
+    let currentAthlete = null;
+    
+    // Test data storage (will be saved to localStorage)
+    let athleteTests = {
+      swim: [],
+      bike: [],
+      run: []
+    };
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      athleteId = urlParams.get('athlete');
+      
+      if (!athleteId) {
+        alert('No athlete ID provided!');
+        window.location.href = '/static/coach.html';
+        return;
+      }
+      
+      await loadAthleteProfile();
+      loadTestsFromStorage();
+      renderAllTests();
+      calculateAndDisplayResults();
+    });
+
+    // Load athlete profile from API
+    async function loadAthleteProfile() {
+      try {
+        console.log('📥 Loading athlete profile for ID:', athleteId);
+        const response = await axios.get(`/api/athlete-profile/${athleteId}`);
+        currentAthlete = response.data;
+        console.log('✅ Profile loaded:', currentAthlete);
+        
+        document.getElementById('athleteName').textContent = currentAthlete.name || 'Athlete';
+        document.getElementById('athleteId').textContent = athleteId;
+        
+      } catch (error) {
+        console.error('❌ Error loading athlete profile:', error);
+        document.getElementById('athleteName').textContent = 'Athlete Profile';
+      }
+    }
+
+    // Tab switching
+    function switchTab(sport) {
+      // Update tab buttons
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.currentTarget.classList.add('active');
+      
+      // Update tab panes
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+      });
+      document.getElementById(sport + '-pane').classList.add('show', 'active');
+    }
+
+    // Open toolkit with athlete context
+    function openToolkit(sport) {
+      window.location.href = `/static/athlete-calculators.html?athlete=${athleteId}&sport=${sport}`;
+    }
+
+    // ============================================
+    // TEST HISTORY MANAGEMENT
+    // ============================================
+
+    // Load tests from localStorage
+    function loadTestsFromStorage() {
+      const stored = localStorage.getItem(`athlete_${athleteId}_tests`);
+      if (stored) {
+        athleteTests = JSON.parse(stored);
+      }
+    }
+
+    // Save tests to localStorage
+    function saveTestsToStorage() {
+      localStorage.setItem(`athlete_${athleteId}_tests`, JSON.stringify(athleteTests));
+    }
+
+    // Add new swim test row
+    function addSwimTestRow() {
+      const test = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        distance: '',
+        time: '',
+        notes: ''
+      };
+      athleteTests.swim.unshift(test);
+      renderSwimTests();
+      saveTestsToStorage();
+    }
+
+    // Add new bike test row
+    function addBikeTestRow() {
+      const test = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        type: '3-min',
+        power: '',
+        notes: ''
+      };
+      athleteTests.bike.unshift(test);
+      renderBikeTests();
+      saveTestsToStorage();
+    }
+
+    // Add new run test row
+    function addRunTestRow() {
+      const test = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        distance: '',
+        time: '',
+        notes: ''
+      };
+      athleteTests.run.unshift(test);
+      renderRunTests();
+      saveTestsToStorage();
+    }
+
+    // Delete test
+    function deleteTest(sport, testId) {
+      if (!confirm('Delete this test?')) return;
+      athleteTests[sport] = athleteTests[sport].filter(t => t.id !== testId);
+      saveTestsToStorage();
+      renderAllTests();
+      calculateAndDisplayResults();
+    }
+
+    // Update test field
+    function updateTestField(sport, testId, field, value) {
+      const test = athleteTests[sport].find(t => t.id === testId);
+      if (test) {
+        test[field] = value;
+        saveTestsToStorage();
+        // Recalculate if it's a key field
+        if (['distance', 'time', 'power', 'type'].includes(field)) {
+          calculateAndDisplayResults();
+        }
+      }
+    }
+
+    // Render all tests
+    function renderAllTests() {
+      renderSwimTests();
+      renderBikeTests();
+      renderRunTests();
+    }
+
+    // Render swim tests
+    function renderSwimTests() {
+      const tbody = document.getElementById('swimTestsBody');
+      if (athleteTests.swim.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No tests recorded. Click "Add Test" to get started.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = athleteTests.swim.map(test => `
+        <tr>
+          <td><input type="date" value="${test.date}" onchange="updateTestField('swim', ${test.id}, 'date', this.value)"></td>
+          <td><input type="number" placeholder="400" value="${test.distance}" onchange="updateTestField('swim', ${test.id}, 'distance', this.value)"></td>
+          <td><input type="text" placeholder="6:00" value="${test.time}" onchange="updateTestField('swim', ${test.id}, 'time', this.value)"></td>
+          <td><input type="text" placeholder="Notes..." value="${test.notes}" onchange="updateTestField('swim', ${test.id}, 'notes', this.value)"></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="deleteTest('swim', ${test.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Render bike tests
+    function renderBikeTests() {
+      const tbody = document.getElementById('bikeTestsBody');
+      if (athleteTests.bike.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No tests recorded. Click "Add Test" to get started.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = athleteTests.bike.map(test => `
+        <tr>
+          <td><input type="date" value="${test.date}" onchange="updateTestField('bike', ${test.id}, 'date', this.value)"></td>
+          <td>
+            <select onchange="updateTestField('bike', ${test.id}, 'type', this.value)" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:4px;">
+              <option value="3-min" ${test.type === '3-min' ? 'selected' : ''}>3-min</option>
+              <option value="6-min" ${test.type === '6-min' ? 'selected' : ''}>6-min</option>
+              <option value="12-min" ${test.type === '12-min' ? 'selected' : ''}>12-min</option>
+              <option value="20-min" ${test.type === '20-min' ? 'selected' : ''}>20-min</option>
+              <option value="LT1/OGC" ${test.type === 'LT1/OGC' ? 'selected' : ''}>LT1/OGC</option>
+              <option value="Ramp" ${test.type === 'Ramp' ? 'selected' : ''}>Ramp</option>
+            </select>
+          </td>
+          <td><input type="number" placeholder="265" value="${test.power}" onchange="updateTestField('bike', ${test.id}, 'power', this.value)"></td>
+          <td><input type="text" placeholder="Notes..." value="${test.notes}" onchange="updateTestField('bike', ${test.id}, 'notes', this.value)"></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="deleteTest('bike', ${test.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Render run tests
+    function renderRunTests() {
+      const tbody = document.getElementById('runTestsBody');
+      if (athleteTests.run.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No tests recorded. Click "Add Test" to get started.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = athleteTests.run.map(test => `
+        <tr>
+          <td><input type="date" value="${test.date}" onchange="updateTestField('run', ${test.id}, 'date', this.value)"></td>
+          <td><input type="number" placeholder="1600" value="${test.distance}" onchange="updateTestField('run', ${test.id}, 'distance', this.value)"></td>
+          <td><input type="text" placeholder="6:40" value="${test.time}" onchange="updateTestField('run', ${test.id}, 'time', this.value)"></td>
+          <td><input type="text" placeholder="Notes..." value="${test.notes}" onchange="updateTestField('run', ${test.id}, 'notes', this.value)"></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-danger" onclick="deleteTest('run', ${test.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ============================================
+    // CALCULATIONS & ZONE GENERATION
+    // ============================================
+
+    function calculateAndDisplayResults() {
+      calculateSwimCSS();
+      calculateBikeCP();
+      calculateRunCS();
+    }
+
+    // Parse time string (MM:SS) to seconds
+    function parseTime(timeStr) {
+      if (!timeStr) return null;
+      const parts = timeStr.split(':');
+      if (parts.length === 2) {
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      }
+      return parseInt(timeStr);
+    }
+
+    // Format seconds to MM:SS
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.round(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Calculate Swim CSS
+    function calculateSwimCSS() {
+      const validTests = athleteTests.swim.filter(t => t.distance && t.time);
+      
+      if (validTests.length < 2) {
+        document.getElementById('cssValue').textContent = '--:--';
+        document.getElementById('cssDate').textContent = 'Need at least 2 tests';
+        document.getElementById('swimDPrimeValue').textContent = '---';
+        return;
+      }
+
+      // Use first two valid tests
+      const test1 = validTests[0];
+      const test2 = validTests[1];
+      
+      const d1 = parseFloat(test1.distance);
+      const t1 = parseTime(test1.time);
+      const d2 = parseFloat(test2.distance);
+      const t2 = parseTime(test2.time);
+
+      if (t1 === t2) return;
+
+      // Calculate CSS (meters per second)
+      const cssMetersPerSec = (d1 - d2) / (t1 - t2);
+      
+      // Convert to pace per 100m (seconds)
+      const cssPacePer100 = 100 / cssMetersPerSec;
+      
+      // Calculate D' (anaerobic reserve in meters)
+      const dPrime = d1 - (cssMetersPerSec * t1);
+
+      // Display results
+      document.getElementById('cssValue').textContent = formatTime(cssPacePer100);
+      document.getElementById('cssDate').textContent = `Updated: ${test1.date}`;
+      document.getElementById('swimDPrimeValue').textContent = Math.round(dPrime);
+
+      // Generate zones
+      generateSwimZones(cssPacePer100);
+    }
+
+    // Generate swim zones
+    function generateSwimZones(cssPace) {
+      const zones = [
+        { zone: 'Z1', name: 'Recovery', low: cssPace + 8, high: cssPace + 5, pct: '88-92%' },
+        { zone: 'Z2', name: 'Endurance', low: cssPace + 5, high: cssPace + 2, pct: '92-97%' },
+        { zone: 'Z3', name: 'Threshold', low: cssPace + 2, high: cssPace, pct: '97-100%' },
+        { zone: 'Z4', name: 'VO2max', low: cssPace, high: cssPace - 3, pct: '100-105%' }
+      ];
+
+      const tbody = document.getElementById('swimZonesBody');
+      tbody.innerHTML = zones.map(z => `
+        <tr>
+          <td>${z.zone}</td>
+          <td>${z.name}</td>
+          <td>${formatTime(z.low)}</td>
+          <td>${formatTime(z.high)}</td>
+          <td>${z.pct}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Calculate Bike CP
+    function calculateBikeCP() {
+      // Find 3-min, 6-min, and 12-min tests
+      const test3 = athleteTests.bike.find(t => t.type === '3-min' && t.power);
+      const test6 = athleteTests.bike.find(t => t.type === '6-min' && t.power);
+      const test12 = athleteTests.bike.find(t => t.type === '12-min' && t.power);
+
+      if (!test3 || !test6 || !test12) {
+        document.getElementById('cpValue').textContent = '---';
+        document.getElementById('cpDate').textContent = 'Need 3-min, 6-min, 12-min tests';
+        document.getElementById('wPrimeValue').textContent = '---';
+        return;
+      }
+
+      const w1 = parseFloat(test3.power);
+      const t1 = 180; // 3 minutes in seconds
+      const w2 = parseFloat(test12.power);
+      const t2 = 720; // 12 minutes in seconds
+
+      // Calculate CP
+      const cp = ((w1 * t1) - (w2 * t2)) / (t1 - t2);
+      
+      // Calculate W'
+      const wPrime = (w1 - cp) * t1 / 1000; // Convert to kJ
+
+      // Display results
+      document.getElementById('cpValue').textContent = Math.round(cp);
+      document.getElementById('cpDate').textContent = `Updated: ${test3.date}`;
+      document.getElementById('wPrimeValue').textContent = wPrime.toFixed(1);
+
+      // Generate zones
+      generateBikeZones(cp);
+    }
+
+    // Generate bike power zones
+    function generateBikeZones(cp) {
+      const zones = [
+        { zone: 'Z1', name: 'Recovery', low: 0, high: Math.round(cp * 0.65), pct: '0-65%' },
+        { zone: 'Z2', name: 'Endurance', low: Math.round(cp * 0.65), high: Math.round(cp * 0.79), pct: '65-79%' },
+        { zone: 'Z3', name: 'Tempo', low: Math.round(cp * 0.79), high: Math.round(cp * 0.89), pct: '79-89%' },
+        { zone: 'Z4', name: 'Threshold', low: Math.round(cp * 0.89), high: Math.round(cp), pct: '89-100%' },
+        { zone: 'Z5', name: 'VO2max', low: Math.round(cp), high: Math.round(cp * 1.05), pct: '100-105%' },
+        { zone: 'Z6', name: 'Anaerobic', low: Math.round(cp * 1.05), high: Math.round(cp * 1.20), pct: '105-120%' }
+      ];
+
+      const tbody = document.getElementById('bikeZonesBody');
+      tbody.innerHTML = zones.map(z => `
+        <tr>
+          <td>${z.zone}</td>
+          <td>${z.name}</td>
+          <td>${z.low}</td>
+          <td>${z.high}</td>
+          <td>${z.pct}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Calculate Run CS
+    function calculateRunCS() {
+      const validTests = athleteTests.run.filter(t => t.distance && t.time);
+      
+      if (validTests.length < 2) {
+        document.getElementById('csValue').textContent = '--:--';
+        document.getElementById('csDate').textContent = 'Need at least 2 tests';
+        document.getElementById('runDPrimeValue').textContent = '---';
+        return;
+      }
+
+      // Use first two valid tests
+      const test1 = validTests[0];
+      const test2 = validTests[1];
+      
+      const d1 = parseFloat(test1.distance);
+      const t1 = parseTime(test1.time);
+      const d2 = parseFloat(test2.distance);
+      const t2 = parseTime(test2.time);
+
+      if (t1 === t2) return;
+
+      // Calculate CS (meters per second)
+      const csMetersPerSec = (d1 - d2) / (t1 - t2);
+      
+      // Convert to pace per km (seconds)
+      const csPacePerKm = 1000 / csMetersPerSec;
+      
+      // Calculate D' (anaerobic reserve in meters)
+      const dPrime = d1 - (csMetersPerSec * t1);
+
+      // Display results
+      document.getElementById('csValue').textContent = formatTime(csPacePerKm);
+      document.getElementById('csDate').textContent = `Updated: ${test1.date}`;
+      document.getElementById('runDPrimeValue').textContent = Math.round(dPrime);
+
+      // Generate zones
+      generateRunZones(csPacePerKm);
+    }
+
+    // Generate run pace zones
+    function generateRunZones(csPace) {
+      const zones = [
+        { zone: 'Z1', name: 'Easy', low: csPace / 0.75, high: csPace / 0.85, pct: '75-85%' },
+        { zone: 'Z2', name: 'Aerobic', low: csPace / 0.85, high: csPace / 0.90, pct: '85-90%' },
+        { zone: 'Z3', name: 'Tempo', low: csPace / 0.90, high: csPace / 0.95, pct: '90-95%' },
+        { zone: 'Z4', name: 'Threshold', low: csPace / 0.95, high: csPace, pct: '95-100%' },
+        { zone: 'Z5', name: 'VO2max', low: csPace, high: csPace / 1.05, pct: '100-105%' }
+      ];
+
+      const tbody = document.getElementById('runZonesBody');
+      tbody.innerHTML = zones.map(z => `
+        <tr>
+          <td>${z.zone}</td>
+          <td>${z.name}</td>
+          <td>${formatTime(z.low)}</td>
+          <td>${formatTime(z.high)}</td>
+          <td>${z.pct}</td>
+        </tr>
+      `).join('');
+    }
+
+  </script>
+</body>
+</html>

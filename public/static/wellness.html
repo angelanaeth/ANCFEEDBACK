@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wellness Metrics - Echodevo Coach</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #667eea;
+      --secondary: #764ba2;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+    
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .metric-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      height: 100%;
+      transition: transform 0.2s;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-4px);
+    }
+    
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .metric-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 0.5rem;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 350px;
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .alert-status {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    .status-good { background: #d1fae5; color: #059669; }
+    .status-attention { background: #fed7aa; color: #ea580c; }
+    .status-warning { background: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-dark">
+    <div class="container-fluid px-4">
+      <a href="#" onclick="returnToDashboard()" class="navbar-brand">
+        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+      </a>
+      <span class="text-white">
+        <i class="fas fa-heartbeat me-2"></i>Wellness & Analytics
+      </span>
+    </div>
+  </nav>
+
+  <div class="container-fluid py-4">
+    <!-- Athlete Selection -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <h5 class="card-title mb-3">Select Athlete</h5>
+                <select class="form-select" id="athleteSelect" onchange="loadWellnessData()">
+                  <option value="">Loading athletes...</option>
+                </select>
+              </div>
+              <div class="col-md-6 text-end">
+                <button class="btn btn-primary" onclick="loadWellnessData()">
+                  <i class="fas fa-sync me-2"></i>Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-5" style="display: none;">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3 text-muted">Fetching wellness data from TrainingPeaks...</p>
+    </div>
+
+    <!-- No Data State -->
+    <div id="noDataState" class="text-center py-5" style="display: none;">
+      <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+      <h4 class="text-muted">No Wellness Data Available</h4>
+      <p class="text-muted">This athlete hasn't tracked any wellness metrics in TrainingPeaks yet.</p>
+      <a href="https://help.trainingpeaks.com/hc/en-us/articles/204072364-TrainingPeaks-Metrics-How-to-enter-Weight-HRV-Sleep-etc" 
+         target="_blank" class="btn btn-outline-primary">
+        <i class="fas fa-question-circle me-2"></i>Learn How to Track Metrics
+      </a>
+    </div>
+
+    <!-- Wellness Content -->
+    <div id="wellnessContent" style="display: none;">
+      <!-- Status & Recommendations -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div id="statusAlert"></div>
+        </div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="metric-card bg-white">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="metric-value text-primary" id="hrvValue">-</div>
+                <div class="metric-label">HRV (ms)</div>
+              </div>
+              <i class="fas fa-heartbeat fa-2x text-primary opacity-25"></i>
+            </div>
+            <div class="mt-3">
+              <small class="text-muted" id="hrvTrend"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="metric-card bg-white">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="metric-value text-info" id="sleepValue">-</div>
+                <div class="metric-label">Sleep (hours)</div>
+              </div>
+              <i class="fas fa-moon fa-2x text-info opacity-25"></i>
+            </div>
+            <div class="mt-3">
+              <small class="text-muted" id="sleepTrend"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="metric-card bg-white">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="metric-value text-warning" id="fatigueValue">-</div>
+                <div class="metric-label">Fatigue (1-5)</div>
+              </div>
+              <i class="fas fa-battery-half fa-2x text-warning opacity-25"></i>
+            </div>
+            <div class="mt-3">
+              <small class="text-muted" id="fatigueTrend"></small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="metric-card bg-white">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="metric-value text-success" id="readinessValue">-</div>
+                <div class="metric-label">Readiness (1-5)</div>
+              </div>
+              <i class="fas fa-check-circle fa-2x text-success opacity-25"></i>
+            </div>
+            <div class="mt-3">
+              <small class="text-muted" id="readinessTrend"></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="chart-container">
+            <h5 class="mb-3">HRV Trend (90 days)</h5>
+            <canvas id="hrvChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="chart-container">
+            <h5 class="mb-3">Sleep Quality (90 days)</h5>
+            <canvas id="sleepChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="chart-container">
+            <h5 class="mb-3">Fatigue & Soreness (90 days)</h5>
+            <canvas id="fatigueChart"></canvas>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="chart-container">
+            <h5 class="mb-3">Readiness to Train (90 days)</h5>
+            <canvas id="readinessChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Quality Info -->
+      <div class="row">
+        <div class="col-12">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Data Source:</strong> All wellness metrics are pulled directly from TrainingPeaks. 
+            <span id="dataQuality"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentAthleteId = null;
+    let charts = {};
+
+    // Return to dashboard with athlete ID
+    function returnToDashboard() {
+      const athleteId = currentAthleteId || localStorage.getItem('selectedAthleteId');
+      if (athleteId) {
+        window.location.href = `/static/coach?athlete=${athleteId}`;
+      } else {
+        window.location.href = '/static/coach';
+      }
+    }
+
+    // Load athletes on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+      try {
+        const response = await axios.get('/api/coach/athletes');
+        const athletes = response.data.athletes;
+
+        const select = document.getElementById('athleteSelect');
+        select.innerHTML = '<option value="">Choose athlete...</option>';
+
+        athletes.forEach(athlete => {
+          const option = document.createElement('option');
+          option.value = athlete.id;
+          option.textContent = `${athlete.name} (${athlete.sport})`;
+          select.appendChild(option);
+        });
+
+        // Check for athlete ID in URL or localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const athleteIdFromUrl = urlParams.get('athlete');
+        const athleteIdFromStorage = localStorage.getItem('selectedAthleteId');
+        const athleteIdToLoad = athleteIdFromUrl || athleteIdFromStorage;
+
+        // Auto-select athlete if one is provided or stored
+        if (athleteIdToLoad && athletes.find(a => a.id === athleteIdToLoad)) {
+          select.value = athleteIdToLoad;
+          loadWellnessData();
+        } else if (athletes.length > 0) {
+          // Fallback to first athlete
+          select.value = athletes[0].id;
+          loadWellnessData();
+        }
+      } catch (error) {
+        console.error('Error loading athletes:', error);
+        document.getElementById('athleteSelect').innerHTML = '<option value="">Error loading athletes</option>';
+      }
+    });
+
+    // Load wellness data for selected athlete
+    async function loadWellnessData() {
+      const athleteId = document.getElementById('athleteSelect').value;
+      if (!athleteId) {
+        document.getElementById('wellnessContent').style.display = 'none';
+        document.getElementById('noDataState').style.display = 'none';
+        return;
+      }
+
+      currentAthleteId = athleteId;
+      // Store athlete ID in localStorage for persistence
+      localStorage.setItem('selectedAthleteId', athleteId);
+
+      // Show loading state
+      document.getElementById('loadingState').style.display = 'block';
+      document.getElementById('wellnessContent').style.display = 'none';
+      document.getElementById('noDataState').style.display = 'none';
+
+      try {
+        // Fetch athlete data with wellness from TrainingPeaks
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const response = await axios.post('/api/gpt/fetch', {
+          athlete_id: athleteId,
+          start_date: startDate,
+          end_date: endDate
+        });
+        
+        const data = response.data;
+
+        // Hide loading
+        document.getElementById('loadingState').style.display = 'none';
+
+        if (!data.wellness || !data.wellness.latest) {
+          // Show no data state
+          document.getElementById('noDataState').style.display = 'block';
+          return;
+        }
+
+        // Show wellness content
+        document.getElementById('wellnessContent').style.display = 'block';
+
+        // Update display with TrainingPeaks data
+        updateMetricCards(data.wellness);
+        updateDataQuality(data.wellness);
+        createCharts(data.wellness.history);
+
+      } catch (error) {
+        console.error('Error loading wellness data:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        alert('Error loading wellness data: ' + (error.response?.data?.error || error.message));
+      }
+    }
+
+    // Update status alert
+    function updateStatusAlert(analysis) {
+      const alertDiv = document.getElementById('statusAlert');
+      let statusClass = 'status-good';
+      let icon = 'fa-check-circle';
+
+      if (analysis.alerts && analysis.alerts.length > 0) {
+        statusClass = 'status-attention';
+        icon = 'fa-exclamation-triangle';
+      }
+
+      let html = `
+        <div class="alert-status ${statusClass}">
+          <div class="d-flex align-items-start">
+            <i class="fas ${icon} fa-2x me-3"></i>
+            <div class="flex-grow-1">
+              <h5 class="mb-2">${analysis.status}</h5>
+              ${analysis.alerts && analysis.alerts.length > 0 ? `
+                <div class="mb-2">
+                  <strong>Alerts:</strong>
+                  <ul class="mb-0">
+                    ${analysis.alerts.map(alert => `<li>${alert}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              <div>
+                <strong>Recommendations:</strong>
+                <ul class="mb-0">
+                  ${analysis.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      alertDiv.innerHTML = html;
+    }
+
+    // Update metric cards
+    function updateMetricCards(wellness) {
+      const latest = wellness.latest || {};
+      const history = wellness.history || [];
+      const summary = wellness.summary || {};
+
+      // HRV
+      document.getElementById('hrvValue').textContent = latest.hrv_rmssd || '-';
+      if (summary.hrv_avg) {
+        document.getElementById('hrvTrend').textContent = `30-day avg: ${summary.hrv_avg} ms`;
+      }
+
+      // Sleep
+      document.getElementById('sleepValue').textContent = latest.sleep_hours ? latest.sleep_hours.toFixed(1) : '-';
+      if (summary.sleep_avg) {
+        document.getElementById('sleepTrend').textContent = `30-day avg: ${summary.sleep_avg} hours`;
+      }
+
+      // Fatigue
+      document.getElementById('fatigueValue').textContent = latest.fatigue || '-';
+      const fatigueAvg = history.filter(w => w.fatigue).map(w => w.fatigue);
+      if (fatigueAvg.length > 0) {
+        const avg = (fatigueAvg.reduce((a, b) => a + b, 0) / fatigueAvg.length).toFixed(1);
+        document.getElementById('fatigueTrend').textContent = `Avg: ${avg}/10`;
+      }
+
+      // Readiness (use resting HR as proxy)
+      document.getElementById('readinessValue').textContent = latest.resting_hr || '-';
+      if (summary.resting_hr_avg) {
+        document.getElementById('readinessTrend').textContent = `30-day avg: ${summary.resting_hr_avg} bpm`;
+      }
+    }
+
+    // Update data quality
+    function updateDataQuality(wellness) {
+      const history = wellness.history || [];
+      const totalDays = history.length;
+      const hrvEntries = history.filter(w => w.hrv_rmssd).length;
+      const sleepEntries = history.filter(w => w.sleep_hours).length;
+      
+      const hrvPct = totalDays > 0 ? ((hrvEntries / 30) * 100).toFixed(0) : 0;
+      const sleepPct = totalDays > 0 ? ((sleepEntries / 30) * 100).toFixed(0) : 0;
+      
+      document.getElementById('dataQuality').innerHTML = `
+        <strong>Last 30 days (TrainingPeaks):</strong> 
+        ${totalDays} entries tracked 
+        (HRV: ${hrvPct}%, Sleep: ${sleepPct}% coverage)
+      `;
+    }
+
+    // Create charts
+    function createCharts(wellness) {
+      // Destroy existing charts
+      Object.values(charts).forEach(chart => chart && chart.destroy());
+      charts = {};
+
+      // Prepare data from TrainingPeaks structure
+      const dates = wellness.map(w => w.date);
+      const hrv = wellness.map(w => w.hrv_rmssd || null);
+      const sleep = wellness.map(w => w.sleep_hours || null);
+      const fatigue = wellness.map(w => w.fatigue || null);
+      const soreness = wellness.map(w => w.soreness || null);
+      const restingHR = wellness.map(w => w.resting_hr || null);
+      const weight = wellness.map(w => w.weight_kg || null);
+
+      // HRV Chart
+      charts.hrv = new Chart(document.getElementById('hrvChart'), {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'HRV (ms)',
+            data: hrv,
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+
+      // Sleep Chart
+      charts.sleep = new Chart(document.getElementById('sleepChart'), {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Sleep (hours)',
+            data: sleep,
+            backgroundColor: '#3b82f6',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true,
+              max: 12,
+              ticks: {
+                callback: function(value) {
+                  return value + 'h';
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Fatigue Chart
+      charts.fatigue = new Chart(document.getElementById('fatigueChart'), {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [
+            {
+              label: 'Fatigue',
+              data: fatigue,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.4
+            },
+            {
+              label: 'Soreness',
+              data: soreness,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { 
+              beginAtZero: true,
+              max: 5
+            }
+          }
+        }
+      });
+
+      // Resting HR Chart
+      charts.restingHR = new Chart(document.getElementById('readinessChart'), {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Resting HR (bpm)',
+            data: restingHR,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { 
+              beginAtZero: false,
+              ticks: {
+                callback: function(value) {
+                  return value + ' bpm';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

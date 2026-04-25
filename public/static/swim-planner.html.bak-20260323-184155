@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swim Planner - Echodevo Coach</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #667eea;
+      --secondary: #764ba2;
+      --swim: #00bcd4;
+    }
+    
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, var(--swim) 0%, #0097a7 100%);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .swim-header {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .swim-icon {
+      font-size: 3rem;
+      color: var(--swim);
+    }
+    
+    .feature-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .feature-icon {
+      font-size: 2rem;
+      color: var(--swim);
+      margin-bottom: 1rem;
+    }
+    
+    /* Calendar Styles */
+    .workout-cell {
+      min-height: 120px;
+      padding: 0.5rem;
+      vertical-align: top;
+      font-size: 0.85rem;
+    }
+    
+    .workout-cell.completed {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    
+    .workout-cell.planned {
+      background: #e7f3ff;
+      border-left: 4px solid #0097a7;
+    }
+    
+    .workout-cell.empty {
+      background: #f8f9fa;
+      text-align: center;
+      color: #adb5bd;
+    }
+    
+    .workout-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.25rem;
+      font-size: 0.9rem;
+      display: block;
+    }
+    
+    .workout-status {
+      display: inline-block;
+      margin-right: 0.5rem;
+      font-size: 1.2rem;
+    }
+    
+    .workout-data {
+      margin: 0.25rem 0;
+      color: #666;
+      font-size: 0.8rem;
+    }
+    
+    .workout-data strong {
+      color: #333;
+    }
+    
+    .date-header {
+      font-weight: 600;
+      color: #666;
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-dark mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/static/coach.html">
+        <i class="fas fa-swimmer me-2"></i>
+        <strong>Swim Planner</strong>
+      </a>
+      <div>
+        <a href="/static/coach.html" class="btn btn-light btn-sm">
+          <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="swim-header">
+      <div class="row align-items-center">
+        <div class="col-auto">
+          <i class="fas fa-swimmer swim-icon"></i>
+        </div>
+        <div class="col">
+          <h1 class="mb-1">Swim Planner</h1>
+          <p class="text-muted mb-0" id="athleteName">Loading athlete...</p>
+        </div>
+        <div class="col-auto">
+          <div class="text-end">
+            <h5 class="mb-0 text-muted">Critical Swim Speed</h5>
+            <h2 class="mb-0" style="color: var(--swim);" id="cssDisplay">
+              <i class="fas fa-spinner fa-spin"></i>
+            </h2>
+            <small class="text-muted" id="cssSeconds"></small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSS Info Card -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info" id="cssInfo" style="display: none;">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Critical Swim Speed (CSS)</strong> is your sustainable swim pace for longer efforts (similar to FTP for cycling or CS for running).
+          <br>
+          <small class="mt-2 d-block">Current CSS: <strong id="cssPace"></strong> | To update, go to <a href="#" onclick="goToProfile(); return false;">Athlete Profile</a></small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Swim Workouts Section (MOVED UP) -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Recent Swim Workouts</h4>
+          <button class="btn btn-outline-primary btn-sm" onclick="refreshWorkouts()" id="refreshBtn">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+          </button>
+        </div>
+        <div id="loadingWorkouts" class="text-center py-5">
+          <i class="fas fa-spinner fa-spin fa-3x text-muted"></i>
+          <p class="mt-3 text-muted">Loading swim workouts from TrainingPeaks...</p>
+        </div>
+        <div id="workoutsContent" style="display: none;">
+          <!-- Previous Week Calendar -->
+          <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+              <h5 class="mb-0" id="prevWeekHeader">Previous Week</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-bordered mb-0" id="prevWeekTable">
+                  <thead>
+                    <tr class="text-center">
+                      <th>SUN</th>
+                      <th>MON</th>
+                      <th>TUE</th>
+                      <th>WED</th>
+                      <th>THU</th>
+                      <th>FRI</th>
+                      <th>SAT</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prevWeekBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Current Week Calendar -->
+          <div class="card">
+            <div class="card-header" style="background: var(--swim); color: white;">
+              <h5 class="mb-0" id="currentWeekHeader">Current Week</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-bordered mb-0" id="currentWeekTable">
+                  <thead>
+                    <tr class="text-center">
+                      <th>SUN</th>
+                      <th>MON</th>
+                      <th>TUE</th>
+                      <th>WED</th>
+                      <th>THU</th>
+                      <th>FRI</th>
+                      <th>SAT</th>
+                    </tr>
+                  </thead>
+                  <tbody id="currentWeekBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="workoutsError" style="display: none;" class="alert alert-danger">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          <span id="errorMessage">Error loading workouts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workout Library Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header" style="background: linear-gradient(135deg, var(--swim) 0%, #0097a7 100%); color: white;">
+            <h4 class="mb-0"><i class="fas fa-book me-2"></i>Swim Workout Library</h4>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info mb-4">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Workout Library:</strong> Using CSS <span class="badge bg-primary" id="libraryCSS">loading...</span> workouts (<span id="workoutCount">0</span> available). Select workouts and push them to TrainingPeaks.
+              <br><small class="mt-2 d-block"><i class="fas fa-lightbulb me-1"></i>To change your CSS, update your <a href="#" onclick="goToProfile(); return false;">Athlete Profile</a>.</small>
+            </div>
+            
+            <!-- Week Selection Controls -->
+            <div class="mb-4">
+              <h5 class="mb-3">Select Week to Plan</h5>
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label for="weekSelector" class="form-label">
+                    <i class="fas fa-calendar-week me-1"></i>Choose Week
+                  </label>
+                  <select class="form-select" id="weekSelector" onchange="changeSelectedWeek()">
+                    <!-- Will be populated with weeks -->
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <button class="btn btn-outline-primary" onclick="showPreviousWeek()" id="prevWeekBtn">
+                    <i class="fas fa-chevron-left me-1"></i>Previous Week
+                  </button>
+                  <button class="btn btn-outline-primary ms-2" onclick="showNextWeek()" id="nextWeekBtn">
+                    Next Week<i class="fas fa-chevron-right ms-1"></i>
+                  </button>
+                </div>
+                <div class="col-md-4">
+                  <div class="alert alert-info p-2 mb-0">
+                    <small><strong>Viewing:</strong><br><span id="currentWeekDisplay">Loading...</span></small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Week Accordion View (shows 2 weeks max) -->
+            <div id="weekAccordion" class="mb-3">
+              <!-- Weeks will be rendered here -->
+            </div>
+
+            <!-- Summary Card -->
+            <div class="card mb-3 bg-light">
+              <div class="card-body">
+                <h6 class="card-title"><i class="fas fa-clipboard-check me-2"></i>Schedule Summary</h6>
+                <div id="scheduleSummary" class="mb-2">
+                  <em class="text-muted">No workouts scheduled yet</em>
+                </div>
+                <small class="text-muted">
+                  <strong>Total:</strong> <span id="totalWorkoutsCount">0</span> workout(s) across <span id="totalWeeksCount">0</span> week(s)
+                </small>
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+              <button class="btn btn-outline-secondary" onclick="clearWeekPlan()">
+                <i class="fas fa-eraser me-2"></i>Clear All Weeks
+              </button>
+              <button class="btn btn-success btn-lg" onclick="pushToTrainingPeaks()" id="pushButton">
+                <i class="fas fa-cloud-upload-alt me-2"></i>Push to TrainingPeaks
+              </button>
+            </div>
+            <div class="mt-2">
+              <small class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                Workouts will be created starting <strong><span id="pushDateInfo">next Sunday</span></strong>
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get athlete ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const athleteId = urlParams.get('athlete');
+
+    // Workout Library Data (CS 1:40)
+    const workoutLibrary = {
+      '1:40': [
+        {
+          number: 1,
+          title: 'Endurance Build #1',
+          yardage_options: [3700],
+          descriptions: {
+            3700: `**Warm-Up**
+  - 400 as: - 200 Swim @50–70% - 4x25 Kick – Take 5s - 100 Pull @70%
+**Drill Set**
+  - – Take 5–10s after each 25 Six Times Through... - 25 Press Your Buoy Drill - 25 Swim
+**Pre-Set**
+• 8x50 Swim in :50 (CS) on 1:00
+**Main Set**
+• 4x600 as follows, w/ 20s in between each: #1 in 10:11–10:18 (Z2) #2 in 10:29–10:36 (Z1) #3 in 9:59–10:06 (CS) #4 in 9:59–10:06 (CS)
+**Cool-Down**
+• 4x25 Press Your Buoy Drill 2x50 Swim – focused on PYB and a neutral head – Take 5–10s between each
+
+**Total: 3,700 yards (3383 meters)**`,
+          },
+          estimated_tss: {3700: 74},
+          estimated_duration: {3700: 4440}
+        },
+        {
+          number: 2,
+          title: 'Speed and Power #1',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 500 as: - 300 Swim @50–70% - 4x25 Kick – Take 5s - 100 Pull @60–70%
+**Drill Set**
+• 8x25 3-2-3 Drill*
+**Pre-Set**
+  - Eight Times Through... - 25 KOB – Take 5s - 50 Swim @80% – Take 10s
+**Main Set**
+  - Two Times Through... - 10x50 Swim in :45 (10%) on 1:00 - 4x100 Swim in 1:40 (CS) on 1:50 - 100 EASY
+**Cool-Down**
+• 4x25 3-2-3 Drill 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 3,
+          title: 'Open Water Skills #1',
+          yardage_options: [3900],
+          descriptions: {
+            3900: `**Warm-Up**
+  - 600 as: - 300 Swim @50–70% - 8x25 Kick – Take 5s - 100 Pull @60–70%
+**Drill Set**
+• 8x25 Press Your Buoy Drill – Take 5–10s 8x25 TARZAN Swim – Take 5–10s
+**Pre-Set**
+• 4x50 Swim as 25 HIGH Turnover, 25 Steady 4x50 Swim as 25 OVER-Kick, 25 Limit Kick
+**Main Set**
+  - – Two Times Through... 2x400 in 6:47–6:52 (Z2), sight in the middle of each length – Take 15s 2x100 @HIGH uptempo, with no walls* – Take 10s 100 EASY reset
+**Cool-Down**
+• 4x25 Press Your Buoy Drill – Take 5–10s 4x25 TARZAN Swim – Take 5–10s 100 Choice
+
+**Total: 3,900 yards (3566 meters)**`,
+          },
+          estimated_tss: {3900: 78},
+          estimated_duration: {3900: 4680}
+        },
+        {
+          number: 4,
+          title: 'Endurance Build #2',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 400 as: - 200 Swim @50–70% - 100 Pull/Paddles @70% - 4x25 FAST Swim – Take 10s
+**Drill Set**
+  - – Take 5–10s after each 50 Six Times Through... - 25 Finger Tip Drag - 25 Swim
+**Pre-Set**
+• 8x(25 Kick, 50 Swim @80% – Take 10s)
+**Main Set**
+• 6x100 Swim in 1:40 (CS) on 1:50 2x250 Swim in 4:14–4:17 (Z2) on 4:30 500 Swim in 8:29–8:35 (Z2) – Take 20s 4x100 Swim in 1:35 (5%) on 1:50
+**Cool-Down**
+• 4x25 Finger Tip Drag – Take 5s 100 Swim br 3/5/7/3 by 25
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 5,
+          title: 'Speed and Power #2',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 500 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 100 Pull @60-70% - 4x25 FAST Swim - Take 5-10s
+**Drill Set**
+• 6x50 as 25 Scull / 25 Swim - Take 5-10s
+**Pre-Set**
+500 Swim as 100H/100E, 75H/75E, 50H/50E, 25H/25E
+**Main Set**
+• 16x50 Swim in :48 (5%) on 1:05 8x25 Swim in :23 (10%) on :40 2x100 Swim in 1:40 (CS) on 1:50 200 Swim in 3:23–3:26 (Z2) on 3:35 12x50 Swim in :48 (5%) on 1:05
+**Cool-Down**
+• 4x25 Scull - Take 5s 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 6,
+          title: 'Open Water Skills #2',
+          yardage_options: [3400],
+          descriptions: {
+            3400: `**Warm-Up**
+  - 700 as: - 300 Swim @50-70% - 4x25 Kick - Take 5s - 200 Pull @60-70% - 4x25 FAST Paddles - Take 5-10s
+**Drill Set**
+• 6x50 Swim @80% - sight every 6 strokes - Take 10-15s
+**Pre-Set**
+• 8x25 TARZAN Swim - Take 5-10s 4x50 Swim as 25 OVER-Kick, 25 Limit Kick
+**Main Set**
+• 4x300 - Take 15s, as: - 100 as 2x(25 Over-Kick/25 Limit Kick) - 100 @70%, sight every 6 strokes - 100 focused on a HIGH turnover 6x100 Swim with NO walls - Take 20s
+**Cool-Down**
+• 4x25 Press Your Buoy Drill - Take 5-10s 4x25 TARZAN Swim - Take 5-10s
+
+**Total: 3,400 yards (3109 meters)**`,
+          },
+          estimated_tss: {3400: 68},
+          estimated_duration: {3400: 4080}
+        },
+        {
+          number: 7,
+          title: 'Endurance Build #3',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 500 as: - 300 Swim @50-60% - 4x25 Kick - Take 5-10s - 4x25 Swim as 12.5 HARD / 12.5 EASY - Take 5-10s
+**Drill Set**
+• Take 5-10s after each 50 6x50 as: - ODDS: Catch-Up Drill - EVENS: 6-Kick Switch Drill
+**Pre-Set**
+500 Pull/Paddles as 100H/100E, 75H/75E, 50H/50E, 25H/25E
+**Main Set**
+• 5x400 - Take 15-20s after each, as: #1 - @70% br3 #2 - in 6:47–6:52 (Z2) #3 - @70% br3 #4 - 6:39–6:44 (CS) #5 - Paddles @70% br3
+**Cool-Down**
+• 4x25 Catch-Up Drill - Take 5s 100 Swim br 3/5/7/3 by 25
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 8,
+          title: 'Speed and Power #3',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 500 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 100 Pull @60-70% - 4x25 Swim, sight every 6 strokes - Take 5-10s
+**Drill Set**
+• 6x50 Swim - Take 10s, as: - ODDS: @70% br3 - EVENS: Build from 70% to 90%
+**Pre-Set**
+• 10x50 - Take 10-15s, as: - ODDS: Swim @70% w/ OVER-Kick - EVENS: Pull @70-80%
+**Main Set**
+• 3x300 Swim in 5:05–5:09 (Z2) - Take 15s 4x200 Pull, as: - ODDS: @80% - EVENS: Negative split 6x50 Swim :48 (5%) on 1:05
+**Cool-Down**
+• 2x50 EASY Swim br3 - Take 10s 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 9,
+          title: 'Open Water Skills #3',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 600 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 200 Pull @60-70% - 4x25 Swim w/ FAST Starts, easy to the wall - Take 5-10s
+**Drill Set**
+• 8x50 as 25 Single-Arm Drill / 25 Swim focusing on a strong Catch and Pull - Take 10-15s
+**Pre-Set**
+• 4x25 TARZAN Swim - Take 5-10s 6x50 Swim as 25 OVER-Kick, 25 Limit Kick
+**Main Set**
+• 2x400 Pull/Paddles @80%, focusing on a strong Catch and Pull - Take 20s 10x50 Swim as 25 HARD!!! / 25 @80% - Take 15s 2x300 Pull @80% w/ no walls, and sighting twice per 25 - Take 15s
+**Cool-Down**
+• 4x25 Single-Arm Drill - Take 5-10s 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 10,
+          title: 'Endurance Build #4',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 700 as: - 200 @50-70% - 200 Pull @70% - 4x50 Swim in :50 (CS) on 1:00 - 4x25 FAST - Take 10s
+**Drill Set**
+• 6x(25 Press Your Buoy Drill, roll onto back to breathe / 25 Swim) - Take 10s
+**Pre-Set**
+600 Swim as 25H / 25E
+**Main Set**
+• 4x200 Pull/Paddles @70-80% - Take 20s 8x50 BAND - Take 15s 5x100 Pull @80-90% - Take 20s
+**Cool-Down**
+200 Swim br 3/5/3/7
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 11,
+          title: 'Speed and Power #4',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 700 as: - 200 Swim @50-60% - 200 Pull @60-70% - 4x25 Kick - Take 5s - 200 Swim @70%
+**Drill Set**
+• 6x(25 TARZAN Swim / 25 Swim) - Take 10s
+**Pre-Set**
+• 6x(25 Swim w/ OVER-Kick / 25 Swim limit kick) - Take 10s 6x(25 Press Your Buoy Drill / 25 Swim) - Take 10s
+**Main Set**
+• 12x50 Swim in :45 (10%) on 1:00 100 EASY Pull 5x100 Swim on 1:50, as: #1 in 1:42 (Z2) #2 in 1:40 (CS) #3 in 1:35 (5%) #4 in 1:42 (Z2) #5 in 1:30 (10%) 100 EASY Pull 2x200 Paddles @80% - Take 15s
+**Cool-Down**
+• 4x25 FIST Drill 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 12,
+          title: 'Open Water Skills #4',
+          yardage_options: [4100],
+          descriptions: {
+            4100: `**Warm-Up**
+  - 600 as: - 200 Swim @50-70% - 200 Pull @70% - 4x25 Kick - Take 5s - 4x25 FAST - Take 10s
+**Drill Set**
+• 8x50 - Take 10s, as: - ODDS: 25 Finger Tip Drag / 25 Swim - EVENS: 25 HIGH Turnover / 25 Swim
+**Pre-Set**
+• 10x50 Swim in :50 (CS) on 1:00
+**Main Set**
+• 3x800 - Take 30-45s, as: - 400 @70-80% - 300 @80%, sight each 25 - 100 @80-90%
+**Cool-Down**
+• 4x25 Finger Tip Drag 100 Choice
+
+**Total: 4,100 yards (3749 meters)**`,
+          },
+          estimated_tss: {4100: 82},
+          estimated_duration: {4100: 4920}
+        },
+        {
+          number: 13,
+          title: 'Endurance Build #5',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50–70% 4x25 Kick – Take 5s 4x25 Swim as 12.5H / 12.5E 200 Pull @70% 4x25 Press Your Buoy Drill
+**Drill Set**
+• 8x50 – Take 10s, as: - ODDS: 25 Catch Up Drill / 25 Swim - EVENS: 25 6-Kick Switch Drill / 25 Swim
+**Pre-Set**
+600 Swim as 50H / 25E
+**Main Set**
+• 6x100 as 25 Single Arm Drill, 75 Swim – Take 15s 4x200 Swim in 3:23–3:26 (Z2) on 3:35 4x50 Swim w/ Fins @50–70% – Take 10s
+**Cool-Down**
+100 EASY Backstroke 100 EASY Swim
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 14,
+          title: 'Speed and Power #5',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50-70% 200 Pull @70% 8x25 Swim, descend 1-4, 5-8 - Take 5-10s 6x50 Swim in :51 (Z2) on 1:05
+**Drill Set**
+• 8x50 - Take 10s, as: - ODDS: 25 FIST Drill / 25 Swim - EVENS: 25 HORNS Drill / 25 Swim
+**Pre-Set**
+• 8x50 Swim in :50 (CS) on 1:00
+**Main Set**
+• 4x50 Swim in :45 (10%) on 1:00 2x300 Swim in 5:05–5:09 (Z2) on 5:20 100 EASY 4x100 Swim on 1:50 as: - ODDS: in 1:30 (10%) - EVENS: in 1:40 (CS) 100 EASY 8x25 in :23 (10%) on :40
+**Cool-Down**
+50 FIST Drill 50 HORNS Drill 100 EASY Swim
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 15,
+          title: 'Open Water Skills #5',
+          yardage_options: [3700],
+          descriptions: {
+            3700: `**Warm-Up**
+300 Swim @50-70% 200 Pull @70% 200 Swim, sight every 6 strokes
+**Drill Set**
+• 8x50 - Take 10s, as: - ODDS: 25 TARZAN Swim / 25 Swim - EVENS: 50 w/ NO Walls
+**Pre-Set**
+• 4x(25 Kick (use buoy as board), 50 Pull) - Take 10s
+**Main Set**
+• 6x200 Swim @80%, sight every 6 strokes - Take 15s 3x300 Swim, as: - 200 @70%, sight every 6 strokes - 100 @90% - Take 20s
+**Cool-Down**
+200 Choice
+
+**Total: 3,700 yards (3383 meters)**`,
+          },
+          estimated_tss: {3700: 74},
+          estimated_duration: {3700: 4440}
+        },
+        {
+          number: 16,
+          title: 'Endurance Build #6',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50-70% 6x25 Catch Up Drill - Take 5s 4x50 Swim, descend 1-3, 4 EASY - Take 10s 200 Pull @70%
+**Drill Set**
+• 6x50 - Take 10s, as: - ODDS: 25 Press Your Buoy Drill / 25 Swim - EVENS: 25 HORNS / 25 Swim
+**Pre-Set**
+• 6x75 Swim in 1:15 (CS) on 1:25
+**Main Set**
+• 4x100 Swim in 1:40 (CS) on 1:50 2x300 Swim in 5:05–5:09 (Z2) on 5:20, sight each 25 4x200 Swim on 3:40 as: - ODDS: in 3:19–3:22 (CS) - EVENS: in 3:29–3:32 (Z1)
+**Cool-Down**
+200 EASY Pull
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 17,
+          title: 'Speed and Power #6',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50–70% 4x25 Kick – Take 5–10s 4x25 Swim FAST – Take 10s 200 Pull @70%
+**Drill Set**
+• 6x50 – Take 10s, as: - ODDS: 25 Single-arm Drill (Left) / 25 Single-arm Drill (Right) - EVENS: 25 Catch Up Drill / 25 Swim
+**Pre-Set**
+  - Four Times Through... - 25 Kick HARD (use a buoy as the board) - 50 Pull @80% – Take 15s
+**Main Set**
+• 12x25 Swim in :23 (10%) on :40 12x50 Swim in :48 (5%) on 1:05 3x400 Swim in 6:47–6:52 (Z2) on 7:05
+**Cool-Down**
+100 Backstroke – STRETCH it out 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 18,
+          title: 'Open Water Skills #6',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50–70% 3x100 Pull @70% – Take 10s 4x50 Swim, sight once each 25
+**Drill Set**
+  - Four Times Through... - 50 Swim, sight every 6 strokes – Take 5s - 50 Swim, br3 – Take 10s
+**Pre-Set**
+400 Pull as 25 HARD / 25 EASY
+**Main Set**
+  - 800 Pull @70%, sight once each 25 – Take 30s 4x100 Swim in 1:42 (Z2) on 1:55 400 Pull/Paddles @70% – Take 20s 4x50 Swim in :48 (5%) on 1:05
+**Cool-Down**
+200 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 19,
+          title: 'Endurance Build #7',
+          yardage_options: [3600],
+          descriptions: {
+            3600: `**Warm-Up**
+  - 200 Swim @50–70% 4x25 Kick – Take 5s 4x25 Swim, descend 1–3 from steady to HARD, 4 EASY 200 Pull @70%
+**Drill Set**
+• 6x50 – Take 10s, as: - ODDS: 25 Press Your Buoy Drill / 25 Swim - EVENS: 6-Kick Switch, focusing on body rotation
+**Pre-Set**
+500 Pull as 25 HARD / 25 EASY
+**Main Set**
+• 6x100 Swim in 1:42 (Z2) on 1:50 5x100 Swim in 1:40 (CS) on 1:50 4x100 Swim in 1:35 (5%) on 1:50 3x100 Swim in 1:30 (10%) on 1:50 4x50 Swim in :48 (5%) on 1:05
+**Cool-Down**
+• 4x25 Press Your Buoy – Take 10s 100 Choice
+
+**Total: 3,600 yards (3292 meters)**`,
+          },
+          estimated_tss: {3600: 72},
+          estimated_duration: {3600: 4320}
+        },
+        {
+          number: 20,
+          title: 'Speed and Power #7',
+          yardage_options: [4000],
+          descriptions: {
+            4000: `**Warm-Up**
+  - 200 Swim @50–70% 200 Pull @70% 4x25 Kick – Take 10s 4x50 Swim – Take 10s, descend 1–3, 4 EASY
+**Drill Set**
+• 6x50 as 25 Scull / 25 Swim – Take 10s
+**Pre-Set**
+  - Four Times Through… - 50 Pull @90 – Take 10s - 50 EASY Pull – Take 10s
+**Main Set**
+• 12x50 Swim in :45 (10%) on 1:00 100 EASY Pull 5x100 Swim in 1:35 (5%) on 1:50 100 EASY Pull 5x200 Swim in 3:19–3:22 (CS) on 3:35 100 EASY Pull
+**Cool-Down**
+100 Choice
+
+**Total: 4,000 yards (3658 meters)**`,
+          },
+          estimated_tss: {4000: 80},
+          estimated_duration: {4000: 4800}
+        },
+        {
+          number: 21,
+          title: 'Open Water Skills #7',
+          yardage_options: [3800],
+          descriptions: {
+            3800: `**Warm-Up**
+  - 300 Swim @50–70% 200 Pull @70% 4x25 Kick – Take 5–10s 4x25 HARD Swim – Take 10s 100 Swim @70%
+**Drill Set**
+• 6x50 – Take 10s, as: - 25 Swim w/ an OVER-Kick - 25 Swim, sighting every 6 strokes
+**Pre-Set**
+  - Four Times Through... - 25 in :23 (10%) on :40 - 50 in :48 (5%) on 1:05 - 75 in 1:15 (CS) on 1:25
+**Main Set**
+• 4x50 Swim in :48 (5%) on 1:05 4x400 Pull @80%, sighting every 8 strokes – Take 20s 4x50 Swim in :48 (5%) on 1:05
+**Cool-Down**
+100 Choice
+
+**Total: 3,800 yards (3475 meters)**`,
+          },
+          estimated_tss: {3800: 76},
+          estimated_duration: {3800: 4560}
+        },
+        {
+          number: 22,
+          title: 'Endurance Build #8',
+          yardage_options: [3500],
+          descriptions: {
+            3500: `**Warm-Up**
+  - 200 Swim @50–70% 4x25 Kick – Take 5s 4x25 Pull, descend 1–3, 4 EASY 200 Swim @70%
+**Drill Set**
+• 6x50 – Take 10s, as: - ODDS: 25 Catch Up Drill / 25 Swim - EVENS: 25 Backstroke / 25 Swim
+**Pre-Set**
+• 5x100 – Take 10–15s, as: 25@90%, 50@80%, 25@70%
+**Main Set**
+• 2x400 Swim in 6:47–6:52 (Z2) — Take 20s 100 EASY Pull 6x100 Swim as: ODDS: in 1:40 (CS) on 1:50 EVENS: in 1:45 (Z1) on 1:55 100 EASY Pull 6x50 Swim in :45 (10%) on 1:00
+**Cool-Down**
+• 4x25 Catch Up Drill – Take 5s 100 Choice
+
+**Total: 3,500 yards (3200 meters)**`,
+          },
+          estimated_tss: {3500: 70},
+          estimated_duration: {3500: 4200}
+        },
+        {
+          number: 23,
+          title: 'Speed and Power #8',
+          yardage_options: [3700],
+          descriptions: {
+            3700: `**Warm-Up**
+  - 200 Swim @50–70% 200 Pull @70% 4x25 HARD – Take 10s 200 Swim @70%
+**Drill Set**
+• 8x50 – Take 10s, as: - ODDS: 25 Finger Tip Drill / 25 Swim - EVENS: br3
+**Pre-Set**
+500 Pull as 100H/100E, 75H/75E, 50H/50E, 25H/25E
+**Main Set**
+• 8x100 Swim in 1:35 (5%) on 1:50 100 EASY Pull 4x200 Swim in 3:19–3:22 (CS) on 3:35 100 EASY Pull 4x50 Swim in :45 (10%) on 1:00
+**Cool-Down**
+100 Choice
+
+**Total: 3,700 yards (3383 meters)**`,
+          },
+          estimated_tss: {3700: 74},
+          estimated_duration: {3700: 4440}
+        }
+      ],
+      '1:30': [
+        {
+          number: 1,
+          title: 'Endurance Build #1',
+          yardage_options: [3699],
+          descriptions: {
+            3699: `
+**Warm-Up**
+  -  400 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 100 Pull @70% 
+**Drill Set**
+•  - Take 5-10s after each 25 Six Times Through... - 25 Press Your Buoy Drill - 25 Swim 
+**Pre-Set**
+•  8x50 Swim in :45 (CS) on :55 
+**Main Set**
+•  4x600 as follows, w/ 20s in between each: #1 in 9:10–9:17 (Z2) #2 in 9:26–9:33 (Z1) #3 in 8:59–9:06 (CS) #4 in 8:59–9:06 (CS) 
+**Cool-Down**
+•  4x25 Press Your Buoy Drill 2x50 Swim - focused on PYB and a neutral head - Take 5-10s between each
+
+**Total: 3,699 yards (3,383 meters)**`,
+          },
+          estimated_tss: {3699: 75},
+          estimated_duration: {3699: 3890}
+        },
+        {
+          number: 2,
+          title: 'Speed and Power #1',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  500 as: - 300 Swim @50-70% - 4x25 Kick - Take 5s - 100 Pull @60-70% 
+**Drill Set**
+•  8x25 3-2-3 Drill* 
+**Pre-Set**
+•  Eight Times Through... - 25 KOB - Take 5s - 50 Swim @80% - Take 10s 
+**Main Set**
+•  - Two Times Through... 10x50 Swim in :41 (10%) on 1:00 4x100 Swim in 1:30 (CS) on 1:40 100 EASY 
+**Cool-Down**
+•  4x25 3-2-3 Drill 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 3,
+          title: 'Open Water Skills #1',
+          yardage_options: [3899],
+          descriptions: {
+            3899: `
+**Warm-Up**
+  -  600 as: - 300 Swim @50-70% - 8x25 Kick - Take 5s - 100 Pull @60-70% 
+**Drill Set**
+•  8x25 Press Your Buoy Drill - Take 5-10s 8x25 TARZAN Swim - Take 5-10s 
+**Pre-Set**
+•  4x50 Swim as 25 HIGH Turnover, 25 Steady 4x50 Swim as 25 OVER-Kick, 25 Limit Kick 
+**Main Set**
+•  - Two Times Through... 2x400 in 6:06–6:11 (Z2), sight in the middle of each length on 6:30 2x100 @HIGH uptempo, with no walls* - Take 10s 100 EASY reset 
+**Cool-Down**
+•  4x25 Press Your Buoy Drill - Take 5-10s 4x25 TARZAN Swim - Take 5-10s 100 Choice
+
+**Total: 3,899 yards (3,566 meters)**`,
+          },
+          estimated_tss: {3899: 79},
+          estimated_duration: {3899: 4100}
+        },
+        {
+          number: 4,
+          title: 'Endurance Build #2',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  400 as: - 200 Swim @50–70% - 100 Pull/Paddles @70% - 4x25 FAST Swim – Take 10s 
+**Drill Set**
+•  – Take 5–10s after each 50 Six Times Through... - 25 Finger Tip Drag - 25 Swim 
+**Pre-Set**
+•  8x(25 Kick, 50 Swim @80% – Take 10s) 
+**Main Set**
+•  6x100 Swim in 1:30 (CS) on 1:40 2x250 Swim in 3:49–3:52 (Z2) on 4:05 500 Swim in 7:38–7:44 (Z2) on 8:00 4x100 Swim in 1:26 (5%) on 1:45 
+**Cool-Down**
+•  4x25 Finger Tip Drag – Take 5s 100 Swim br 3/5/7/3 by 25
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 5,
+          title: 'Speed and Power #2',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  500 as: - 200 Swim @50–70% - 4x25 Kick – Take 5s - 100 Pull @60–70% - 4x25 FAST Swim – Take 5–10s 
+**Drill Set**
+•  6x50 as 25 Front Scull / 25 Swim – Take 5–10s 
+**Pre-Set**
+•  500 Swim as 100H/100E, 75H/75E, 50H/50E, 25H/25E 
+**Main Set**
+•  16x50 Swim in :43 (5%) on 1:00 8x25 Swim in :20 (10%) on :35 2x100 Swim in 1:30 (CS) on 1:40 200 Swim in 3:03–3:06 (Z2) on 3:20 12x50 Swim in :43 (5%) on 1:00 
+**Cool-Down**
+•  4x25 Scull – Take 5s 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 7,
+          title: 'Endurance Build #3',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  500 as: - 300 Swim @50-60% - 4x25 Kick - Take 5-10s - 4x25 Swim as 12.5 HARD / 12.5 EASY - Take 5-10s 
+**Drill Set**
+•  - Take 5-10s after each 50 6x50 as: - ODDS: Catch-Up Drill - EVENS: 6-Kick Switch Drill 
+**Pre-Set**
+•  500 Pull/Paddles as 100H/100E, 75H/75E, 50H/50E, 25H/25E 
+**Main Set**
+•  5x400 - Take 15-20s after each, as: #1 - @70% br3 #2 - in 6:06–6:11 (Z2) #3 - @70% br3 #4 - in 5:59–6:04 (CS) #5 - Paddles @70% br3 
+**Cool-Down**
+•  4x25 Catch-Up Drill - Take 5s 100 Swim br 3/5/7/3 by 25
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 8,
+          title: 'Speed and Power #3',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  500 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 100 Pull @60-70% - 4x25 Swim, sight every 6 strokes - Take 5-10s 
+**Drill Set**
+•  6x50 Swim - Take 10s, as: - ODDS: @70% br3 - EVENS: Build from 70% to 90% 
+**Pre-Set**
+•  10x50 - Take 10-15s, as: - ODDS: Swim @70% w/ OVER-Kick - EVENS: Pull @70-80% 
+**Main Set**
+•  3x300 Swim in 4:34–4:38 (Z2) on 4:50 4x200 Pull, as: - ODDS: @80% - EVENS: Negative split 6x50 Swim :43 (5%) on 1:00 
+**Cool-Down**
+•  2x50 EASY Swim br3 - Take 10s 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 10,
+          title: 'Endurance Build #4',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  700 as: - 200 @50-70% - 200 Pull @70% - 4x50 Swim in :45 (CS) on :55 - 4x25 FAST - Take 10s 
+**Drill Set**
+•  6x(25 Front Scull / 25 Swim) - Take 10s 
+**Pre-Set**
+•  600 Swim as 25H / 25E 
+**Main Set**
+•  4x200 Pull/Paddles @70-80% - Take 20s 8x50 BAND - Take 15s 5x100 Pull @80-90% - Take 20s 
+**Cool-Down**
+•  200 Swim br 3/5/3/7
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 11,
+          title: 'Speed and Power #4',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  700 as: - 200 Swim @50-60% - 200 Pull @60-70% - 4x25 Kick - Take 5s - 200 Swim @70% 
+**Drill Set**
+•  6x(25 FIST Drill / 25 Swim) - Take 10s 
+**Pre-Set**
+•  6x(25 Swim w/ OVER-Kick / 25 Swim limit kick) - Take 10s 6x(25 Press Your Buoy Drill / 25 Swim) - Take 10s 
+**Main Set**
+•  12x50 Swim in :41 (10%) on 1:00 100 EASY Pull 5x100 Swim on 1:45, as: #1 in 1:32 (Z2) #2 in 1:30 (CS) #3 in 1:26 (5%) #4 in 1:32 (Z2) #5 in 1:21 (10%) 100 EASY Pull 2x200 Paddles @80% - Take 15s 
+**Cool-Down**
+•  4x25 FIST Drill 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 12,
+          title: 'Open Water Skills #4',
+          yardage_options: [4099],
+          descriptions: {
+            4099: `
+**Warm-Up**
+  -  600 as: - 200 Swim @50-70% - 200 Pull @70% - 4x25 Kick - Take 5s - 4x25 FAST - Take 10s 
+**Drill Set**
+•  8x50 - Take 10s, as: - ODDS: 25 Finger Tip Drag / 25 Swim - EVENS: 25 HIGH Turnover / 25 Swim 
+**Pre-Set**
+•  10x50 Swim in :45 (CS) on :55 
+**Main Set**
+•  3x800 - Take 30-45s, as: - 400 @70-80% - 300 @80%, sight each 25 - 100 @80-90% 
+**Cool-Down**
+•  4x25 Finger Tip Drag 100 Choice
+
+**Total: 4,099 yards (3,749 meters)**`,
+          },
+          estimated_tss: {4099: 83},
+          estimated_duration: {4099: 4311}
+        },
+        {
+          number: 13,
+          title: 'Endurance Build #5',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  700 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 4x25 Swim as 12.5H / 12.5E - 200 Pull @70% - 4x25 Press Your Buoy Drill 
+**Drill Set**
+•  8x50 - Take 10s, as: - ODDS: 25 Catch Up Drill / 25 Swim - EVENS: 25 6-Kick Switch Drill / 25 Swim 
+**Pre-Set**
+•  600 Swim as 50H / 25E 
+**Main Set**
+•  6x100 as 25 Single Arm Drill, 75 Swim - Take 15s 4x200 Swim in 3:03–3:06 (Z2) on 3:20 4x50 Swim w/ Fins @50-70% - Take 10s 
+**Cool-Down**
+•  100 EASY Backstroke 100 EASY Swim
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 14,
+          title: 'Speed and Power #5',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  900 as: - 200 Swim @50-70% - 200 Pull @70% - 8x25 Swim, descend 1-4, 5-8 - Take 5-10s - 6x50 Swim in :46 (Z2) on 1:00 
+**Drill Set**
+•  8x50 - Take 10s, as: - ODDS: 25 FIST Drill / 25 Swim - EVENS: 25 HORNS Drill / 25 Swim 
+**Pre-Set**
+•  8x50 Swim in :45 (CS) on :55 
+**Main Set**
+•  2x300 Swim in 4:34–4:38 (Z2) on 4:50 100 EASY 6x100 Swim on 1:40 as: - ODDS: in 1:21 (10%) - EVENS: in 1:30 (CS) 100 EASY 8x25 in :20 (10%) on :35 
+**Cool-Down**
+•  50 FIST Drill 50 HORNS Drill 100 EASY Swim
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 16,
+          title: 'Endurance Build #6',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  750 as: - 200 Swim @50-70% - 6x25 Catch Up Drill - Take 5s - 4x50 Swim, descend 1-3, 4 EASY - Take 10s - 200 Pull @70% 
+**Drill Set**
+•  6x50 - Take 10s, as: - ODDS: 25 Press Your Buoy Drill / 25 Swim - EVENS: 25 HORNS / 25 Swim 
+**Pre-Set**
+•  6x75 Swim in 1:07 (CS) on 1:20 
+**Main Set**
+•  4x100 Swim in 1:30 (CS) on 1:40 2x300 Swim in 4:34–4:38 (Z2) on 4:50, sight each 25 4x200 Swim on 3:20 as: - ODDS: in 2:59–3:02 (CS) - EVENS: in 3:08–3:11 (Z1) 
+**Cool-Down**
+•  200 EASY Pull
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 17,
+          title: 'Speed and Power #6',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  600 as: - 200 Swim @50-70% - 4x25 Kick - Take 5-10s - 4x25 Swim FAST - Take 10s - 200 Pull @70% 
+**Drill Set**
+•  6x50 - Take 10s, as: - ODDS: 25 Single-arm Drill (Left) / 25 Single-arm Drill (Right) - EVENS: 25 Catch Up Drill / 25 Swim 
+**Pre-Set**
+•  Four Times Through... - 25 Kick HARD (use a buoy as the board) - 50 Pull @80% - Take 15s 
+**Main Set**
+•  12x25 Swim in :20 (10%) on :35 12x50 Swim in :43 (5%) on 1:00 3x400 Swim in 6:06–6:11 (Z2) on 6:30 
+**Cool-Down**
+•  100 Backstroke - STRETCH it out 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 18,
+          title: 'Open Water Skills #6',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  700 as: - 200 Swim @50-70% - 3x100 Pull @70% - Take 10s - 4x50 Swim, sight once each 25 
+**Drill Set**
+•  Four Times Through... - 50 Swim, sight every 6 strokes - Take 5s - 50 Swim, br3 - Take 10s 
+**Pre-Set**
+•  400 Pull as 25 HARD / 25 EASY 
+**Main Set**
+•  800 Pull @70%, sight once each 25 - Take 30s 4x100 Swim in 1:32 (Z2) on 1:45 400 Pull/Paddles @70% - Take 20s 4x50 Swim in :43 (5%) on 1:00 
+**Cool-Down**
+•  200 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 19,
+          title: 'Endurance Build #7',
+          yardage_options: [3599],
+          descriptions: {
+            3599: `
+**Warm-Up**
+  -  600 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 4x25 Swim, descend 1-3 from steady to HARD, 4 EASY - 200 Pull @70% 
+**Drill Set**
+•  6x50 - Take 10s, as: - ODDS: 25 Press Your Buoy Drill / 25 Swim - EVENS: 6-Kick Switch, focusing on body rotation 
+**Pre-Set**
+•  500 Pull as 25 HARD / 25 EASY 
+**Main Set**
+•  6x100 Swim in 1:32 (Z2) on 1:45 5x100 Swim in 1:30 (CS) on 1:40 4x100 Swim in 1:26 (5%) on 1:40 3x100 Swim in 1:21 (10%) on 1:40 4x50 Swim in :43 (5%) on 1:00 
+**Cool-Down**
+•  4x25 Press Your Buoy - Take 10s 100 Choice
+
+**Total: 3,599 yards (3,291 meters)**`,
+          },
+          estimated_tss: {3599: 73},
+          estimated_duration: {3599: 3784}
+        },
+        {
+          number: 20,
+          title: 'Speed and Power #7',
+          yardage_options: [3999],
+          descriptions: {
+            3999: `
+**Warm-Up**
+  -  700 as: - 200 Swim @50-70% - 200 Pull @70% - 4x25 Kick - Take 10s - 4x50 Swim - Take 10s, descend 1-3, 4 EASY 
+**Drill Set**
+•  6x50 as 25 Scull / 25 Swim - Take 10s 
+**Pre-Set**
+•  Four Times Through… - 50 Pull @90 - Take 10s - 50 EASY Pull - Take 10s 
+**Main Set**
+•  12x50 Swim in :41 (10%) on 1:00 100 EASY Pull 6x100 Swim in 1:26 (5%) on 1:45 100 EASY Pull 5x200 Swim in 2:59–3:02 (CS) on 3:15 100 EASY Pull 
+**Cool-Down**
+•  100 Choice
+
+**Total: 3,999 yards (3,657 meters)**`,
+          },
+          estimated_tss: {3999: 81},
+          estimated_duration: {3999: 4205}
+        },
+        {
+          number: 21,
+          title: 'Open Water Skills #7',
+          yardage_options: [3799],
+          descriptions: {
+            3799: `
+**Warm-Up**
+  -  800 as: - 300 Swim @50-70% - 200 Pull @70% - 4x25 Kick - Take 5-10s - 4x25 HARD Swim - Take 10s - 100 Swim @70% 
+**Drill Set**
+•  6x50 - Take 10s, as: - 25 Swim w/ an OVER-Kick - 25 Swim, sighting every 6 strokes 
+**Pre-Set**
+•  Four Times Through... - 25 in :20 (10%) on :35 - 50 in :43 (5%) on 1:00 - 75 in 1:07 (CS) on 1:20 
+**Main Set**
+•  4x50 Swim in :43 (5%) on 1:00 4x400 Pull @80%, sighting every 8 strokes - Take 20s 4x50 Swim in :43 (5%) on 1:00 
+**Cool-Down**
+•  100 Choice
+
+**Total: 3,799 yards (3,474 meters)**`,
+          },
+          estimated_tss: {3799: 77},
+          estimated_duration: {3799: 3995}
+        },
+        {
+          number: 22,
+          title: 'Endurance Build #8',
+          yardage_options: [3499],
+          descriptions: {
+            3499: `
+**Warm-Up**
+  -  600 as: - 200 Swim @50-70% - 4x25 Kick - Take 5s - 4x25 Pull, descend 1-3, 4 EASY - 200 Swim @70% 
+**Drill Set**
+•  6x50 - Take 10s, as: - ODDS: 25 Catch Up Drill / 25 Swim - EVENS: 25 Backstroke / 25 Swim 
+**Pre-Set**
+•  5x100 - Take 10-15s, as: 25@90%, 50@80%, 25@70% 
+**Main Set**
+•  2x400 Swim in 6:06–6:11 (Z2) on 6:25 100 EASY Pull 6x100 Swim as: - ODDS: in 1:30 (CS) on 1:40 - EVENS: in 1:35 (Z1) on 1:45 100 EASY Pull 6x50 Swim in :41 (10%) on 1:00 
+**Cool-Down**
+•  4x25 Catch Up Drill - Take 5s 100 Choice
+
+**Total: 3,499 yards (3,200 meters)**`,
+          },
+          estimated_tss: {3499: 71},
+          estimated_duration: {3499: 3679}
+        },
+        {
+          number: 23,
+          title: 'Speed and Power #8',
+          yardage_options: [3699],
+          descriptions: {
+            3699: `
+**Warm-Up**
+  -  700 as: - 200 Swim @50-70% - 200 Pull @70% - 4x25 HARD - Take 10s - 200 Swim @70% 
+**Drill Set**
+•  8x50 - Take 10s, as: - ODDS: 25 Finger Tip Drill / 25 Swim - EVENS: br3 
+**Pre-Set**
+•  500 Pull as 100H/100E, 75H/75E, 50H/50E, 25H/25E 
+**Main Set**
+•  8x100 Swim in 1:26 (5%) on 1:40 100 EASY Pull 4x200 Swim in 2:59–3:02 (CS) on 3:15 100 EASY Pull 4x50 Swim in :41 (10%) on 1:00 
+**Cool-Down**
+•  100 Choice
+
+**Total: 3,699 yards (3,383 meters)**`,
+          },
+          estimated_tss: {3699: 75},
+          estimated_duration: {3699: 3890}
+        }
+      ]
+    };
+
+    // Week planner state
+    // Multi-week planning structure
+    let weekPlan = {}; // { 'YYYY-MM-DD': { days: {...} } }
+    let currentViewWeekIndex = 0; // Current week being viewed
+    let availableWeeks = []; // List of available week start dates
+    const MAX_WEEKS_AHEAD = 24; // Can plan up to 24 weeks ahead
+    const WEEKS_TO_SHOW = 2; // Show 2 weeks at a time
+
+    // Format seconds to MM:SS
+    function formatTime(seconds) {
+      if (!seconds) return 'Not set';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Format pace per 100m to pace per 100y (if needed)
+    function formatPace(seconds, unit = '100m') {
+      if (!seconds) return 'Not set';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')} / ${unit}`;
+    }
+
+    // Load athlete info and CSS
+    async function loadAthleteInfo() {
+      if (!athleteId) {
+        document.getElementById('athleteName').textContent = 'No athlete selected';
+        document.getElementById('cssDisplay').innerHTML = '<span class="text-danger">N/A</span>';
+        return;
+      }
+
+      try {
+        // Fetch athlete profile
+        const response = await axios.get(`/api/coach/athlete/${athleteId}/profile`);
+        
+        if (response.data && response.data.athlete_id) {
+          const profile = response.data;
+          
+          // Display athlete name
+          document.getElementById('athleteName').textContent = 
+            `Athlete: ${profile.name || 'Unknown'} (${athleteId})`;
+          
+          // Display CSS (Critical Swim Speed) - stored as swim_pace_per_100 in seconds
+          const css = profile.swim_pace_per_100;
+          
+          if (css && css > 0) {
+            // Display main CSS
+            document.getElementById('cssDisplay').innerHTML = formatPace(css, '100m');
+            document.getElementById('cssSeconds').textContent = `(${css} seconds per 100m)`;
+            
+            // Show info card
+            document.getElementById('cssInfo').style.display = 'block';
+            document.getElementById('cssPace').textContent = formatPace(css, '100m');
+          } else {
+            // No CSS set
+            document.getElementById('cssDisplay').innerHTML = 
+              '<span class="text-warning">Not Set</span>';
+            document.getElementById('cssSeconds').textContent = 
+              'Update in athlete profile';
+          }
+        } else {
+          // Profile not found or no data
+          document.getElementById('athleteName').textContent = `Athlete ID: ${athleteId}`;
+          document.getElementById('cssDisplay').innerHTML = 
+            '<span class="text-warning">No Profile</span>';
+          document.getElementById('cssSeconds').textContent = 
+            'Create profile first';
+        }
+      } catch (error) {
+        console.error('Error loading athlete:', error);
+        document.getElementById('athleteName').textContent = `Athlete ID: ${athleteId}`;
+        document.getElementById('cssDisplay').innerHTML = 
+          '<span class="text-danger">Error</span>';
+        document.getElementById('cssSeconds').textContent = 
+          error.response?.data?.error || error.message;
+      }
+    }
+
+    function goToProfile() {
+      window.location.href = `/static/athlete-profile.html?athlete=${athleteId}`;
+    }
+
+    function selectFeature(feature) {
+      alert(`You selected: ${feature}\n\nTell me what you want this feature to do and I'll build it!`);
+    }
+
+    // Get week range (Sunday to Saturday)
+    function getWeekRange(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const sunday = new Date(d);
+      sunday.setDate(d.getDate() - day);
+      const saturday = new Date(sunday);
+      saturday.setDate(sunday.getDate() + 6);
+      
+      return {
+        start: sunday,
+        end: saturday,
+        days: Array.from({ length: 7 }, (_, i) => {
+          const day = new Date(sunday);
+          day.setDate(sunday.getDate() + i);
+          return day;
+        })
+      };
+    }
+
+    // Format date for display
+    function formatDate(date) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${months[date.getMonth()]} ${date.getDate()}`;
+    }
+
+    // Format duration (seconds to h:mm:ss or mm:ss)
+    function formatDuration(seconds) {
+      if (!seconds || seconds === 0) return '-';
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      if (hours > 0) {
+        return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Format distance with commas
+    function formatDistance(yards) {
+      if (!yards || yards === 0) return '-';
+      return yards.toLocaleString();
+    }
+
+    // Create workout cell HTML
+    function createWorkoutCell(workout, date) {
+      if (!workout) {
+        return `
+          <td class="workout-cell empty">
+            <div class="date-header">${formatDate(date)}</div>
+            <div>-</div>
+          </td>
+        `;
+      }
+
+      const isCompleted = workout.completed;
+      const cellClass = isCompleted ? 'completed' : 'planned';
+      const statusIcon = isCompleted ? '✅' : '📅';
+      
+      const duration = isCompleted ? workout.duration_actual : workout.duration_planned;
+      const distance = isCompleted ? workout.distance_actual : workout.distance_planned;
+      const tss = isCompleted ? workout.tss_actual : workout.tss_planned;
+
+      return `
+        <td class="workout-cell ${cellClass}">
+          <div class="date-header">${formatDate(date)}</div>
+          <span class="workout-status">${statusIcon}</span>
+          <span class="workout-title">${workout.title || 'Swim'}</span>
+          <div class="workout-data">
+            <i class="fas fa-clock" style="width: 12px;"></i> ${formatDuration(duration)}
+          </div>
+          <div class="workout-data">
+            <i class="fas fa-ruler" style="width: 12px;"></i> ${formatDistance(distance)} yds
+          </div>
+          <div class="workout-data">
+            <i class="fas fa-chart-line" style="width: 12px;"></i> ${tss || '-'} TSS
+          </div>
+        </td>
+      `;
+    }
+
+    // Refresh workouts function
+    function refreshWorkouts() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      const originalHTML = refreshBtn.innerHTML;
+      
+      // Disable button and show spinning icon
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+      
+      // Hide error if showing
+      document.getElementById('workoutsError').style.display = 'none';
+      
+      // Show loading state
+      document.getElementById('workoutsContent').style.display = 'none';
+      document.getElementById('loadingWorkouts').style.display = 'block';
+      
+      // Reload workouts
+      loadSwimWorkouts().finally(() => {
+        // Re-enable button after load completes
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalHTML;
+      });
+    }
+
+    // Load swim workouts from TrainingPeaks
+    async function loadSwimWorkouts() {
+      if (!athleteId) {
+        document.getElementById('loadingWorkouts').style.display = 'none';
+        document.getElementById('workoutsError').style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'No athlete ID provided';
+        return;
+      }
+
+      try {
+        // Calculate date ranges
+        const today = new Date();
+        const currentWeek = getWeekRange(today);
+        const prevWeekStart = new Date(currentWeek.start);
+        prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+        const previousWeek = getWeekRange(prevWeekStart);
+
+        // Update headers
+        document.getElementById('prevWeekHeader').textContent = 
+          `Previous Week (${formatDate(previousWeek.start)} - ${formatDate(previousWeek.end)})`;
+        document.getElementById('currentWeekHeader').textContent = 
+          `Current Week (${formatDate(currentWeek.start)} - ${formatDate(currentWeek.end)})`;
+
+        // Fetch workouts from TrainingPeaks
+        const startDate = previousWeek.start.toISOString().split('T')[0];
+        const endDate = currentWeek.end.toISOString().split('T')[0];
+
+        console.log(`🏊 Fetching swim workouts for athlete ${athleteId}`);
+        console.log(`📅 Date range: ${startDate} to ${endDate}`);
+        console.log(`🔗 API URL: /api/swim/workouts/${athleteId}?start_date=${startDate}&end_date=${endDate}`);
+
+        const response = await axios.get(`/api/swim/workouts/${athleteId}`, {
+          params: {
+            start_date: startDate,
+            end_date: endDate
+          }
+        });
+
+        console.log('📥 API Response:', response.data);
+
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'Failed to load workouts');
+        }
+
+        const workouts = response.data.workouts || [];
+        console.log(`✅ Loaded ${workouts.length} swim workouts`);
+        console.log('📋 Workouts:', workouts);
+
+        // Group workouts by date
+        const workoutsByDate = {};
+        workouts.forEach(workout => {
+          let date = workout.workout_date || workout.WorkoutDay;
+          // Strip time from date if present (e.g., "2026-02-22T00:00:00" -> "2026-02-22")
+          if (date && date.includes('T')) {
+            date = date.split('T')[0];
+          }
+          console.log(`📆 Workout date: ${workout.workout_date} -> ${date}, Title: ${workout.title}`);
+          workoutsByDate[date] = workout;
+        });
+        console.log('🗂️ Workouts grouped by date:', workoutsByDate);
+
+        // Build previous week table
+        let prevWeekHtml = '<tr>';
+        console.log('🗓️ Previous week dates:');
+        previousWeek.days.forEach(day => {
+          const dateStr = day.toISOString().split('T')[0];
+          const workout = workoutsByDate[dateStr];
+          console.log(`  ${dateStr}: ${workout ? '✅ Found' : '❌ Not found'}`);
+          prevWeekHtml += createWorkoutCell(workout, day);
+        });
+        prevWeekHtml += '</tr>';
+        document.getElementById('prevWeekBody').innerHTML = prevWeekHtml;
+
+        // Build current week table
+        let currentWeekHtml = '<tr>';
+        console.log('🗓️ Current week dates:');
+        currentWeek.days.forEach(day => {
+          const dateStr = day.toISOString().split('T')[0];
+          const workout = workoutsByDate[dateStr];
+          console.log(`  ${dateStr}: ${workout ? '✅ Found' : '❌ Not found'}`);
+          currentWeekHtml += createWorkoutCell(workout, day);
+        });
+        currentWeekHtml += '</tr>';
+        document.getElementById('currentWeekBody').innerHTML = currentWeekHtml;
+
+        // Show workouts content
+        document.getElementById('loadingWorkouts').style.display = 'none';
+        document.getElementById('workoutsContent').style.display = 'block';
+
+      } catch (error) {
+        console.error('Error loading swim workouts:', error);
+        
+        // Show error message
+        document.getElementById('loadingWorkouts').style.display = 'none';
+        document.getElementById('workoutsError').style.display = 'block';
+        
+        // Check if it's an auth error
+        if (error.response?.status === 401 || error.response?.data?.status === 401) {
+          document.getElementById('workoutsError').className = 'alert alert-danger';
+          document.getElementById('errorMessage').innerHTML = 
+            '<strong>❌ Authentication Required:</strong> Your TrainingPeaks coach token has expired. ' +
+            'Please <a href="/static/tp-connect-production" target="_blank" class="alert-link"><strong>click here to re-authenticate</strong></a> ' +
+            'and then refresh this page to see your swim workouts.';
+        } else {
+          document.getElementById('errorMessage').textContent = 
+            error.response?.data?.error || error.message || 'Failed to load workouts from TrainingPeaks';
+        }
+      }
+    }
+
+    // Initialize week planner
+    function initWeekPlanner(cssKey) {
+      const library = workoutLibrary[cssKey] || [];
+      document.getElementById('libraryCSS').textContent = cssKey;
+      document.getElementById('workoutCount').textContent = library.length;
+      
+      // Generate available weeks (current week + next 23 weeks = 24 total)
+      availableWeeks = [];
+      const today = new Date();
+      const currentDay = today.getDay();
+      
+      // Find this week's Sunday
+      const thisWeekSunday = new Date(today);
+      thisWeekSunday.setDate(today.getDate() - currentDay);
+      
+      // Generate weeks
+      for (let i = 0; i < MAX_WEEKS_AHEAD; i++) {
+        const weekStart = new Date(thisWeekSunday);
+        weekStart.setDate(thisWeekSunday.getDate() + (i * 7));
+        availableWeeks.push(weekStart);
+        
+        // Initialize week plan for this week
+        const weekKey = formatDateKey(weekStart);
+        if (!weekPlan[weekKey]) {
+          weekPlan[weekKey] = { days: {} };
+          const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+          days.forEach(day => {
+            weekPlan[weekKey].days[day] = { workout: null, yardage: null };
+          });
+        }
+      }
+      
+      // Populate week selector
+      populateWeekSelector();
+      
+      // Start at next week (index 1)
+      currentViewWeekIndex = 1;
+      renderWeekView();
+    }
+    
+    function formatDateKey(date) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    function populateWeekSelector() {
+      const selector = document.getElementById('weekSelector');
+      selector.innerHTML = '';
+      
+      availableWeeks.forEach((weekStart, index) => {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        let label = '';
+        const today = new Date();
+        const currentWeekIndex = availableWeeks.findIndex(w => {
+          const thisDay = today.getDay();
+          const thisWeekSunday = new Date(today);
+          thisWeekSunday.setDate(today.getDate() - thisDay);
+          return formatDateKey(w) === formatDateKey(thisWeekSunday);
+        });
+        
+        if (index === currentWeekIndex) {
+          label = `This Week (${formatDate(weekStart)} - ${formatDate(weekEnd)})`;
+        } else if (index === currentWeekIndex + 1) {
+          label = `Next Week (${formatDate(weekStart)} - ${formatDate(weekEnd)})`;
+        } else if (index < currentWeekIndex) {
+          const weeksAgo = currentWeekIndex - index;
+          label = `${weeksAgo} week${weeksAgo > 1 ? 's' : ''} ago (${formatDate(weekStart)} - ${formatDate(weekEnd)})`;
+        } else {
+          const weeksAhead = index - currentWeekIndex;
+          label = `In ${weeksAhead} week${weeksAhead > 1 ? 's' : ''} (${formatDate(weekStart)} - ${formatDate(weekEnd)})`;
+        }
+        
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = label;
+        selector.appendChild(option);
+      });
+      
+      selector.value = currentViewWeekIndex;
+    }
+    
+    function changeSelectedWeek() {
+      currentViewWeekIndex = parseInt(document.getElementById('weekSelector').value);
+      renderWeekView();
+    }
+    
+    function showPreviousWeek() {
+      if (currentViewWeekIndex > 0) {
+        currentViewWeekIndex--;
+        document.getElementById('weekSelector').value = currentViewWeekIndex;
+        renderWeekView();
+      }
+    }
+    
+    function showNextWeek() {
+      if (currentViewWeekIndex < availableWeeks.length - 1) {
+        currentViewWeekIndex++;
+        document.getElementById('weekSelector').value = currentViewWeekIndex;
+        renderWeekView();
+      }
+    }
+    
+    function renderWeekView() {
+      const cssKey = document.getElementById('libraryCSS').textContent;
+      const library = workoutLibrary[cssKey] || [];
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      // Determine which weeks to show (current + next if available)
+      const weeksToRender = [];
+      weeksToRender.push(currentViewWeekIndex);
+      if (currentViewWeekIndex + 1 < availableWeeks.length) {
+        weeksToRender.push(currentViewWeekIndex + 1);
+      }
+      
+      // Update current week display
+      const firstWeek = availableWeeks[weeksToRender[0]];
+      const lastWeek = availableWeeks[weeksToRender[weeksToRender.length - 1]];
+      const lastWeekEnd = new Date(lastWeek);
+      lastWeekEnd.setDate(lastWeek.getDate() + 6);
+      document.getElementById('currentWeekDisplay').textContent = 
+        `${formatDate(firstWeek)} - ${formatDate(lastWeekEnd)} (${weeksToRender.length} week${weeksToRender.length > 1 ? 's' : ''})`;
+      
+      // Build accordion HTML
+      let html = '<div class="accordion" id="weekAccordionContainer">';
+      
+      weeksToRender.forEach((weekIndex, accordionIndex) => {
+        const weekStart = availableWeeks[weekIndex];
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        const weekKey = formatDateKey(weekStart);
+        const weekData = weekPlan[weekKey];
+        
+        // Count scheduled workouts for this week
+        let scheduledCount = 0;
+        Object.values(weekData.days).forEach(day => {
+          if (day.workout && day.yardage) scheduledCount++;
+        });
+        
+        html += `
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading${weekIndex}">
+              <button class="accordion-button ${accordionIndex === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${weekIndex}" aria-expanded="${accordionIndex === 0 ? 'true' : 'false'}" aria-controls="collapse${weekIndex}">
+                <strong><i class="fas fa-calendar-week me-2"></i>${formatDate(weekStart)} - ${formatDate(weekEnd)}</strong>
+                <span class="ms-3 badge bg-${scheduledCount > 0 ? 'success' : 'secondary'}">${scheduledCount} workout${scheduledCount !== 1 ? 's' : ''}</span>
+              </button>
+            </h2>
+            <div id="collapse${weekIndex}" class="accordion-collapse collapse ${accordionIndex === 0 ? 'show' : ''}" aria-labelledby="heading${weekIndex}" data-bs-parent="#weekAccordionContainer">
+              <div class="accordion-body">
+                <table class="table table-sm table-bordered mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 20%;">Day</th>
+                      <th style="width: 40%;">Workout</th>
+                      <th style="width: 40%;">Yardage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+        `;
+        
+        days.forEach((day, dayIndex) => {
+          const dayDate = new Date(weekStart);
+          dayDate.setDate(weekStart.getDate() + dayIndex);
+          const plan = weekData.days[day];
+          
+          html += `
+            <tr>
+              <td>
+                <strong>${dayLabels[dayIndex]}</strong><br>
+                <small class="text-muted">${formatDate(dayDate)}</small>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" id="workout_${weekKey}_${day}" onchange="updateWeekPlan('${weekKey}', '${day}', 'workout', this.value)">
+                  <option value="">-- Select Workout --</option>
+                  ${library.map(w => 
+                    `<option value="${w.number}" ${plan.workout === w.number ? 'selected' : ''}>#${w.number} - ${w.title}</option>`
+                  ).join('')}
+                </select>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" id="yardage_${weekKey}_${day}" onchange="updateWeekPlan('${weekKey}', '${day}', 'yardage', this.value)" ${!plan.workout ? 'disabled' : ''}>
+                  <option value="">-- Select Yardage --</option>
+          `;
+          
+          // Add yardage options if workout is selected
+          if (plan.workout) {
+            const workout = library.find(w => w.number === plan.workout);
+            if (workout && workout.yardage_options) {
+              workout.yardage_options.forEach(y => {
+                html += `<option value="${y}" ${plan.yardage === y ? 'selected' : ''}>${y.toLocaleString()} yards</option>`;
+              });
+            }
+          }
+          
+          html += `
+                </select>
+              </td>
+            </tr>
+          `;
+        });
+        
+        html += `
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      document.getElementById('weekAccordion').innerHTML = html;
+      
+      // Update summary
+      updateScheduleSummary();
+      
+      // Update button states
+      document.getElementById('prevWeekBtn').disabled = currentViewWeekIndex === 0;
+      document.getElementById('nextWeekBtn').disabled = currentViewWeekIndex >= availableWeeks.length - 1;
+    }
+    
+    function updateWeekPlan(weekKey, day, field, value) {
+      if (field === 'workout') {
+        weekPlan[weekKey].days[day].workout = value ? parseInt(value) : null;
+        weekPlan[weekKey].days[day].yardage = null; // Reset yardage when workout changes
+        
+        // Update yardage dropdown
+        const yardageSelect = document.getElementById(`yardage_${weekKey}_${day}`);
+        if (value) {
+          const cssKey = document.getElementById('libraryCSS').textContent;
+          const library = workoutLibrary[cssKey] || [];
+          const workout = library.find(w => w.number === parseInt(value));
+          
+          if (workout && workout.yardage_options) {
+            yardageSelect.disabled = false;
+            yardageSelect.innerHTML = '<option value="">-- Select Yardage --</option>' +
+              workout.yardage_options.map(y => `<option value="${y}">${y.toLocaleString()} yards</option>`).join('');
+          } else {
+            yardageSelect.disabled = true;
+            yardageSelect.innerHTML = '<option value="">No options</option>';
+          }
+        } else {
+          yardageSelect.disabled = true;
+          yardageSelect.innerHTML = '<option value="">-- Select Yardage --</option>';
+        }
+      } else if (field === 'yardage') {
+        weekPlan[weekKey].days[day].yardage = value ? parseInt(value) : null;
+      }
+      
+      // Re-render to update badge counts
+      renderWeekView();
+    }
+    
+    function updateScheduleSummary() {
+      const cssKey = document.getElementById('libraryCSS').textContent;
+      const library = workoutLibrary[cssKey] || [];
+      
+      let totalWorkouts = 0;
+      let weeksWithWorkouts = new Set();
+      let summaryHTML = '';
+      
+      Object.keys(weekPlan).forEach(weekKey => {
+        const weekData = weekPlan[weekKey];
+        const weekWorkouts = [];
+        
+        Object.entries(weekData.days).forEach(([day, plan]) => {
+          if (plan.workout && plan.yardage) {
+            totalWorkouts++;
+            weeksWithWorkouts.add(weekKey);
+            
+            const workout = library.find(w => w.number === plan.workout);
+            if (workout) {
+              weekWorkouts.push({
+                day: day,
+                title: workout.title,
+                number: workout.number,
+                yardage: plan.yardage
+              });
+            }
+          }
+        });
+        
+        if (weekWorkouts.length > 0) {
+          const weekDate = new Date(weekKey);
+          const weekEnd = new Date(weekDate);
+          weekEnd.setDate(weekDate.getDate() + 6);
+          
+          summaryHTML += `<div class="mb-2"><strong>${formatDate(weekDate)} - ${formatDate(weekEnd)}:</strong><br>`;
+          weekWorkouts.forEach(w => {
+            summaryHTML += `<small class="text-muted ms-3">• ${w.day.charAt(0).toUpperCase() + w.day.slice(1)}: #${w.number} - ${w.title} (${w.yardage.toLocaleString()} yds)</small><br>`;
+          });
+          summaryHTML += '</div>';
+        }
+      });
+      
+      if (totalWorkouts === 0) {
+        summaryHTML = '<em class="text-muted">No workouts scheduled yet</em>';
+      }
+      
+      document.getElementById('scheduleSummary').innerHTML = summaryHTML;
+      document.getElementById('totalWorkoutsCount').textContent = totalWorkouts;
+      document.getElementById('totalWeeksCount').textContent = weeksWithWorkouts.size;
+    }
+    
+    function clearWeekPlan() {
+      if (!confirm('Clear all scheduled workouts?')) return;
+      
+      // Reset all week plans
+      Object.keys(weekPlan).forEach(weekKey => {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        days.forEach(day => {
+          weekPlan[weekKey].days[day] = { workout: null, yardage: null };
+        });
+      });
+      
+      renderWeekView();
+      console.log('All week plans cleared');
+    }
+
+    async function pushToTrainingPeaks() {
+      if (!athleteId) {
+        alert('No athlete selected');
+        return;
+      }
+
+      // Count total selected workouts across all weeks
+      let totalSelected = 0;
+      Object.keys(weekPlan).forEach(weekKey => {
+        Object.values(weekPlan[weekKey].days).forEach(day => {
+          if (day.workout && day.yardage) totalSelected++;
+        });
+      });
+
+      if (totalSelected === 0) {
+        alert('Please select at least one workout with yardage before pushing to TrainingPeaks.');
+        return;
+      }
+
+      const pushButton = document.getElementById('pushButton');
+      pushButton.disabled = true;
+      pushButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Pushing...';
+
+      try {
+        // Get CSS key and library
+        const cssKey = document.getElementById('libraryCSS').textContent;
+        const library = workoutLibrary[cssKey] || [];
+
+        // Build workout list for all weeks
+        const workoutsToCreate = [];
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        
+        Object.keys(weekPlan).forEach(weekKey => {
+          const weekStart = new Date(weekKey);
+          
+          days.forEach((day, dayOffset) => {
+            const plan = weekPlan[weekKey].days[day];
+            if (plan.workout && plan.yardage) {
+              const workout = library.find(w => w.number === plan.workout);
+              if (workout) {
+                const workoutDate = new Date(weekStart);
+                workoutDate.setDate(weekStart.getDate() + dayOffset);
+                
+                // Strip markdown from description
+                let description = workout.descriptions[plan.yardage] || '';
+                description = description
+                  .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove bold
+                  .replace(/\*([^*]+)\*/g, '$1')      // Remove italic
+                  .replace(/#{1,6}\s+/g, '')          // Remove headers
+                  .trim();
+                
+                workoutsToCreate.push({
+                  date: workoutDate.toISOString().split('T')[0],
+                  title: `${workout.title} [WKT #${workout.number}]`,
+                  description: description,
+                  distance: Math.round(plan.yardage * 0.9144), // Convert yards to meters
+                  tss: workout.estimated_tss[plan.yardage],
+                  duration: workout.estimated_duration[plan.yardage]
+                });
+              }
+            }
+          });
+        });
+
+        console.log('🚀 Pushing workouts to TrainingPeaks:', workoutsToCreate);
+
+        // Call API to push workouts
+        const response = await axios.post('/api/swim/push-workouts', {
+          athlete_id: athleteId,
+          workouts: workoutsToCreate
+        });
+
+        console.log('📥 Push API Response:', response.data);
+
+        if (response.data.success) {
+          alert(`✅ Success! Pushed ${workoutsToCreate.length} workout(s) to TrainingPeaks.\n\n${response.data.message || ''}`);
+          
+          // Clear the plan after successful push
+          clearWeekPlan();
+          
+          // Reload workouts to show the new ones
+          loadSwimWorkouts();
+        } else {
+          // Show detailed error information
+          console.error('❌ Push failed:', response.data);
+          let errorMsg = `Failed to push workouts:\n\n`;
+          errorMsg += `Success: ${response.data.summary.success}/${response.data.summary.total}\n`;
+          if (response.data.errors && response.data.errors.length > 0) {
+            errorMsg += `\nErrors:\n`;
+            response.data.errors.forEach(err => {
+              errorMsg += `- ${err.date} ${err.title}: ${err.error}\n`;
+            });
+          }
+          throw new Error(errorMsg);
+        }
+      } catch (error) {
+        console.error('Error pushing to TrainingPeaks:', error);
+        alert(`❌ Error: ${error.response?.data?.error || error.message || 'Failed to push workouts'}`);
+      } finally {
+        pushButton.disabled = false;
+        pushButton.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Push to TrainingPeaks';
+      }
+    }
+
+    // Load athlete and workouts on page load
+    async function initPage() {
+      await loadAthleteInfo();
+      
+      // Initialize week planner with CSS
+      const cssSeconds = document.getElementById('cssSeconds').textContent;
+      let cssKey = '1:40'; // Default
+      
+      // Parse CSS from display (e.g., "(100 seconds per 100m)")
+      const match = cssSeconds.match(/(\d+) seconds/);
+      if (match) {
+        const seconds = parseInt(match[1]);
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        cssKey = `${mins}:${secs.toString().padStart(2, '0')}`;
+      }
+      
+      initWeekPlanner(cssKey);
+      loadSwimWorkouts();
+    }
+
+    initPage();
+  </script>
+</body>
+</html>

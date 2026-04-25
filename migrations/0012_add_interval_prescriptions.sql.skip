@@ -1,0 +1,28 @@
+-- Migration: Add Interval Prescription Fields
+-- Date: 2026-03-28
+-- Description: Add power_intervals, pace_intervals, swim_intervals, vo2_bike_prescription, vo2_run_prescription
+
+-- Power Intervals (best effort power targets for bike)
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals_source TEXT DEFAULT 'toolkit';
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals_updated_at TIMESTAMP;
+
+-- Pace Intervals (best effort pace targets for run)
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals_source TEXT DEFAULT 'toolkit';
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals_updated_at TIMESTAMP;
+
+-- Swim Intervals (swim pacing for various distances/zones)
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals_source TEXT DEFAULT 'toolkit';
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals_updated_at TIMESTAMP;
+
+-- VO2 Bike Prescription (structured VO2max intervals for bike)
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_prescription TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_source TEXT DEFAULT 'toolkit';
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_updated_at TIMESTAMP;
+
+-- VO2 Run Prescription (structured VO2max intervals for run)
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_prescription TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_source TEXT DEFAULT 'toolkit';
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_updated_at TIMESTAMP;

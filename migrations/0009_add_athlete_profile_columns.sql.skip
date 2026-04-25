@@ -1,0 +1,80 @@
+-- Add missing columns to athlete_profiles table
+-- Migration: 0009_add_athlete_profile_columns.sql
+
+-- Basic info columns
+ALTER TABLE athlete_profiles ADD COLUMN sport TEXT DEFAULT 'Triathlon';
+ALTER TABLE athlete_profiles ADD COLUMN status TEXT DEFAULT 'Active';
+ALTER TABLE athlete_profiles ADD COLUMN age INTEGER;
+
+-- Bike metrics
+ALTER TABLE athlete_profiles ADD COLUMN bike_cp INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN bike_w_prime INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN bike_pvo2max INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN bike_peak_power INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN bike_ftp INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN bike_ftp_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN bike_ftp_updated_at DATETIME;
+
+-- Run metrics  
+ALTER TABLE athlete_profiles ADD COLUMN run_cs_seconds INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN run_d_prime INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN run_vvo2max_seconds INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN run_durability REAL;
+ALTER TABLE athlete_profiles ADD COLUMN run_ftp INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN run_ftp_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN run_ftp_updated_at DATETIME;
+
+-- Swim metrics
+ALTER TABLE athlete_profiles ADD COLUMN css_pace INTEGER;
+ALTER TABLE athlete_profiles ADD COLUMN css_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN css_updated_at DATETIME;
+
+-- Zones data (stored as JSON)
+ALTER TABLE athlete_profiles ADD COLUMN swim_pace_zones TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN swim_pace_zones_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN swim_pace_zones_updated_at DATETIME;
+
+ALTER TABLE athlete_profiles ADD COLUMN bike_power_zones TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN bike_power_zones_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN bike_power_zones_updated_at DATETIME;
+
+ALTER TABLE athlete_profiles ADD COLUMN run_pace_zones TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN run_pace_zones_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN run_pace_zones_updated_at DATETIME;
+
+-- Interval data (stored as JSON)
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN swim_intervals_updated_at DATETIME;
+
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN power_intervals_updated_at DATETIME;
+
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN pace_intervals_updated_at DATETIME;
+
+-- Heart rate
+ALTER TABLE athlete_profiles ADD COLUMN hr_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN hr_updated_at DATETIME;
+ALTER TABLE athlete_profiles ADD COLUMN hr_mid_z1 INTEGER;
+
+-- VO2 prescriptions (stored as JSON)
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_prescription TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_bike_updated_at DATETIME;
+
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_prescription TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_source TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN vo2_run_updated_at DATETIME;
+
+-- Training goals
+ALTER TABLE athlete_profiles ADD COLUMN current_phase TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN target_race_name TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN target_race_id TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN weekly_hours_available REAL;
+ALTER TABLE athlete_profiles ADD COLUMN primary_goal TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN coach_notes TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN medical_history TEXT;
+ALTER TABLE athlete_profiles ADD COLUMN coaching_start_date DATE;

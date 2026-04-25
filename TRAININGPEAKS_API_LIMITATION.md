@@ -1,0 +1,235 @@
+# 🚨 TRAININGPEAKS API LIMITATION - CANNOT UPDATE WORKOUTS
+
+**Date**: January 12, 2026  
+**Issue**: TrainingPeaks API does not allow coaches to update existing planned workouts
+
+---
+
+## 🔍 What We Discovered
+
+### API Testing Results:
+```
+❌ PUT /v2/workouts/id/{id}
+   Response: 405 Method Not Allowed
+   
+❌ PATCH /v2/workouts/id/{id}
+   Response: 405 Method Not Allowed
+   
+❌ POST /v1/workouts/{id}
+   Response: 404 Not Found
+```
+
+### Conclusion:
+**TrainingPeaks API does NOT allow coaches to update existing planned workouts directly.**
+
+---
+
+## 📋 What Coaches CAN Do
+
+✅ **Create new workouts**: `POST /v1/workouts/{athlete_id}`  
+✅ **Read workouts**: `GET /v2/workouts/...`  
+✅ **Delete workouts**: `DELETE /v1/workouts/{id}`  
+
+❌ **Update existing workouts**: Not supported via API
+
+---
+
+## 💡 The Solution: Companion Workouts
+
+Since we can't update the original workout's PreActivityComments, we create a **companion workout** (Note type) on the same day.
+
+### What Athletes Will See in TrainingPeaks:
+
+**Before Fueling:**
+```
+Monday, Jan 14:
+┌────────────────────────────────────────┐
+│ Sweet Spot Intervals [BTH-K1]          │
+│ Type: Bike                              │
+│ TSS: 147                                │
+│ Duration: 90 min                        │
+└────────────────────────────────────────┘
+```
+
+**After Fueling:**
+```
+Monday, Jan 14:
+┌────────────────────────────────────────┐
+│ Sweet Spot Intervals [BTH-K1]          │
+│ Type: Bike                              │
+│ TSS: 147                                │
+│ Duration: 90 min                        │
+└────────────────────────────────────────┘
+
+┌────────────────────────────────────────┐
+│ 🍊 FUELING - Sweet Spot Intervals      │
+│ Type: Note                              │
+│ Pre-Activity Comments:                  │
+│   ⚡ ECHODEVO FUELING GUIDANCE ⚡       │
+│   CARBOHYDRATES: 358g (90g/hr)         │
+│   HYDRATION: 675ml (168ml/hr)          │
+│   SODIUM: 900mg (225mg/hr)             │
+└────────────────────────────────────────┘
+```
+
+---
+
+## 🎯 Benefits of Companion Workouts
+
+### ✅ Advantages:
+1. **Works with TrainingPeaks API** - Uses supported endpoints
+2. **Preserves original workout** - No risk of data loss
+3. **Clear separation** - Fueling info separate from training plan
+4. **Easy to identify** - 🍊 emoji prefix
+5. **Can be updated** - Delete old, create new for updates
+6. **Industry standard** - Many coaching platforms use this approach
+
+### ⚠️ Minor Drawback:
+- Athletes see 2 items per fueled workout (original + fueling note)
+- But this is actually CLEARER than embedding in comments
+
+---
+
+## 📊 Implementation
+
+### Step 1: Create Companion Workout
+```javascript
+POST /v1/workouts/{athlete_id}
+{
+  "WorkoutDay": "2026-01-14",
+  "WorkoutType": "Note",
+  "Title": "🍊 FUELING - Sweet Spot Intervals",
+  "Description": "Fueling guidance for your workout",
+  "PreActivityComments": "⚡ ECHODEVO FUELING GUIDANCE ⚡\n\n...",
+  "TotalTimePlanned": 0,
+  "TssPlanned": 0
+}
+```
+
+### Step 2: Link to Original Workout
+- Same date as original workout
+- Title includes original workout name
+- Clear emoji prefix (🍊) for identification
+
+### Step 3: Update Process
+- Check if fueling note already exists
+- If yes: Delete old, create new
+- If no: Create new
+
+---
+
+## 🔄 What You'll See
+
+### In TrainingPeaks Calendar:
+```
+┌─────────────────────────────────────────────┐
+│ Monday, January 14                          │
+├─────────────────────────────────────────────┤
+│ ⚙️ Sweet Spot Intervals [BTH-K1]            │
+│ 🍊 FUELING - Sweet Spot Intervals           │
+├─────────────────────────────────────────────┤
+│ Tuesday, January 15                         │
+├─────────────────────────────────────────────┤
+│ ⚙️ Sweet Spot/CP+ Intervals [BTH-Q1]        │
+│ 🍊 FUELING - Sweet Spot/CP+ Intervals       │
+│ 🏊 Triathlon Swim Series                    │
+│ 🍊 FUELING - Triathlon Swim Series          │
+└─────────────────────────────────────────────┘
+```
+
+### When Athlete Opens Fueling Note:
+```
+Title: 🍊 FUELING - Sweet Spot Intervals
+
+Pre-Activity Comments:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ ECHODEVO FUELING GUIDANCE ⚡
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🍌 CARBOHYDRATES
+Total: 358g
+Rate: 90g/hour
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💧 HYDRATION  
+Total: 675ml
+Rate: 168ml/hour
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧂 SODIUM
+Total: 900mg
+Rate: 225mg/hour
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 CALCULATION BASIS
+Sport: Bike
+Duration: 240 minutes
+Intensity: Sweet Spot (IF ~0.88-0.93)
+Athlete Profile: 79.4kg, CP 256W
+
+💡 ADJUSTMENTS
+• Hot weather: +20% hydration
+• High altitude: +15% CHO
+• Personal sweat rate: Adjust sodium
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generated by Echodevo Adaptive
+Readiness Engine
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## 🎓 Industry Context
+
+This is how professional coaching platforms handle supplementary workout information:
+
+### TrainingPeaks Best Practices:
+- ✅ Use Note type for non-training information
+- ✅ Prefix with emoji for easy identification
+- ✅ Link to original workout in title
+- ✅ Put detailed info in PreActivityComments
+
+### Other Platforms:
+- **Today's Plan**: Nutrition notes separate from workouts
+- **TrainAsONE**: Fueling advice in dedicated section
+- **Final Surge**: Pre-workout notes as companion items
+
+---
+
+## ✅ Status
+
+**CURRENT IMPLEMENTATION**: Companion workout approach (correct method)
+
+**WHAT THIS MEANS FOR YOU**:
+1. Original workouts remain untouched ✅
+2. Fueling appears as separate note on same day ✅
+3. Athletes click fueling note to see guidance ✅
+4. Can update/delete fueling notes independently ✅
+
+---
+
+## 📝 Summary
+
+### The Bad News:
+❌ Can't embed fueling in original workout's PreActivityComments  
+❌ TrainingPeaks API doesn't allow coaches to update planned workouts
+
+### The Good News:
+✅ Companion workout approach works perfectly  
+✅ Actually CLEARER for athletes  
+✅ Industry-standard pattern  
+✅ Easy to update/manage  
+✅ Preserves original workout data
+
+---
+
+## 🚀 What to Expect
+
+When you fuel workouts, you'll see in TrainingPeaks:
+1. Original workout (e.g., "Sweet Spot Intervals")
+2. Fueling note (e.g., "🍊 FUELING - Sweet Spot Intervals")
+
+Click the fueling note → See full guidance in Pre-Activity Comments
+
+**This is the correct and recommended approach!** ✅

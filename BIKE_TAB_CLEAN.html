@@ -1,0 +1,237 @@
+<!-- CLEAN BIKE TAB STRUCTURE -->
+<!-- This replaces lines 886-1451 in athlete-profile-v3.html -->
+
+      <!-- BIKE TAB -->
+      <div class="tab-pane fade" id="bike" role="tabpanel">
+        
+        <!-- Top Metrics Cards (4 cards: CP, LT1, OGC, W') -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          
+          <!-- Critical Power Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              Critical Power (CP)
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editBikeCP()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="bikeCP_Value">--- W</div>
+            <div class="metric-info" id="bikeCP_WKg" style="font-size: 14px; color: #6b7280; margin-top: 4px;"></div>
+            <div class="metric-source" id="bikeCP_Source">Not set</div>
+          </div>
+          
+          <!-- LT1 Power Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              LT1 Power
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editBikeLT1()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="bikeLT1_Value">--- W</div>
+            <div class="metric-info" id="bikeLT1_PercentCP" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-info" id="bikeLT1_WKg" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-source" id="bikeLT1_Source">Not set</div>
+          </div>
+          
+          <!-- OGC Power Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              OGC Power
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editBikeOGC()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="bikeOGC_Value">--- W</div>
+            <div class="metric-info" id="bikeOGC_PercentCP" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-info" id="bikeOGC_WKg" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-source" id="bikeOGC_Source">Not set</div>
+          </div>
+          
+          <!-- W' (Anaerobic Capacity) Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              W' (Anaerobic Capacity)
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editBikeWPrime()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="bikeWPrime_Value">--- kJ</div>
+            <div class="metric-info" id="bikeWPrime_JKg" style="font-size: 14px; color: #6b7280; margin-top: 4px;"></div>
+            <div class="metric-source" id="bikeWPrime_Source">Not set</div>
+          </div>
+          
+        </div>
+
+        <!-- Inline Edit Forms (collapsed by default) -->
+        <!-- Edit CP Form -->
+        <div class="data-table-container mb-3" id="editCPForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit Critical Power</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">CP (Watts)</label>
+                <input type="number" class="form-control" id="editCP_Input" placeholder="e.g., 250">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editCP_Date">
+              </div>
+              <div>
+                <label class="form-label">Source</label>
+                <select class="form-control" id="editCP_Source">
+                  <option value="2-point test">2-point test</option>
+                  <option value="3-point test">3-point test</option>
+                  <option value="Manual entry">Manual entry</option>
+                  <option value="Calculator">Calculator</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveBikeCPEdit()">Save CP</button>
+              <button class="btn btn-secondary" onclick="window.cancelBikeCPEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit LT1 Form -->
+        <div class="data-table-container mb-3" id="editLT1Form" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit LT1 Power & HR</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">LT1 Power (Watts)</label>
+                <input type="number" class="form-control" id="editLT1_Power" placeholder="e.g., 180">
+              </div>
+              <div>
+                <label class="form-label">LT1 HR (bpm)</label>
+                <input type="number" class="form-control" id="editLT1_HR" placeholder="e.g., 145">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editLT1_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveBikeLT1Edit()">Save LT1</button>
+              <button class="btn btn-secondary" onclick="window.cancelBikeLT1Edit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit OGC Form -->
+        <div class="data-table-container mb-3" id="editOGCForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit OGC Power & HR</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">OGC Power (Watts)</label>
+                <input type="number" class="form-control" id="editOGC_Power" placeholder="e.g., 230">
+              </div>
+              <div>
+                <label class="form-label">OGC HR (bpm)</label>
+                <input type="number" class="form-control" id="editOGC_HR" placeholder="e.g., 165">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editOGC_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveBikeOGCEdit()">Save OGC</button>
+              <button class="btn btn-secondary" onclick="window.cancelBikeOGCEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit W' Form -->
+        <div class="data-table-container mb-3" id="editWPrimeForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit W' (Anaerobic Capacity)</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">W' (kJ)</label>
+                <input type="number" class="form-control" id="editWPrime_Input" placeholder="e.g., 20.5" step="0.1">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editWPrime_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveBikeWPrimeEdit()">Save W'</button>
+              <button class="btn btn-secondary" onclick="window.cancelBikeWPrimeEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Power Zones Section (Collapsible) -->
+        <div class="data-table-container mb-3">
+          <div class="data-table-header" style="cursor: pointer;" onclick="window.toggleBikePowerZones()" id="bikePowerZonesHeader">
+            <h3>
+              <i class="fas fa-chevron-down me-2" id="bikePowerZonesIcon"></i>
+              Power Zones
+            </h3>
+            <p>Training zones calculated from your CP, LT1, and OGC</p>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.calculateBikePowerZones()">
+                <i class="fas fa-calculator me-1"></i>Calculate Zones from CP
+              </button>
+              <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); window.toggleBikeZoneView()" id="bikeZoneViewToggle">
+                Switch to Expanded View
+              </button>
+            </div>
+          </div>
+          
+          <!-- Zones Table (hidden by default) -->
+          <div id="bikePowerZonesContent" style="display: none;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Zone</th>
+                  <th>Name</th>
+                  <th>Power Range</th>
+                  <th style="width: 100px;">% CP</th>
+                  <th style="width: 100px;">W/kg</th>
+                  <th style="width: 80px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bikePowerZonesBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted" style="padding: 32px;">
+                    No zones calculated yet. Click "Calculate Zones from CP" above.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div id="powerZonesFooter" style="padding: 16px; background: var(--gray-50); margin-top: 16px; display: none;">
+              <p style="margin: 0; font-size: 14px; color: #6b7280;" id="powerZonesSourceInfo"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bike Toolkit Button -->
+        <div class="card bg-light mt-3">
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-md-12">
+                <button onclick="window.openToolkit('bike'); return false;" class="btn btn-warning w-100 btn-lg">
+                  <i class="fas fa-calculator me-2"></i>Open Bike Toolkit
+                </button>
+                <small class="text-muted d-block mt-1 text-center">
+                  Calculate CP, W', LT1/OGC, power zones, intervals, and VO2max prescriptions
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>

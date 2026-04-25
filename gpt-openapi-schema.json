@@ -1,0 +1,943 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EchoDevo Coach API - Per-Athlete Context",
+    "description": "TrainingPeaks coaching API with per-athlete GPT context filtering. When athlete_id parameter is provided, ALL endpoints will ONLY return data for that specific athlete.",
+    "version": "2.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://3000-i8mf68r87mlc4fo6mi2yb-c07dda5e.sandbox.novita.ai",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/api/gpt/athletes": {
+      "get": {
+        "operationId": "listAthletes",
+        "summary": "List athletes with optional per-athlete filtering",
+        "description": "Returns all athletes for coach account. If athlete_id query parameter is provided, ONLY returns that athlete (per-athlete GPT context).",
+        "parameters": [
+          {
+            "name": "athlete_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional: Filter to ONLY return this athlete. When set, GPT context is locked to this athlete."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of athletes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "athletes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AthleteSummary"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "context": {
+                      "type": "string",
+                      "description": "Message indicating if per-athlete context is active"
+                    },
+                    "athlete_filter": {
+                      "type": "string",
+                      "description": "The athlete_id being filtered, if any"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/fetch": {
+      "post": {
+        "operationId": "fetchAthleteData",
+        "summary": "Fetch athlete data with per-athlete context enforcement",
+        "description": "Fetches athlete data for specified date range. If athlete_id query parameter is set (per-athlete context), will REJECT requests for different athletes.",
+        "parameters": [
+          {
+            "name": "athlete_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Per-athlete context filter. If set, can ONLY fetch data for this athlete."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_id", "start_date", "end_date"],
+                "properties": {
+                  "athlete_id": {
+                    "type": "string",
+                    "description": "Athlete ID to fetch data for"
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Start date (YYYY-MM-DD)"
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "End date (YYYY-MM-DD)"
+                  },
+                  "include_planned": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include planned workouts"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Athlete data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AthleteData"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - per-athlete context violation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "context_athlete_id": {
+                      "type": "string"
+                    },
+                    "requested_athlete_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gpt/write": {
+      "post": {
+        "operationId": "writeWorkoutPlan",
+        "summary": "Write workout plan with per-athlete context enforcement",
+        "description": "Posts workout plan to TrainingPeaks. If athlete_id query parameter is set (per-athlete context), will REJECT requests for different athletes.",
+        "parameters": [
+          {
+            "name": "athlete_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Per-athlete context filter. If set, can ONLY write workouts for this athlete."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_id", "workouts"],
+                "properties": {
+                  "athlete_id": {
+                    "type": "string",
+                    "description": "Athlete ID to write workouts for"
+                  },
+                  "workouts": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WorkoutPlan"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Workouts created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "workouts_created": {
+                      "type": "integer"
+                    },
+                    "workout_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "context_athlete_id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied - per-athlete context violation"
+          }
+        }
+      }
+    },
+    "/api/gpt/metrics/calculate": {
+      "post": {
+        "operationId": "calculateMetrics",
+        "summary": "Calculate CTL/ATL/TSB metrics",
+        "description": "Calculates training metrics from workout history",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_id", "workouts"],
+                "properties": {
+                  "athlete_id": {
+                    "type": "string"
+                  },
+                  "workouts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "date": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "tss": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Calculated metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metrics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/athlete/analyze": {
+      "post": {
+        "operationId": "analyzeAthlete",
+        "summary": "Comprehensive 3-Tier Athlete Analysis",
+        "description": "Performs deep athlete analysis using Echodevo Brain methodology. Returns Tier 1 (readiness), Tier 2 (subsystem breakdown), and Tier 3 (projections). This is the main endpoint for 'analyze this athlete' requests.",
+        "parameters": [
+          {
+            "name": "athlete_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Per-athlete context filter. If set, can ONLY analyze this athlete."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_id"],
+                "properties": {
+                  "athlete_id": {
+                    "type": "string",
+                    "description": "Athlete ID to analyze"
+                  },
+                  "date_range": {
+                    "type": "integer",
+                    "description": "Number of days of history to analyze (default: 90)",
+                    "default": 90
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complete athlete analysis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AthleteAnalysis"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Per-athlete context violation - attempted to analyze wrong athlete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextViolationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/athlete/project": {
+      "post": {
+        "operationId": "projectMetrics",
+        "summary": "Project future CTL/ATL/TSB",
+        "description": "Projects CTL/ATL/TSB forward based on planned training load. Use for 'project next week' or 'what if I do 600 TSS' queries.",
+        "parameters": [
+          {
+            "name": "athlete_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Per-athlete context filter. If set, can ONLY project for this athlete."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["athlete_id"],
+                "properties": {
+                  "athlete_id": {
+                    "type": "string",
+                    "description": "Athlete ID to project for"
+                  },
+                  "planned_tss": {
+                    "type": "integer",
+                    "description": "Planned weekly TSS (default: 500)",
+                    "default": 500
+                  },
+                  "days": {
+                    "type": "integer",
+                    "description": "Number of days to project forward (default: 7)",
+                    "default": 7
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Future metric projections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricProjection"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Per-athlete context violation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextViolationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AthleteSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "sport": {
+            "type": "string"
+          },
+          "current_ctl": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_atl": {
+            "type": "number",
+            "nullable": true
+          },
+          "current_tsb": {
+            "type": "number",
+            "nullable": true
+          },
+          "last_workout": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "current_block": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AthleteData": {
+        "type": "object",
+        "properties": {
+          "athlete": {
+            "$ref": "#/components/schemas/Athlete"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "workouts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Workout"
+            }
+          },
+          "date_range": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "format": "date"
+              },
+              "end": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        }
+      },
+      "Athlete": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "sport": {
+            "type": "string"
+          },
+          "ftp": {
+            "type": "number",
+            "nullable": true
+          },
+          "cp": {
+            "type": "number",
+            "nullable": true
+          },
+          "cs": {
+            "type": "number",
+            "nullable": true
+          },
+          "lactate_threshold_hr": {
+            "type": "number",
+            "nullable": true
+          },
+          "weight_kg": {
+            "type": "number",
+            "nullable": true
+          },
+          "age": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "Metrics": {
+        "type": "object",
+        "properties": {
+          "ctl": {
+            "type": "number",
+            "description": "Chronic Training Load (42-day EWMA)"
+          },
+          "atl": {
+            "type": "number",
+            "description": "Acute Training Load (7-day EWMA)"
+          },
+          "tsb": {
+            "type": "number",
+            "description": "Training Stress Balance (CTL - ATL)"
+          },
+          "hrv": {
+            "type": "number",
+            "nullable": true
+          },
+          "rhr": {
+            "type": "number",
+            "nullable": true
+          },
+          "sleep_hours": {
+            "type": "number",
+            "nullable": true
+          },
+          "sleep_quality": {
+            "type": "number",
+            "nullable": true
+          },
+          "readiness_score": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "Workout": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "sport": {
+            "type": "string",
+            "enum": ["bike", "run", "swim", "strength", "other"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration": {
+            "type": "number",
+            "description": "Duration in minutes"
+          },
+          "distance": {
+            "type": "number",
+            "nullable": true,
+            "description": "Distance in kilometers"
+          },
+          "tss": {
+            "type": "number",
+            "description": "Training Stress Score"
+          },
+          "if": {
+            "type": "number",
+            "nullable": true,
+            "description": "Intensity Factor"
+          },
+          "np": {
+            "type": "number",
+            "nullable": true,
+            "description": "Normalized Power"
+          },
+          "avg_power": {
+            "type": "number",
+            "nullable": true
+          },
+          "avg_hr": {
+            "type": "number",
+            "nullable": true
+          },
+          "avg_pace": {
+            "type": "string",
+            "nullable": true
+          },
+          "elevation_gain": {
+            "type": "number",
+            "nullable": true
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "planned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WorkoutPlan": {
+        "type": "object",
+        "required": ["date", "sport", "title", "duration", "tss"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "sport": {
+            "type": "string",
+            "enum": ["bike", "run", "swim", "strength", "other"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "number",
+            "description": "Duration in minutes"
+          },
+          "tss": {
+            "type": "number"
+          },
+          "coach_notes": {
+            "type": "string"
+          }
+        }
+      },
+      "AthleteAnalysis": {
+        "type": "object",
+        "description": "Complete 3-tier athlete analysis from Echodevo Brain",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "athlete_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "date_range": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "days": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "current_metrics": {
+                "type": "object",
+                "properties": {
+                  "ctl": {
+                    "type": "number",
+                    "description": "Chronic Training Load (Fitness)"
+                  },
+                  "atl": {
+                    "type": "number",
+                    "description": "Acute Training Load (Fatigue)"
+                  },
+                  "tsb": {
+                    "type": "number",
+                    "description": "Training Stress Balance (Form)"
+                  },
+                  "ctl_ema_tau": {
+                    "type": "integer"
+                  },
+                  "atl_ema_tau": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "fitness_state": {
+                "type": "object",
+                "properties": {
+                  "overall_state": {
+                    "type": "string",
+                    "description": "e.g., 'Optimal Training State', 'Overreached', 'Fresh'"
+                  },
+                  "readiness_score": {
+                    "type": "integer",
+                    "description": "Score from 1-10"
+                  },
+                  "atl_ctl_ratio": {
+                    "type": "number"
+                  },
+                  "stress_category": {
+                    "type": "string"
+                  }
+                }
+              },
+              "sport_breakdown": {
+                "type": "object",
+                "properties": {
+                  "swim": {
+                    "$ref": "#/components/schemas/SportMetrics"
+                  },
+                  "bike": {
+                    "$ref": "#/components/schemas/SportMetrics"
+                  },
+                  "run": {
+                    "$ref": "#/components/schemas/SportMetrics"
+                  }
+                }
+              },
+              "recent_workouts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Workout"
+                }
+              },
+              "wellness_metrics": {
+                "type": "object",
+                "properties": {
+                  "hrv": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "resting_hr": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "sleep_hours": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "sleep_score": {
+                    "type": "number",
+                    "nullable": true
+                  },
+                  "soreness": {
+                    "type": "string"
+                  },
+                  "mood": {
+                    "type": "string"
+                  },
+                  "stress": {
+                    "type": "string"
+                  }
+                }
+              },
+              "training_block": {
+                "type": "object",
+                "properties": {
+                  "current_block": {
+                    "type": "string"
+                  },
+                  "weeks_in_block": {
+                    "type": "integer"
+                  },
+                  "recommended_block": {
+                    "type": "string"
+                  }
+                }
+              },
+              "projections_7d": {
+                "$ref": "#/components/schemas/FutureProjection"
+              },
+              "projections_14d": {
+                "$ref": "#/components/schemas/FutureProjection"
+              },
+              "tss_recommendation": {
+                "type": "object",
+                "properties": {
+                  "echo_estimate": {
+                    "type": "number"
+                  },
+                  "low_tss": {
+                    "type": "integer"
+                  },
+                  "high_tss": {
+                    "type": "integer"
+                  },
+                  "rationale": {
+                    "type": "string"
+                  }
+                }
+              },
+              "flags_and_warnings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "severity": {
+                      "type": "string",
+                      "enum": ["high", "medium", "low"]
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "recommendation": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "metadata": {
+                "type": "object",
+                "properties": {
+                  "analysis_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "api_version": {
+                    "type": "string"
+                  },
+                  "data_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SportMetrics": {
+        "type": "object",
+        "properties": {
+          "ctl": {
+            "type": "number"
+          },
+          "atl": {
+            "type": "number"
+          },
+          "recent_tss_7d": {
+            "type": "number"
+          },
+          "percentage_of_total": {
+            "type": "number"
+          },
+          "durability_index": {
+            "type": "number",
+            "nullable": true,
+            "description": "For bike/run only"
+          }
+        }
+      },
+      "FutureProjection": {
+        "type": "object",
+        "properties": {
+          "ctl": {
+            "type": "number"
+          },
+          "atl": {
+            "type": "number"
+          },
+          "tsb": {
+            "type": "number"
+          },
+          "projected_tss": {
+            "type": "number"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": ["Low", "Medium", "High"]
+          }
+        }
+      },
+      "MetricProjection": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "athlete_id": {
+            "type": "string"
+          },
+          "current": {
+            "type": "object",
+            "properties": {
+              "ctl": {
+                "type": "number"
+              },
+              "atl": {
+                "type": "number"
+              },
+              "tsb": {
+                "type": "number"
+              }
+            }
+          },
+          "projection": {
+            "type": "object",
+            "properties": {
+              "days": {
+                "type": "integer"
+              },
+              "planned_tss": {
+                "type": "number"
+              },
+              "ctl": {
+                "type": "number"
+              },
+              "atl": {
+                "type": "number"
+              },
+              "tsb": {
+                "type": "number"
+              },
+              "risk_assessment": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

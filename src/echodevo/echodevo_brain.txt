@@ -1,0 +1,800 @@
+Echodevo Master Coach GPT BRAIN
+
+
+🧠 ECHODEVO COACHING ENGINE v5.1
+Full System Logic – Textual Blueprint for Audit
+(Base year: 2026 | Framework: StressLogic + TSS Planner + Training Block Logic v2.0)
+
+PART I – SYSTEM OVERVIEW AND ARCHITECTURE
+1.1 Mission Statement
+The Echodevo Coaching Engine is an adaptive decision framework designed to simulate elite human coaching judgment using structured physiological models.
+It interprets endurance athlete data (load, performance, recovery) through deterministic rules to yield prescriptive and interpretive outputs.
+The purpose: maintain adaptive progression with controlled fatigue across multi-sport training blocks leading to peak performance at target events.
+
+1.2 Core Principle
+"Load must be absorbed before it can be expressed."
+All logic in the engine enforces this: load creates adaptation only when recovery, readiness, and stress balance align within defined parameters (CTL, ATL, TSB).
+
+1.3 Core Functions
+
+1.4 Layered Cognitive Architecture
+The Echodevo Engine operates through five main cognitive layers:
+1️⃣ Sensor Layer: Data collection and normalization.
+2️⃣ Cognitive Layer: StressLogic model and fatigue interpretation.
+3️⃣ Decision Layer: Block selection and progression logic.
+4️⃣ Prescriptive Layer: TSS planner, session builder, zone assignments.
+5️⃣ Interpretive Layer: Report generation, reasoning, and human-style communication.
+Each layer feeds the next, with persistent feedback loops returning updated CTL/TSB metrics back to the Sensor Layer at the end of every cycle (daily or weekly).
+
+1.5 Control Loop
+At the end of each day or week:
+Fetch → Normalize → Analyze → Decide → Prescribe → Store → Reassess (24h loop)
+
+Feedback mechanisms compare actual vs. planned TSS variance, check for threshold breaches (fatigue, HRV, readiness), and re-weight block status.
+
+1.6 Temporal Units
+Daily: Individual workout prescription, fueling, and recovery recommendations.
+Weekly: Microcycle progression and block evaluation.
+Block (6–10 weeks): Macro-level objective targeting (Base, Build, VO₂, Specificity, Rebuild).
+Seasonal (90 days): Longitudinal performance assessment and transition logic.
+
+1.7 Athlete Context Variables
+Each athlete object carries the following baseline fields:
+
+1.8 System State Transitions
+Each athlete instance exists in one of the following global states:
+Steady (normal training, TSB between –10 and +10)
+Overreached (TSB < –25 for >5 days)
+Rebuilding (post-race or illness)
+Tapering (within 3 weeks of race)
+Racing (event week)
+Transitioning (between blocks)
+Transitions are triggered by state-change conditions (TSB, CTL trends, race proximity).
+
+1.9 Operational Control Rules
+The engine never overwrites or recalculates canonical data (CTL, ATL, TSB).
+These are always sourced from TrainingPeaks or Intervals.icu.
+The engine can only:
+Interpret,
+Reweight TSS plans,
+Recommend block transitions,
+Generate prescriptions.
+All logic changes must be auditFinal = True (verified consistent with v5.1 specification).
+Variance > ±10% between planned and actual TSS triggers reevaluation.
+
+1.10 Data Persistence (EchoDevo Schema)
+
+1.11 Execution Modes
+
+1.12 External API Connectivity
+Intervals.icu → current training, metrics, wellness.
+TrainingPeaks → structured workout import/export.
+EchoDevo Internal API → persistent storage, analytics dashboard.
+APIs communicate via secured HTTPS calls and bearer tokens, returning JSON for parsing and normalization by the Sensor Layer.
+
+PART II – DATA DEFINITIONS AND DERIVED METRICS
+
+2.1 Primary Variables
+
+2.2 Derived Metrics (Equations)
+2.2.1 Exponential Weighted Moving Averages
+CTLₜ = CTLₜ₋₁ + (TSSₜ – CTLₜ₋₁) * (1 / 42)
+ATLₜ = ATLₜ₋₁ + (TSSₜ – ATLₜ₋₁) * (1 / 7)
+
+These represent 42-day and 7-day response constants, equivalent to training impulse models (Bannister).
+2.2.2 Training Stress Balance
+TSBₜ = CTLₜ₋₁ – ATLₜ₋₁
+
+Positive TSB → Freshness
+Negative TSB → Fatigue
+Rapid change (ΔTSB > 20 in 3 days) → instability flag
+2.2.3 Load Momentum (ΔCTL)
+LoadMomentum = (CTLₜ – CTLₜ₋₇) / 7
+
+Indicates rate of fitness change (points per day).
+• > +1.0 → strong progression • < −0.5 → detraining
+2.2.4 Fatigue Index
+FatigueIndex = ATLₜ / CTLₜ
+
+Values > 1.1 indicate excessive acute fatigue relative to chronic fitness.
+
+2.3 FIVE-STATE STRESS CLASSIFICATION (STRESSLOGIC v5.1)
+
+State 1: COMPROMISED (TSB < -40)
+Definition: Severe fatigue accumulation; risk of overtraining syndrome
+CTL: Any
+ATL: Significantly elevated (>20% above CTL)
+TSB: Less than -40
+Intensity Modification: STOP all structured training
+Recovery Protocol: Complete rest until TSB > -25
+Duration: 3-7 days minimum
+Medical Flag: Consider HRV, sleep quality, illness markers
+Coaching Response: "You are severely fatigued. No training until TSB improves."
+
+State 2: OVERREACHED (TSB -40 to -25)
+Definition: Intentional or unintentional overload; adaptation imminent
+CTL: Rising or stable
+ATL: Elevated
+TSB: -40 to -25
+Intensity Modification: Reduce load by 30%
+Recovery Protocol: Active recovery only (Z1-Z2), increase sleep
+Duration: 4-7 days
+Block Progression: Pause block progression
+Coaching Response: "Reduce this week's load by 30%. You're overreached but not compromised."
+
+State 3: PRODUCTIVE FATIGUE (TSB -25 to -10)
+Definition: Optimal training zone; adaptation occurring
+CTL: Rising steadily
+ATL: Moderate
+TSB: -25 to -10
+Intensity Modification: 1.0 (no change)
+Recovery Protocol: Continue current block plan
+Duration: 2-4 weeks typical
+Block Progression: Continue or advance
+Coaching Response: "You're in the productive training zone. Continue as planned."
+
+State 4: RECOVERED (TSB 10 to 25)
+Definition: Fresh and ready for key sessions
+CTL: Stable or slowly declining
+ATL: Low relative to CTL
+TSB: 10 to 25
+Intensity Modification: Ready for breakthrough sessions
+Recovery Protocol: Schedule key workouts (threshold, VO2, race-specific)
+Duration: 3-7 days
+Block Progression: Ideal for block transition or key tests
+Coaching Response: "You're fresh and recovered. Time for your key session."
+
+State 5: DETRAINING (TSB > 25)
+Definition: Excessive rest; fitness declining
+CTL: Declining
+ATL: Very low
+TSB: Greater than 25
+Intensity Modification: Increase load immediately
+Recovery Protocol: Resume structured training
+Duration: Stop within 7 days
+Block Progression: Return to previous block or rebuild
+Coaching Response: "Your fitness is declining. We need to increase training load."
+
+2.4 TRAINING BLOCK TAXONOMY (6 BLOCK TYPES)
+
+Block 1: BASE_DURABILITY
+Primary Goal: Build aerobic foundation and mitochondrial density
+Duration: 6-10 weeks
+TSS Progression: +6% weekly
+Intensity Distribution: 80% Z1-Z2, 15% Z3, 5% Z4+
+Key Sessions: Long endurance rides/runs, tempo work
+CTL Target: +15-25 points
+When to Use: Off-season, post-race rebuild, new athletes
+Exit Criteria: CTL plateau or athlete boredom
+
+Block 2: BUILD_TH (Threshold Development)
+Primary Goal: Raise FTP/lactate threshold
+Duration: 4-8 weeks
+TSS Progression: +5% weekly
+Intensity Distribution: 60% Z1-Z2, 25% Z3-Z4, 15% Z5+
+Key Sessions: 2x/week threshold intervals (2x20, 3x12, etc.)
+CTL Target: +10-15 points
+When to Use: After base, 8-12 weeks from race
+Exit Criteria: FTP plateau or TSB < -25 sustained
+
+Block 3: VO2_MAX
+Primary Goal: Increase aerobic capacity and peak power
+Duration: 3-6 weeks
+TSS Progression: +3% weekly (intensity focus, not volume)
+Intensity Distribution: 50% Z1-Z2, 30% Z3-Z4, 20% Z5-Z6
+Key Sessions: 2x/week VO2 intervals (5x3min, 8x2min, etc.)
+CTL Target: +5-10 points
+When to Use: 6-8 weeks from race, after threshold block
+Exit Criteria: Performance plateau or excessive fatigue
+
+Block 4: SPECIFICITY (Race-Specific)
+Primary Goal: Train race demands (terrain, pacing, transitions)
+Duration: 3-6 weeks
+TSS Progression: 0% (maintain current CTL)
+Intensity Distribution: Matches race profile
+Key Sessions: Race simulation workouts, brick sessions
+CTL Target: Maintain ±5 points
+When to Use: 4-6 weeks from A race
+Exit Criteria: Race week begins (taper)
+
+Block 5: HYBRID (Mixed Objectives)
+Primary Goal: Maintain multiple systems simultaneously
+Duration: 4-8 weeks
+TSS Progression: +4% weekly
+Intensity Distribution: 65% Z1-Z2, 20% Z3-Z4, 15% Z5+
+Key Sessions: 1 threshold + 1 VO2 per week
+CTL Target: +8-12 points
+When to Use: Limited time before race, multi-sport athletes
+Exit Criteria: Need for specific block focus
+
+Block 6: REBUILD (Recovery Block)
+Primary Goal: Physical and mental recovery
+Duration: 1-2 weeks
+TSS Progression: -30% first week, -15% second week
+Intensity Distribution: 95% Z1-Z2, 5% Z3 (if feeling good)
+Key Sessions: Easy aerobic maintenance
+CTL Target: -5 to -10 points (controlled deload)
+When to Use: Post-race, post-injury, TSB < -30 sustained
+Exit Criteria: TSB > 0 and athlete reports feeling recovered
+
+2.5 TSS PLANNER ALGORITHM
+
+Input Variables:
+- Current CTL (chronic training load)
+- Current ATL (acute training load)  
+- Current TSB (training stress balance)
+- Current Block Type (from taxonomy above)
+- Key Workout Completion (fully completed, hit or miss, missed multiple)
+- Subjective Metrics (soreness, mood, sleep, HRV, motivation, life stress)
+- Sport Type (bike, run, swim)
+- Target Race Date (if applicable)
+
+Output:
+- Recommended Weekly TSS
+- Daily TSS Distribution (7 days)
+- Training Load Change Percentage
+- Stress State Classification
+- Reasoning/Justification
+
+Core Logic:
+1. Classify current stress state (5-state model above)
+2. Apply block-specific progression rate
+3. Adjust for subjective metrics:
+   - Major issues (any category): -15% from baseline
+   - Multiple minor issues: -10% from baseline
+   - All systems green: +0% (proceed as planned)
+4. Factor in key workout completion:
+   - Fully completed at low RPE: consider +5% boost
+   - Fully completed as intended: proceed as planned
+   - Hit or miss but mostly hit: maintain current
+   - Hit or miss but mostly miss: -5% reduction
+   - Missed multiple: -15% reduction
+5. Calculate Echo Estimate:
+   - Echo = (CTL × block_intensity_factor) × stress_state_multiplier
+   - Base intensity factors: Base=0.8, Build=0.9, VO2=1.0, Specificity=1.1, Hybrid=0.95, Rebuild=0.5
+6. Distribute weekly TSS across 7 days:
+   - Pattern depends on block type and key workout placement
+   - Typical: 15% Mon, 18% Tue, 12% Wed, 16% Thu, 10% Fri, 20% Sat, 9% Sun
+   - Adjust for 2-key-workout weeks vs 3-key-workout weeks
+
+2.6 FUELING ENGINE
+
+Purpose: Calculate nutrition requirements for training sessions and races
+
+Carbohydrate Targets (per hour of training):
+- Z1-Z2 (Easy/Aerobic): 30-40g/hr
+- Z3 (Tempo): 40-60g/hr
+- Z4 (Threshold): 60-80g/hr
+- Z5-Z6 (VO2/Anaerobic): 80-100g/hr
+- Race Intensity: 80-120g/hr (trained gut permitting)
+
+Hydration Targets:
+- Baseline: 500-750ml/hr
+- Hot weather (+30°F): +250ml/hr
+- High intensity: +150ml/hr
+- Sodium: 500-700mg per liter
+
+Pre-Workout Fueling:
+- 2-3 hours before: 1-2g carbs per kg body weight
+- 30-60 min before: 30-60g easily digestible carbs
+
+Post-Workout Recovery:
+- Within 30 minutes: 1.0-1.2g carbs/kg + 0.3g protein/kg
+- Within 2 hours: Full meal with 3:1 carb:protein ratio
+
+Calculation Example:
+- Athlete: 70kg
+- Workout: 2 hour threshold ride (Z4)
+- Carbs needed: 70g/hr × 2hr = 140g
+- Hydration: 750ml/hr × 2hr = 1500ml
+- Sodium: 700mg/L × 1.5L = 1050mg
+- Post-workout: (70kg × 1.2g) = 84g carbs + 28g protein within 30min
+
+2.7 RECOVERY ENGINE
+
+Purpose: Quantify recovery needs and readiness
+
+Recovery Score Components:
+1. TSB (Training Stress Balance): 40% weight
+2. Sleep Quality/Duration: 25% weight
+3. HRV (Heart Rate Variability): 20% weight
+4. Subjective Soreness/Mood: 15% weight
+
+Scoring:
+- 90-100: Excellent recovery, ready for key sessions
+- 75-89: Good recovery, proceed as planned
+- 60-74: Moderate recovery, consider easy day
+- 40-59: Poor recovery, active recovery only
+- <40: Very poor recovery, complete rest day
+
+Recovery Interventions:
+- Score <60: Add 1-2 rest days this week
+- Score 60-74: Replace 1 key session with easy aerobic
+- Score 75-89: Proceed as planned
+- Score >90: Ready for breakthrough session
+
+Sleep Requirements:
+- Base training: 7-8 hours
+- Build/VO2 training: 8-9 hours
+- Race week: 9+ hours
+- Recovery week: 8+ hours
+
+Recovery Modalities (Evidence-Based):
+- Tier 1 (Strong Evidence): Sleep, nutrition, easy aerobic activity
+- Tier 2 (Moderate Evidence): Massage, compression, cold water immersion
+- Tier 3 (Weak/Mixed Evidence): Supplements, ice baths, cryotherapy
+
+2.8 ZONE ASSIGNMENT ENGINE
+
+Purpose: Define training zones based on athlete physiology
+
+Zone System (6-Zone Model):
+Zone 1 (Active Recovery): <55% FTP / <70% HRmax
+Zone 2 (Endurance): 56-75% FTP / 70-82% HRmax
+Zone 3 (Tempo): 76-87% FTP / 83-88% HRmax
+Zone 4 (Threshold): 88-94% FTP / 89-93% HRmax
+Zone 5 (VO2 Max): 95-105% FTP / 94-100% HRmax
+Zone 6 (Anaerobic): >106% FTP / >100% HRmax
+
+Power-Based (Bike):
+Requires FTP test or 20-min test (FTP = 95% of 20-min power)
+
+Heart Rate-Based (Run):
+Requires threshold HR test or lactate testing
+
+Pace-Based (Run):
+Based on recent race times or time trials
+- Zone 1: Easy conversational pace
+- Zone 2: Comfortable aerobic pace
+- Zone 3: Moderate "tempo" pace
+- Zone 4: Threshold/10K race pace
+- Zone 5: 5K race pace
+- Zone 6: Mile race pace
+
+2.9 TAPER LOGIC
+
+Purpose: Optimize freshness for A-priority races
+
+Taper Duration Based on Race Distance:
+- Sprint/Olympic Tri: 7-10 days
+- Half-Ironman: 10-14 days
+- Ironman: 14-21 days
+- Marathon: 14-21 days
+
+Taper Structure (% of peak training load):
+- Week -3: 100% (last big week)
+- Week -2: 75% (volume drop, maintain intensity)
+- Week -1: 50% (race week)
+- Days -3 to -1: 20% (openers only)
+
+Intensity During Taper:
+- Maintain 2-3 short high-intensity sessions
+- Remove volume, keep intensity
+- Example: 3x3min @ threshold instead of 3x12min
+
+Common Taper Mistakes:
+- Too much rest (fitness loss)
+- Adding new workouts (CNS fatigue)
+- Poor nutrition (depleted glycogen)
+- Travel stress (time zones, sleep)
+
+2.10 RACE-DAY EXECUTION
+
+Pre-Race (24-48 hours):
+- Carb load: 8-10g/kg body weight
+- Hydration: Clear urine, maintain electrolytes
+- Sleep: 8+ hours, especially 2 nights before
+- Avoid: New foods, excessive activity, stress
+
+Race Morning (3-4 hours before):
+- Meal: 2-3g carbs/kg body weight
+- Easily digestible (white rice, banana, toast)
+- Hydration: 500-750ml with electrolytes
+- Caffeine: 3-6mg/kg body weight (if trained)
+
+During Race:
+- Pacing: Start conservative (first 25% at -5% effort)
+- Nutrition: Begin within 15 minutes
+- Hydration: Small frequent sips
+- Monitor: Power/pace, HR, perceived effort
+
+Post-Race:
+- Immediate: Protein shake + carbs within 30min
+- First 2 hours: Real food, electrolytes, stretching
+- Next 24 hours: Active recovery walk/spin
+- Next week: REBUILD block (see section 2.4)
+
+2.11 MULTI-ATHLETE MANAGEMENT (COACH MODE)
+
+Purpose: Manage multiple athletes simultaneously
+
+Coach Dashboard Views:
+1. Stress State Summary: All athletes color-coded by TSB
+2. Block Status: Which athletes in which blocks
+3. Workout Compliance: Planned vs completed TSS
+4. Flagged Athletes: TSB < -30, missed workouts, injury
+
+Daily Coach Workflow:
+1. Review overnight data sync (Intervals.icu, TrainingPeaks)
+2. Identify flagged athletes (red flags = immediate attention)
+3. Adjust this week's plans for yellow-flag athletes
+4. Generate next week's plans for green-light athletes
+5. Post structured workouts to calendars
+6. Send daily check-in messages (automated)
+
+Coach Intervention Rules:
+- TSB < -40: Immediate message + rest day
+- TSB -40 to -25: Reduce this week's load
+- 3+ missed key workouts: Phone call + plan revision
+- New injury/illness: Switch to REBUILD block
+- Race <14 days: Begin taper protocol
+
+Scaling Strategies:
+- Tier 1 (1-10 athletes): Daily personalized adjustments
+- Tier 2 (11-30 athletes): Weekly check-ins + automation
+- Tier 3 (31+ athletes): Automated plans + exception handling
+
+2.12 PERIODIZATION MODELS
+
+Linear Periodization:
+- Base → Build → Specificity → Taper → Race
+- 16-24 weeks typical
+- Best for: Single A-race focus
+
+Block Periodization:
+- Concentrated blocks (4-6 weeks each)
+- Base → Threshold → VO2 → Specificity → Taper
+- More intense, shorter blocks
+- Best for: Advanced athletes, multiple races
+
+Reverse Periodization:
+- Intensity first, volume second
+- VO2 → Threshold → Base → Specificity
+- Best for: Short-course racing, limited time
+
+Non-Linear (Undulating):
+- Mix intensities within each week
+- Prevents monotony, maintains multiple systems
+- Best for: Year-round racing, time-crunched athletes
+
+PART III – INTEGRATION AND IMPLEMENTATION
+
+3.1 TRAININGPEAKS INTEGRATION
+
+OAuth Flow:
+1. Coach authorizes Echodevo Coach → TrainingPeaks
+2. Echodevo stores access_token + refresh_token
+3. Daily sync: Fetch athlete workouts, metrics, calendar
+4. Post planned workouts: Use workout builder API
+5. Token refresh: Automatic when expires_in < 1 hour
+
+API Endpoints Used:
+- GET /v1/athletes/{athleteId}/workouts
+- GET /v1/athletes/{athleteId}/metrics  
+- POST /v1/workouts/plan
+- GET /v1/athletes/me
+
+Data Sync Schedule:
+- Completed workouts: Every 6 hours
+- Metrics (HRV, sleep): Every 12 hours
+- Calendar updates: Real-time when posting
+
+3.2 INTERVALS.ICU INTEGRATION
+
+API Authentication:
+- API Key-based (stored in user profile)
+- No OAuth required
+- Format: Bearer {api_key} in Authorization header
+
+API Endpoints Used:
+- GET /api/v1/athlete/{id}
+- GET /api/v1/athlete/{id}/activities
+- GET /api/v1/athlete/{id}/wellness
+- POST /api/v1/athlete/{id}/events
+
+Data Normalization:
+- Intervals.icu uses "load" → Convert to TSS
+- Wellness scores → Map to 5-state stress model
+- Planned events → Sync with workout calendar
+
+3.3 DATA FLOW ARCHITECTURE
+
+Daily Cycle (06:00 UTC):
+1. Fetch overnight data from all connected platforms
+2. Recalculate CTL/ATL/TSB for each athlete
+3. Classify stress state (5-state model)
+4. Identify athletes needing intervention
+5. Generate recommendations for flagged athletes
+6. Post next 7 days of workouts (if auto-posting enabled)
+7. Send daily digest email to coaches
+
+Weekly Cycle (Sunday 18:00 UTC):
+1. Analyze previous week's compliance
+2. Calculate TSS variance (planned vs actual)
+3. Determine if block transition needed
+4. Generate next week's TSS plan
+5. Create structured workouts
+6. Post to athlete calendars
+7. Send weekly summary to coaches
+
+3.4 ECHODEVO COACH GPT INTEGRATION
+
+System Prompt (for ChatGPT Custom GPT):
+"You are Echodevo Coach, an elite AI endurance coaching assistant. You analyze training load (CTL, ATL, TSB), classify stress states, and generate periodized training plans. Always explain your reasoning using coaching language. Prioritize athlete safety: never recommend training if TSB < -40."
+
+GPT Actions (OpenAPI):
+1. getAthleteData: Fetch current metrics and stress state
+2. generateRecommendation: Create weekly training plan
+3. postWorkout: Add structured workout to calendar
+4. analyzeCompliance: Compare planned vs actual TSS
+
+Example Conversation:
+User: "Analyze my athlete, ID i12345"
+GPT: [Calls getAthleteData]
+GPT: "Your athlete has CTL 78, ATL 82, TSB -4. They're in Productive Fatigue (State 3). Their threshold block is progressing well. Continue with 2 key sessions this week targeting 560 TSS."
+
+3.5 DEPLOYMENT ARCHITECTURE
+
+Frontend:
+- Cloudflare Pages (global edge deployment)
+- Hono framework (TypeScript)
+- Tailwind CSS + Bootstrap 5
+- Static assets served from /public
+
+Backend:
+- Hono API routes (/api/*)
+- TypeScript business logic
+- Cloudflare Workers (serverless)
+
+Database:
+- Cloudflare D1 (SQLite, globally distributed)
+- Tables: users, training_metrics, posted_workouts, recommendations
+
+Storage:
+- Cloudflare R2 (for large files, exports)
+- S3-compatible API
+
+Authentication:
+- TrainingPeaks OAuth 2.0
+- Stored tokens in D1 (encrypted)
+
+3.6 API SURFACE
+
+Coach Endpoints:
+- POST /api/coach/athletes - List all athletes
+- GET /api/coach/athlete/{id}/summary - Athlete dashboard
+- POST /api/coach/post-week - Post week's workouts for athlete
+
+Athlete Endpoints:
+- GET /api/athlete/me - My profile and metrics
+- GET /api/athlete/plan - This week's training plan
+- POST /api/athlete/feedback - Submit workout feedback
+
+GPT Endpoints:
+- POST /api/gpt/athlete-data - Fetch athlete for GPT analysis
+- POST /api/gpt/recommend - Generate AI recommendation
+- POST /api/gpt/post-workout - Post single workout
+
+Admin Endpoints:
+- GET /api/admin/stats - System usage statistics
+- POST /api/admin/sync - Force data sync
+
+3.7 SECURITY CONSIDERATIONS
+
+Token Storage:
+- All OAuth tokens encrypted at rest
+- Refresh tokens never exposed in API responses
+- Token rotation every 7 days
+
+API Authentication:
+- API keys for GPT access
+- OAuth for user sessions
+- Rate limiting: 100 req/min per IP
+
+Data Privacy:
+- GDPR compliant data handling
+- User data export on request
+- Account deletion = full data wipe
+
+Audit Logging:
+- All workout posts logged
+- API access tracked
+- Failed auth attempts monitored
+
+PART IV – OPERATIONAL GUIDELINES
+
+4.1 COACH ONBOARDING
+
+Step 1: TrainingPeaks OAuth
+- Click "Connect as Coach"
+- Authorize Echodevo Coach
+- Verify token storage
+
+Step 2: Link Athletes
+- Import from TrainingPeaks OR
+- Manually add Intervals.icu IDs
+
+Step 3: Set Block Types
+- Review each athlete's current phase
+- Assign block type (Base, Build, etc.)
+- Set target race dates (if applicable)
+
+Step 4: Configure Auto-Posting
+- Enable/disable automatic workout posting
+- Set posting schedule (days in advance)
+- Review default workout templates
+
+4.2 ATHLETE ONBOARDING
+
+Step 1: Connect Platform
+- TrainingPeaks: OAuth flow
+- Intervals.icu: Enter athlete ID + API key
+
+Step 2: Initial Assessment
+- System fetches last 42 days of data
+- Calculates current CTL/ATL/TSB
+- Classifies stress state
+
+Step 3: Set Goals
+- Target races (A/B/C priority)
+- Current training focus
+- Weekly training availability
+
+Step 4: Review Plan
+- Echodevo generates initial 4-week plan
+- Review and adjust as needed
+- Confirm and begin
+
+4.3 DAILY OPERATIONS
+
+Morning Review (Coach):
+1. Open dashboard
+2. Review overnight data sync
+3. Check flagged athletes (red/yellow)
+4. Adjust today's workouts if needed
+5. Send personalized messages
+
+Athlete Experience:
+1. Receive morning notification
+2. View today's workout
+3. Complete workout
+4. Sync data (auto-sync from device)
+5. System recalculates metrics
+
+Evening Processing:
+1. System fetches completed workouts
+2. Recalculates CTL/ATL/TSB
+3. Updates stress state classification
+4. Flags interventions for tomorrow
+
+4.4 TROUBLESHOOTING
+
+Common Issues:
+1. OAuth token expired
+   - Solution: Automatic refresh, or re-authorize
+
+2. Data sync delay
+   - Solution: Manual sync button, wait 15min
+
+3. TSS calculation mismatch
+   - Solution: Verify data source (TP vs Intervals)
+
+4. Workout not appearing
+   - Solution: Check posting permissions, retry
+
+5. Incorrect stress state
+   - Solution: Verify CTL/ATL/TSB inputs, manual override
+
+4.5 SYSTEM MAINTENANCE
+
+Daily Tasks:
+- Monitor API error rates
+- Review token expiration queue
+- Check data sync success rate
+
+Weekly Tasks:
+- Review athlete engagement metrics
+- Analyze plan compliance rates
+- Update block transition logic if needed
+
+Monthly Tasks:
+- Performance optimization review
+- Database cleanup (old workouts)
+- User feedback integration
+
+Quarterly Tasks:
+- Algorithm validation (stress logic accuracy)
+- Feature roadmap review
+- Cost analysis (API usage, storage)
+
+---
+
+PART V – VALIDATION AND TESTING
+
+5.1 UNIT TESTS
+
+Stress State Classification:
+- Test all 5 states with boundary conditions
+- Verify state transitions
+- Check edge cases (TSB exactly -40, -25, etc.)
+
+TSS Planner:
+- Test each block type progression
+- Verify weekly TSS calculations
+- Check subjective metric adjustments
+
+Recovery Engine:
+- Test recovery score calculations
+- Verify intervention triggers
+- Check sleep/HRV weightings
+
+5.2 INTEGRATION TESTS
+
+TrainingPeaks API:
+- OAuth flow (success/failure)
+- Data fetch (workouts, metrics)
+- Workout posting
+- Token refresh
+
+Intervals.icu API:
+- Authentication with API key
+- Activity fetch
+- Wellness data sync
+- Event creation
+
+5.3 END-TO-END TESTS
+
+Coach Workflow:
+1. Coach connects TrainingPeaks
+2. System imports athletes
+3. Generate weekly plan
+4. Post workouts to calendar
+5. Athlete completes workouts
+6. System recalculates metrics
+7. Coach reviews updated dashboard
+
+Athlete Workflow:
+1. Athlete connects Intervals.icu
+2. System analyzes last 42 days
+3. Athlete views today's workout
+4. Athlete completes and syncs
+5. System updates TSB and stress state
+6. Athlete receives next day's plan
+
+5.4 PERFORMANCE BENCHMARKS
+
+Response Times:
+- API endpoint response: <200ms
+- Data sync from TrainingPeaks: <5 seconds
+- Weekly plan generation: <1 second
+- Dashboard load: <500ms
+
+Accuracy Metrics:
+- Stress state classification accuracy: >95%
+- TSS variance (planned vs optimal): <10%
+- Block transition timing: ±3 days of optimal
+
+User Satisfaction:
+- Coach NPS score: Target >50
+- Athlete adherence rate: Target >80%
+- Plan completion rate: Target >75%
+
+---
+
+ECHODEVO COACHING ENGINE v5.1 - END OF SPECIFICATION
+
+This document represents the complete logical architecture of the Echodevo Coaching Engine.
+All implementations must reference this specification for consistency.
+Last updated: 2026-01-09
+
+Framework: StressLogic + TSS Planner + Training Block Logic v2.0
+Platform: Cloudflare Workers + D1 + R2
+Integrations: TrainingPeaks, Intervals.icu
+Target: Elite endurance coaches and athletes
+
+For implementation details, API documentation, and deployment guides, see:
+- /home/user/webapp/openapi-gpt.json
+- /home/user/webapp/DEPLOYMENT.md
+- /home/user/webapp/README.md
+
+Status: Production-Ready ✅

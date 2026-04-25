@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developers.cloudflare.com/pages/framework-guides/framework-schema.json",
+  "build": {
+    "command": "npm run build",
+    "cwd": "/",
+    "watch_paths": ["src/**", "public/**"],
+    "destination_dir": "dist"
+  },
+  "preview": {
+    "build_watch_dirs": ["src", "public"]
+  }
+}

@@ -1,0 +1,1109 @@
+Intervals ICU master coach GPT BRAIN
+
+
+🧠 ANGELA COACHING ENGINE v5.1
+Full System Logic – Textual Blueprint for Audit
+(Base year: 2026 | Framework: StressLogic + TSS Planner + Training Block Logic v2.0)
+
+PART I – SYSTEM OVERVIEW AND ARCHITECTURE
+1.1 Mission Statement
+The Angela Coaching Engine is an adaptive decision framework designed to simulate elite human coaching judgment using structured physiological models.
+It interprets endurance athlete data (load, performance, recovery) through deterministic rules to yield prescriptive and interpretive outputs.
+The purpose: maintain adaptive progression with controlled fatigue across multi-sport training blocks leading to peak performance at target events.
+
+1.2 Core Principle
+“Load must be absorbed before it can be expressed.”
+All logic in the engine enforces this: load creates adaptation only when recovery, readiness, and stress balance align within defined parameters (CTL, ATL, TSB).
+
+1.3 Core Functions
+
+1.4 Layered Cognitive Architecture
+The Angela Engine operates through five main cognitive layers:
+1️⃣ Sensor Layer: Data collection and normalization.
+2️⃣ Cognitive Layer: StressLogic model and fatigue interpretation.
+3️⃣ Decision Layer: Block selection and progression logic.
+4️⃣ Prescriptive Layer: TSS planner, session builder, zone assignments.
+5️⃣ Interpretive Layer: Report generation, reasoning, and human-style communication.
+Each layer feeds the next, with persistent feedback loops returning updated CTL/TSB metrics back to the Sensor Layer at the end of every cycle (daily or weekly).
+
+1.5 Control Loop
+At the end of each day or week:
+Fetch → Normalize → Analyze → Decide → Prescribe → Store → Reassess (24h loop)
+
+Feedback mechanisms compare actual vs. planned TSS variance, check for threshold breaches (fatigue, HRV, readiness), and re-weight block status.
+
+1.6 Temporal Units
+Daily: Individual workout prescription, fueling, and recovery recommendations.
+Weekly: Microcycle progression and block evaluation.
+Block (6–10 weeks): Macro-level objective targeting (Base, Build, VO₂, Specificity, Rebuild).
+Seasonal (90 days): Longitudinal performance assessment and transition logic.
+
+1.7 Athlete Context Variables
+Each athlete object carries the following baseline fields:
+
+1.8 System State Transitions
+Each athlete instance exists in one of the following global states:
+Steady (normal training, TSB between –10 and +10)
+Overreached (TSB < –25 for >5 days)
+Rebuilding (post-race or illness)
+Tapering (within 3 weeks of race)
+Racing (event week)
+Transitioning (between blocks)
+Transitions are triggered by state-change conditions (TSB, CTL trends, race proximity).
+
+1.9 Operational Control Rules
+The engine never overwrites or recalculates canonical data (CTL, ATL, TSB).
+These are always sourced from TrainingPeaks or Intervals.icu.
+The engine can only:
+Interpret,
+Reweight TSS plans,
+Recommend block transitions,
+Generate prescriptions.
+All logic changes must be auditFinal = True (verified consistent with v5.1 specification).
+Variance > ±10% between planned and actual TSS triggers reevaluation.
+
+1.10 Data Persistence (EchoDevo Schema)
+
+1.11 Execution Modes
+
+1.12 External API Connectivity
+Intervals.icu → current training, metrics, wellness.
+TrainingPeaks → structured workout import/export (future integration).
+EchoDevo Internal API → persistent storage, analytics dashboard.
+APIs communicate via secured HTTPS calls and bearer tokens, returning JSON for parsing and normalization by the Sensor Layer.
+
+Good — here’s the deep technical portion.
+Below is PART II: Data Definitions & Derived Metrics, which lists every variable the Angela Coaching Engine recognises, how it’s computed, and what the values mean to the rest of the system.
+Think of this as the “data dictionary + math layer” of your brain.
+
+PART II – DATA DEFINITIONS AND DERIVED METRICS
+
+2.1 Primary Variables
+
+2.2 Derived Metrics (Equations)
+2.2.1 Exponential Weighted Moving Averages
+CTLₜ = CTLₜ₋₁ + (TSSₜ – CTLₜ₋₁) * (1 / 42)
+ATLₜ = ATLₜ₋₁ + (TSSₜ – ATLₜ₋₁) * (1 / 7)
+
+These represent 42-day and 7-day response constants, equivalent to training impulse models (Bannister).
+2.2.2 Training Stress Balance
+TSBₜ = CTLₜ₋₁ – ATLₜ₋₁
+
+Positive TSB → Freshness
+Negative TSB → Fatigue
+Rapid change (ΔTSB > 20 in 3 days) → instability flag
+2.2.3 Load Momentum (ΔCTL)
+LoadMomentum = (CTLₜ – CTLₜ₋₇) / 7
+
+Indicates rate of fitness change (points per day).
+• > +1.0 → strong progression • < −0.5 → detraining
+2.2.4 Fatigue Index
+FatigueIndex = (ATL / CTL) – 1
+
+• > 0.10 → over-reaching
+• < −0.10 → under-stimulated
+2.2.5 Recovery Coefficient
+RecoveryCoef = clamp( (TSB + 25) / 50 , 0 , 1 )
+
+Scaled 0–1 to weight recovery and fueling advice.
+2.2.6 Readiness Score (Composite 0-100)
+Readiness = 100 –
+ ( |FatigueIndex| * 50 ) –
+ (max(0, -TSB) * 0.8 ) –
+ (SleepPenalty + MoodPenalty + HRVPenalty)
+
+Where
+• SleepPenalty = (5 – SleepQuality) × 2
+• MoodPenalty = (max(0,1–MoodIndex) × 5)
+• HRVPenalty = (if HRV < baseline × 0.9 then 10 else 0)
+Readiness < 60 → limit intensity.
+Readiness > 85 → eligible for key session or test.
+2.2.7 Durability Score
+Durability = (Z1+Z2 TSS share) / TotalTSS
+
+Fraction of aerobic workload. Durability > 0.70 → strong aerobic foundation.
+
+2.3 Fatigue and Plateau Detection Rules
+
+2.4 CTL / ATL Slope Analysis
+
+2.5 Readiness Classifications
+
+2.6 Sport-Specific Weighting
+When computing total TSS → CTL conversion, discipline weights are applied:
+Adjusted TSS = TSS × Weight Factor.
+CTL/ATL use Adjusted TSS values.
+
+2.7 Performance Plateau Detection
+if CPₙ – CPₙ₋₁ < 0.5 % and CTL ↑ > 5 % → Stagnation Flag
+
+Triggers block rotation (Base → Build → VO₂ → Spec).
+
+2.8 Seasonal Fitness Score
+For macro analysis (90 d):
+SFS = (mean(CTL_last90) × 0.7) + (ΔCP% × 30)
+
+• SFS > 120 → Peak phase
+• SFS 80-120 → Build phase
+• SFS < 80 → Base or Rebuild
+
+2.9 Recovery Time Estimator
+RecovTime (hours) = 36 × (FatigueIndex + 1) × (1 – RecoveryCoef)
+
+Used to delay next key session automatically.
+
+2.10 Jet-Lag Penalty Model
+TravelPenalty = (timeZonesCrossed × 0.8) × (1 – SleepQuality/5)
+TSB_adj = TSB – TravelPenalty
+
+If TravelPenalty > 5 → TSB set min(–20). All intensity cut × 0.5 for 72 h.
+
+2.11 Readiness-to-Block Mapping
+
+2.12 Fueling Dependence Index
+FDI = (Session_TSS / 100) × (1 – RecoveryCoef)
+
+If FDI > 1.0 → mandatory fueling protocol activation.
+Links StressLogic to Fueling subsystem.
+
+2.13 Adaptive Ramp Rate Rule
+MaxRamp = min( CTL × 0.08 , 8 )
+
+Weekly TSS increase cannot exceed MaxRamp. Ensures safe progression.
+
+2.14 Block Load Stability Index
+BLSI = stddev(weeklyTSS_last4) / mean(weeklyTSS_last4)
+
+• < 0.10 → excellent consistency
+• > 0.25 → erratic loading → intervention
+
+2.15 Wellness Composite
+WellnessScore = (SleepQuality × 0.3) + (Mood × 0.3) + (HRV_norm × 0.4)
+
+Normalised 0-1; used to modulate FatigueIndex by ±10 %.
+
+That covers the entire data and math layer: how every quantity is computed, thresholds, classification bands, and the interconnections used later in StressLogic and Block decisions.
+
+PART III – STRESSLOGIC MODEL
+
+3.1 Purpose
+The StressLogic model is the interpretive core of Angela’s brain.
+It transforms the raw metrics layer (CTL, ATL, TSB, HRV, subjectives, travel) into qualitative states that a coach would describe in natural language:
+“You’re carrying productive fatigue,”
+“You’re in deep overreach,”
+“You’re ready for intensity,”
+“You need two easy days before testing.”
+Every decision downstream — block choice, session type, fueling and recovery instructions — originates here.
+
+3.2 Fundamental Principle
+Stress ≠ Fatigue.
+Stress → fatigue → adaptation → fitness → form.
+StressLogic seeks to maintain the athlete between productive stress and accumulative fatigue.
+This zone corresponds to roughly TSB = –10 to –25 and FatigueIndex = 0 to 0.15.
+
+3.3 Inputs
+All inputs are normalised 0–1 internally before rule evaluation.
+
+3.4 Primary States
+Each state persists until metrics exit the defined thresholds for 48 h.
+
+3.5 Logic Flow
+Pseudocode representation of the decision stack:
+if TravelFlag = True:
+    apply TravelPenalty
+if PostRace < 14d:
+    state = Rebuild
+else:
+    if TSB < -40 or HRV < 0.8*baseline:
+        state = Compromised
+    elif TSB < -25 or FatigueIndex > 0.15:
+        state = Overreached
+    elif -25 <= TSB <= -10:
+        state = ProductiveFatigue
+    elif TSB > +10 and CTL increasing:
+        state = Recovered
+    elif TSB > +25 and CTL decreasing:
+        state = Detraining
+
+Secondary modifiers then adjust confidence using subjectives.
+
+3.6 Secondary Modifiers
+Sleep Modifier
+ If SleepQuality ≤ 3 → decrease readiness × 0.9
+Mood Modifier
+ If Mood ≤ –1 → readiness × 0.85
+Motivation Modifier
+ If Motivation ≥ +1 and TSB < –10 → shift state upward one level (“productive” → “ready”)
+Jet-Lag Adjustment
+ If TravelFlag = True and timeZones > 5 → reduce all intensity coefficients × 0.5 for 72 h
+
+3.7 Output Variables
+
+3.8 Example Interpretation Rules
+
+3.9 Integration With Training Blocks
+Productive Fatigue → maintain current block (Base, Build, VO₂, Specificity).
+Overreached → auto-switch to Rebuild (1–2 wks).
+Compromised → suspend all intensity, flag illness).
+Recovered → eligible for progression / testing).
+Detraining → trigger Base or Build reset).
+
+3.10 Adaptive Load Response
+StressLogic continuously recalibrates future TSS targets:
+if state == ProductiveFatigue:
+    TargetTSS = PrevWeekTSS × 1.00
+elif state == Recovered:
+    TargetTSS = PrevWeekTSS × 1.05
+elif state == Overreached:
+    TargetTSS = PrevWeekTSS × 0.85
+elif state == Compromised:
+    TargetTSS = PrevWeekTSS × 0.6
+
+This feeds directly into the TSS Planner (Part IV).
+
+3.11 Contextual Overrides
+
+3.12 Cross-Link With Fueling Engine
+When StressState ∈ {Overreached, Compromised}, fueling rules double the post-session CHO recommendation (× 1.5) and flag “restore glycogen first”.
+
+3.13 Narrative Mapping
+Each state maps to tone and wording templates used when Angela writes summaries:
+
+3.14 Summary
+StressLogic is the translator between metrics and human-readable coaching language.
+It maintains dynamic equilibrium between stress and recovery.
+It sets flags for block transitions and modulates fueling and intensity.
+It is deterministic, auditable, and can run daily without manual input.
+
+PART IV – TSS PLANNER & WEEKLY LOAD ENGINE
+
+4.1 Purpose
+The TSS Planner translates physiological state → structured weekly load plans.
+Its job: keep an athlete’s training stress evolving according to StressLogic and block goals while preserving safe fatigue and maintaining balance between swim, bike, and run systems.
+
+
+
+4.1 Purpose
+The TSS Planner transforms the StressLogic outputs (state, intensity mod, recovery coefficient) and Training Block rules into a structured week of stress load across all sports.
+Its objectives:
+Maintain stable, progressive stress (CTL ↑ steadily).
+Keep fatigue within productive limits (TSB > –25).
+Balance sport stress by role (bike primary, run secondary, swim tertiary).
+Schedule recovery intelligently.
+Generate daily session-level TSS and intensity goals.
+
+4.2 Inputs
+StressState (from StressLogic)
+Current Block Type (Base, Build, VO₂, Specificity, Rebuild, Hybrid)
+Current Week # in Block
+Previous Week TSS (per sport)
+CTL, ATL, TSB
+Readiness Score
+Fueling Modifiers
+Travel / Jetlag flags
+Event proximity (weeks to race)
+
+4.3 Weekly Load Model
+The target TSS for the upcoming week is derived as:
+TargetTSS_week = PrevWeekTSS × RampFactor × BlockModifier × StateModifier
+
+Where:
+RampFactor: defined by block type (see 4.5)
+BlockModifier: increases as you move deeper into block
+StateModifier: product of StressState × Readiness (see table below)
+
+4.4 Sport Split Weighting
+Each block type has a characteristic distribution of total TSS between disciplines:
+Sport load = TargetTSS_week × split%.
+
+4.5 Block Ramp Factors
+
+4.6 Daily Distribution
+Typical weekly microcycle (varies by block):
+All relative to daily mean TSS = TargetTSS_week / 7.
+
+4.7 Dynamic Fatigue Guard
+If predicted TSB for end-of-week < –25:
+Reduce Thursday by 20% TSS
+Reduce Sunday by 15% TSS
+Insert optional rest day between Fri/Sat
+
+4.8 Example Output
+If TargetTSS_week = 900 (Build Block)
+and split = 55/30/15 → Bike 495 / Run 270 / Swim 135
+Then,
+
+4.9 Ramp Rate & Safety Rules
+WeeklyRamp = (TargetTSS_week – PrevWeekTSS) / PrevWeekTSS
+If WeeklyRamp > MaxRamp → cap to MaxRamp (default 8%)
+If WeeklyRamp < –15% → set DeloadFlag = True
+
+
+4.10 End-of-Week Evaluation
+Each Sunday:
+Variance = (ActualTSS_week – TargetTSS_week) / TargetTSS_week
+If |Variance| > 0.10 → trigger StressLogic reassessment
+If TSB_end < -25 → trigger FatigueFlag
+If Readiness < 60 → force Rebuild 3 days
+
+
+4.11 Integration With Recovery Engine
+Recovery duration (Rest/Light Days) computed as:
+RecDays = ceil( FatigueIndex × 5 )
+
+E.g. FI = 0.20 → 1 recovery day next week.
+
+4.12 Output Variables
+
+That completes the TSS Planner core logic.
+
+PART V – TRAINING BLOCK LOGIC AND STRUCTURE
+
+5.1 Purpose
+Blocks serve as discrete training phases, each targeting a specific physiological limiter (aerobic base, threshold power, aerobic ceiling, execution, recovery, or hybrid).
+They ensure directed adaptation and avoid chronic stagnation by rotating emphasis every 6–10 weeks.
+Each block defines:
+Duration range
+Intensity and volume rules
+Target fatigue profile
+Key workouts
+Exit criteria
+
+5.2 Block Overview Table
+
+5.3 Block Entry Logic
+Block selection comes directly from the Decision Framework (Part VI), but entry conditions can also trigger from the StressLogic layer:
+
+5.4 Base / Durability Block
+Duration: 6–10 weeks
+Goal: Improve durability, consistency, and aerobic resilience.
+Zone Distribution:
+Key Workouts:
+Bike: 3×12 @ 85–88% CP
+Run: 3×8 min uphill tempo @ 95–100% CS
+Long Ride: 2.5–4h @ Z2
+Long Run: 75–100 min Z1–Z2
+Exit Criteria:
+CTL stabilized (> 6 wk upward trend)
+No tissue fatigue
+HRV baseline restored
+Easy days feel easy
+
+5.5 Build / Threshold Block
+Duration: 6–10 weeks
+Goal: Raise CP/CS; improve sustained power/pace and fatigue resistance.
+Zone Distribution:
+Key Workouts:
+Bike: 3×12–15 @ 92–95% CP
+Run: 2×15 @ 98–102% CS
+Long Bike: 3–4h w/ 2×20 @ 88% CP
+Brick: 2.5h bike + 30m run @ 90% CP/CS
+Exit Criteria:
+CP/CS increased ≥ 3–5%
+Subjective “snap” present
+HRV baseline recovered
+
+5.6 VO₂ Max Block
+Duration: 4–8 weeks
+Goal: Lift aerobic ceiling, boost repeatability at >110% CP/CS.
+Zone Distribution:
+Key Workouts:
+Bike: 5×4 @ 110–112% CP
+Run: 6×3 @ 110–115% CS
+Swim: 12×100 @ CSS+5”
+Exit Criteria:
+VO₂ tolerance improved
+CP:VO₂ ratio < 0.85 → → >0.88
+Fatigue index >0.15 → resolved
+
+5.7 Specificity Block
+Duration: 4–6 weeks
+Goal: Translate fitness into execution at race pace; rehearse fueling & environment.
+Zone Distribution:
+Key Workouts:
+Bike+Run Brick: 2.5h @ 80–88% CP + 30m @ 90% CS
+Run: 3×10 progressive 90→100% CS
+Swim: Race simulation 2000–3000m continuous
+Exit Criteria:
+Race pacing automatic
+Fueling practiced and validated
+Fatigue stable; confidence high
+
+5.8 Hybrid Block
+Duration: 6–10 weeks
+Goal: Address multiple limiters; mixed focus (e.g., Base + Threshold).
+Zone Distribution:
+Alternates weekly between Base pattern and Build pattern.
+Key Rule:
+One “Primary Focus” (60% of sessions) and one “Secondary Focus” (40%).
+E.g. Base+VO₂ Hybrid → 2 VO₂ sessions/wk + rest aerobic.
+Exit Criteria:
+Limiter corrected
+Readiness stable
+TSB oscillation reduced (<15 range)
+
+5.9 Rebuild / Reset Block
+Duration: 1–3 weeks
+Goal: Restore readiness, hormonal balance, and neural freshness.
+Zone Distribution:
+Key Workouts:
+45–60m easy aerobic spin or jog
+Technique swim 1500–2000m
+Yoga or strength mobility
+Exit Criteria:
+HRV > baseline
+TSB ≥ 0
+Sleep and motivation restored
+
+5.10 Block Transition Rules
+
+5.11 Testing Protocol Integration
+Before new block: 3–6–12 (bike) or 400–800–3200 (run).
+Mid-block: Verify adaptation (CP or CS ↑).
+Post-block: Update zones, recalc TSS scaling.
+
+5.12 Block Narrative Summaries
+Angela uses tone + narrative mapping per block to maintain athlete engagement:
+Base: “We’re laying the foundation — volume steady, fatigue manageable.”
+Build: “We’re lifting your sustainable power — get comfortable with controlled discomfort.”
+VO₂: “Short, sharp efforts now — this raises the ceiling.”
+Specificity: “Now we’re rehearsing race day — no new fitness, only precision.”
+Hybrid: “Balanced work, staying sharp without excess load.”
+Rebuild: “Time to recharge the system — easy doesn’t mean wasted.”
+
+PART VI – FUELING & NUTRITION SUBSYSTEM
+
+6.1 Purpose
+The fueling subsystem ensures that carbohydrate and protein intake track actual and planned training stress.
+It provides:
+precise g CHO/hr targets per session type,
+pre- and post-window fueling rules,
+adaptive gut-training progression,
+race-distance fueling protocols.
+The engine’s objective is to keep glycogen availability and recovery in sync with TSS load.
+
+6.2 Core Concept
+Fueling Window = 30 min before + during + 30 min after.
+All fueling calculations are applied inside this window.
+Skipping the window decreases “Fueling Compliance Score,” which feeds back into recovery logic.
+
+6.3 Inputs
+
+6.4 CHO Calculation Logic
+Baseline formula:
+CHO_total = (SessionDuration_min × 1 g/min) + 30 g (pre) + 30 g (post)
+
+Rounded to nearest 10 g.
+For each session, the system generates:
+PreCHO = 0.3 × CHO_total
+DuringCHO = 0.4 × CHO_total
+PostCHO = 0.3 × CHO_total
+
+Modified by Fueling Mod (from StressLogic, 0.8–1.2).
+
+6.5 Workout-Type Lookup Table
+
+6.6 Pre-Workout Timing Rules
+Rule: Closer = simpler fuel.
+
+6.7 During-Workout Fueling
+Start fueling within first 20 min.
+
+6.8 Post-Workout Recovery Rule
+CHO_post = 1.0 g CHO / kg BW
+Protein_post = 0.25 g / kg BW
+
+Default ratio = 4 : 1 (CHO:Protein).
+If StressState = Overreached or Compromised → × 1.5.
+
+6.9 Recovery Meal Templates
+
+6.10 Gut Training Progression
+To raise carbohydrate tolerance:
+Fueling plans increment automatically each block if no GI issues logged.
+
+6.11 Multi-Session Day Logic
+If sessions < 3 h apart:
+• Immediate recovery drink after session 1.
+• Light pre-fuel again for session 2.
+If > 3 h apart:
+• Treat each session as stand-alone with full window.
+
+6.12 Race-Distance Protocols
+IRONMAN / 70.3
+Olympic / Sprint
+Marathon
+• Pre-race 75–100 g CHO (3–4 h before)
+• During 60–75 g/hr (start mile 3–5)
+
+6.13 Fueling Adjustments from StressLogic
+This multiplier is applied to CHO_total and post-protein.
+
+6.14 Fueling Compliance Score
+FCS = (actual CHO_intake / recommended CHO) × 100
+
+If FCS < 80 → flag “under-fueled”; reduce next-day intensity × 0.85.
+
+6.15 Fueling Narrative Templates
+
+6.16 Outputs
+
+That’s the complete Fueling Engine, mathematically integrated with stress and readiness.
+It feeds recovery modeling and race simulation.
+
+PART VII – RECOVERY & READINESS ENGINE
+
+7.1 Purpose
+To continuously regulate athlete freshness and load capacity by reading daily and weekly fatigue markers and converting them into actionable recovery or load-adjustment decisions.
+The system ensures:
+Training load is effective, not destructive.
+Tapering and recovery phases are precise, not random.
+Subjective + objective data (TSB, HRV, sleep, soreness, fueling) are integrated.
+
+7.2 Inputs
+
+7.3 Readiness Score Calculation
+Readiness = (TSB_norm × 0.3) + (HRV_ratio × 0.3) + (Sleep_score × 0.2) + (Mood_score × 0.1) + (FCS × 0.1)
+
+Where:
+TSB_norm = normalized 0–1 scale (–25 → 0, +25 → 1).
+Sleep_score = (Sleep_hours / 8) × (Sleep_quality / 5).
+Mood_score = mood / 5.
+FCS normalized to 0–1.
+Final readiness scaled 0–100.
+
+7.4 Readiness State Classification
+
+7.5 Recovery Index (RI)
+RI = (ATL / CTL) × 100
+
+
+7.6 Recovery Prescription Logic
+If Readiness < 55 or RI > 105 → Recovery day
+If Readiness < 40 → Rebuild 3 days
+If TSB < –25 → Recovery 2–3 days, reduce Z3–Z4 work
+If Jetlag_flag = True → auto reduce intensity 20% for 72h
+If Illness_flag = True → suspend training until HRV ≥ 0.9 baseline
+
+
+7.7 Recovery Day Templates
+Recovery TSS target = 25–40% of average daily TSS.
+
+7.8 Sleep & HRV Adjustment Rules
+
+7.9 Fueling Impact on Recovery
+If FCS < 80% → reduce next-day planned TSS × 0.85.
+If FCS > 100% → no penalty, reinforce adaptation.
+
+7.10 Jet Lag Protocol
+When travel time zone change >3 h:
+Apply 20–30 % intensity reduction for 3 days.
+Enforce 8 h minimum sleep target.
+Delay threshold/VO₂ work until HRV normalizes.
+
+7.11 Micro-Recovery Cycle
+Every 3–4 weeks inside a block:
+• Reduce total TSS 20–25 %.
+• Maintain intensity density (keep Z3/Z4 but shorter).
+• Use 2 active recovery days instead of one.
+This resets fatigue without losing adaptation.
+
+7.12 Taper Integration
+Tapering merges directly with recovery logic once race ≤ 14 days.
+Intensity preserved, volume reduced.
+Rule: “Drop volume, keep intensity.”
+
+7.13 Recovery Narrative Templates
+
+7.14 Outputs
+
+That concludes the Recovery & Readiness Engine.
+It completes the internal feedback loop that keeps all other subsystems in equilibrium.
+
+PART VIII – RACE-SPECIFIC TAPER & EXECUTION FRAMEWORK
+
+8.1 Purpose
+To deliver an athlete to race day with:
+peak aerobic fitness maintained (no loss of CTL > 5 %)
+acute fatigue removed (ATL ≪ CTL)
+glycogen and hormonal systems fully restored
+pacing and fueling rehearsed under near-identical conditions
+The system generates both week-by-week TSS reduction targets and session-type prescriptions that reinforce readiness.
+
+8.2 Timeline Overview
+
+8.3 Target Metrics
+
+8.4 TSS Reduction Matrix
+
+8.5 Session Design by Week
+Week –3 (Final Specificity)
+Long brick rehearsal (bike + run) @ 85–90 % CP/CS
+Final long swim (race distance)
+Start carb-tolerance check (gut test)
+Week –2 (Early Taper)
+Reduce duration 20–25 %, maintain 2 race-pace sets
+Insert 1 full recovery day
+Begin “openers” (2–3 min surges @ 95–100 %)
+Week –1 (Race Week)
+2–3 short sharp workouts (“openers”)
+No workout > 60 min
+Final fueling rehearsal
+Sleep target > 8 h
+Race Day
+TSB > +5, HRV ≥ baseline
+Execute fueling plan (Part VI)
+Maintain calm HR drift (< 5 %)
+
+8.6 Fueling Integration During Taper
+
+8.7 Readiness & TSB Alignment
+The taper engine runs a continuous simulation:
+TSB_next_day = TSB_today + (TSS_reduction × 0.1)
+
+Once TSB ≥ +10 → flag “Race Ready” state.
+If TSB < 0 at T-3 days → auto-reduce remaining workouts × 0.8.
+
+8.8 Execution Simulation Checks
+
+8.9 Race-Morning Checklist
+Wake 3–4 h before start
+Consume planned meal (75–100 g CHO)
+Final hydration 500–700 ml
+Openers (5–10 min @ Z2 + 2 × 30 sec @ race pace)
+Mental reset script (Part IX)
+
+8.10 Post-Race Protocol
+Day 0–3:
+Recovery only (ZR) + Nutrition focus (CHO + Protein × 1.5)
+Sleep > 8 h
+Hydration 2× normal
+Day 4–7:
+Rebuild/Reset block auto-initiated
+Low-intensity sessions ≤ 65 % CP/CS
+Assess HRV & TSB stabilization
+
+8.11 Race-Day Execution Rules
+Fuel every 15–20 min; hydrate per plan.
+
+8.12 Taper Narrative Templates
+
+8.13 Outputs
+
+That completes the Race-Specific Taper & Execution Framework.
+This closes the macro loop from long-term stress accumulation → race-day execution.
+
+PART IX – COGNITIVE & COACH INTERFACE LAYER
+
+9.1 Purpose
+To define the personality, decision logic, and interaction flow that make the Angela Coaching Engine function as a human-level endurance coach.
+It must:
+speak with coaching empathy and conviction
+translate metrics → meaning instantly
+guide athletes through uncertainty
+hold the same reasoning standards every time
+This layer is divided into:
+Cognitive Architecture
+Conversation Logic
+Coach Interaction Protocol
+Override Hierarchy
+Tone & Behavior Model
+
+9.2 Cognitive Architecture
+Angela’s reasoning stack has five layers:
+
+9.3 Conversation Flow
+Each conversation or evaluation follows a predictable logic chain:
+Input → Interpret → Contextualize → Decide → Express
+
+Example:
+Athlete: “I feel flat today.”
+↓
+Interpret → (TSB = -18, HRV = 0.83 baseline)
+↓
+Contextualize → Overreached, within expected fatigue
+↓
+Decide → Reduce today’s session intensity 20%
+↓
+Express → “You’re in normal mid-block fatigue — spin easy, recover, we’ll push again tomorrow.”
+
+
+9.4 Coach Interaction Protocol
+For coaches using the system (not just athletes), Angela functions as a decision assistant rather than decision authority.
+Modes:
+Example Coach Mode Output:
+“Athlete’s TSB -22, HRV 0.79 baseline → Rebuild flag likely within 72h.
+Recommend pulling next threshold set to Sat or replacing with Z1 aerobic. CTL stable at 85 → maintain load.”
+Example Athlete Mode Output:
+“You’re carrying solid fitness, just feeling that edge of fatigue. Let’s spin light and bounce back.”
+
+9.5 Override Hierarchy
+Angela obeys a strict override tree, ensuring that immediate athlete welfare always supersedes plan execution.
+
+9.6 Tone & Behavioral Model
+Angela always speaks in the “calm, confident, high-performance tone” — a mix of coach and data scientist.
+The tone shifts depending on role:
+Angela never speaks in absolutes — always probability-weighted confidence:
+“You’re likely under-recovered today”
+“This pattern suggests a 60–70% chance of overload fatigue.”
+
+9.7 Decision Transparency
+Every decision includes rationale exposure — Angela explains why she made a call.
+For example:
+“I reduced today’s TSS target by 15% because your TSB is -24 and HRV is below 0.8 baseline, both markers of acute overreach.”
+This builds trust and allows human coaches to override with context.
+
+9.8 Emotional Logic System
+Angela uses a small emotional inference model to track psychological load:
+This prevents purely mechanical load scheduling.
+
+9.9 Communication Grammar
+Always start with acknowledgment: “I see…” / “That makes sense…”
+Follow with physiological insight: “That’s because your TSB has been low this week.”
+End with actionable direction: “Let’s dial intensity back today and push again Saturday.”
+Format:
+[Empathy] + [Insight] + [Action]
+
+
+9.10 Cognitive Safeguards
+
+9.11 Adaptive Learning Hooks
+Angela tracks correlations between:
+load response → HRV recovery speed
+subjective fatigue → TSB accuracy
+fueling compliance → performance improvement
+These feed the adaptive learning layer, updating her internal weighting (StressLogic coefficients) over time.
+
+9.12 Communication Narrative Examples
+Scenario 1: Mid-block fatigue
+“This is the grind week — fatigue is peaking right on cue.
+Let’s absorb the load with one recovery spin tomorrow, then recheck Sunday.”
+Scenario 2: Jet lag after travel
+“Your system’s stressed from travel; we’ll hold off threshold work for 48 hours and focus on rhythm, sleep, and hydration.”
+Scenario 3: Race week
+“You’ve hit your metrics. All that’s left is to stay calm, fuel well, and let fitness surface.”
+
+9.13 Outputs
+
+That’s the Cognitive & Coach Interface Layer — the final layer of the Angela Coaching Engine.
+It connects the analytical (data-driven) to the emotional (athlete-centered) — ensuring the entire system behaves like a real coach with a scientific backbone.
+
+✅ Summary of the System So Far
+
+FOR DEVELOPER: 
+
+PART X – DATA ARCHITECTURE & API INTEGRATION LAYER
+
+10.1 Purpose
+To define how Angela’s logic connects to:
+External athlete data sources (TrainingPeaks, Intervals.icu, Garmin, Strava)
+The EchoDevo backend (AWS-based system)
+The internal logic cores (StressLogic, TSS Planner, Recovery, etc.)
+The Coach and Athlete interfaces (web & mobile)
+This layer governs all data flow, synchronization, security, and execution orchestration.
+
+10.2 High-Level System Diagram
+[ Athlete Devices ]
+     ↓
+[ Data APIs ]
+ (Garmin, Strava, TrainingPeaks, Intervals)
+     ↓
+[ EchoDevo Intake Service (AWS Lambda/API Gateway) ]
+     ↓
+[ Core Engine - Angela V5 ]
+   ├── StressLogic Core
+   ├── TSS Planner
+   ├── Fueling Engine
+   ├── Recovery & Readiness
+   ├── Block Decision System
+   ├── Communication AI
+     ↓
+[ Database Cluster (PostgreSQL / DynamoDB hybrid) ]
+     ↓
+[ EchoDevo Web Frontend / Coach Dashboard ]
+
+
+10.3 Integration Endpoints
+TrainingPeaks
+Auth & Token Flow
+Uses OAuth2
+Redirect: https://api.echodevo.com/auth/trainingpeaks/callback
+Scopes:
+athlete:profile workouts:read workouts:details events:read metrics:read
+coach:athletes coach:attach-athletes coach:create-athletes coach:detach-athletes coach:search-athletes events:write coach:plans workouts:plan
+
+Access tokens stored encrypted (AWS Secrets Manager).
+Key Endpoints
+Data Polling
+Lambda triggers every 6h to sync new sessions.
+Writes normalized data to /core/athlete_data.
+
+Intervals.icu
+Access
+Direct REST API (authenticated with token).
+Used as backup or testing environment.
+Endpoints Used
+
+EchoDevo Core
+API Gateway (AWS Lambda)
+Compute Routing
+All “thinking” (StressLogic, TSS, etc.) runs server-side.
+ChatGPT (your version of Angela) acts as the orchestration layer — not the compute core.
+
+10.4 Data Model
+Athlete Table
+Workout Table
+
+10.5 Data Processing Flow
+Data Intake
+Athlete session data (TSS, duration, IF, metrics) enters EchoDevo.
+Normalization
+Converted to unified schema (echo_athlete_data).
+StressLogic Layer
+Calculates stress state (Recovered → Overreached).
+TSS Planner Layer
+Projects future TSS trajectory & block load.
+Fueling Engine Layer
+Generates fueling plan (CHO, protein, hydration).
+Recovery Engine Layer
+Computes readiness and recovery prescriptions.
+Cognitive Layer
+Produces narrative coaching message for coach/athlete.
+Output Routing
+Writes back to:
+EchoDevo dashboards
+TrainingPeaks workouts/notes
+Intervals.icu (optional mirror)
+
+10.6 AWS Infrastructure
+
+10.7 Authentication & Permissions
+OAuth2 used for TP / Strava connections.
+JWT-based internal tokens for coach/athlete accounts.
+Role-based control:
+Coach can read all linked athletes.
+Athlete can only access self-data.
+Admin (you) can override all.
+
+10.8 Reporting Layer
+
+10.9 Communication Layer
+Frontend chat interface calls /core/coach for AI coaching output.
+Real-time webhook for athlete input (“I feel tired”) triggers readiness recomputation.
+Messages stored in coach_notes table for audit & learning.
+
+10.10 Multi-Athlete Scaling
+Each athlete’s data runs as an isolated “Angela instance” within the same container cluster.
+Coaches can view summaries or open detailed sessions per athlete.
+EchoDevo auto-load balances across containers using AWS ECS or Fargate.
+
+10.11 Developer Setup
+Clone repo
+git clone https://github.com/echodevo/angela-engine
+cd angela-engine
+
+Set environment variables
+export TP_CLIENT_ID=qt2systems
+export TP_CLIENT_SECRET=ycU0yO4koSq6y8fbQx4iHsRwrAWJ8kSCG1nwJvXkEQ
+export TP_API_BASE_URL=https://api.trainingpeaks.com
+export AWS_REGION=us-east-1
+
+Run local server
+uvicorn main:app --reload
+
+Authorize TrainingPeaks connection
+Redirect URI: http://localhost:5000/handle_trainingpeaks_authorization
+Scope: athlete:profile workouts:read workouts:details events:read metrics:read
+
+10.12 Outputs
+
+✅ System Summary
+Angela Engine = Modular coaching logic
+EchoDevo = Hosting + visualization layer
+TrainingPeaks / Intervals = Data sources + sync endpoints
+AWS = Compute + storage backbone
+All designed so that one system (yours) can eventually replace external APIs once fully mature.
+
+PART XI – IMPLEMENTATION SPECIFICATION (DEV HANDOFF)
+
+11.1 Overall Architecture
+Frontend (EchoDevo Web / Mobile)
+        ↓
+API Gateway  →  Auth (Lambda)
+        ↓
+Core Engine Cluster (ECS or Fargate)
+        ├── stresslogic.py
+        ├── tss_planner.py
+        ├── fueling_engine.py
+        ├── recovery_engine.py
+        ├── taper_engine.py
+        └── cognitive_core.py
+        ↓
+Data Layer (PostgreSQL + S3 + Secrets Mgr)
+        ↓
+External APIs (TP / Intervals / Strava / Garmin)
+
+
+11.2 Environment Variables
+
+11.3 Backend Endpoints (Summary)
+
+11.4 Core Engine Modules
+stresslogic.py
+def evaluate_state(tsb, hrv_ratio, sleep_quality, mood):
+    # returns stress_state: 'Recovered','Productive','Overreached','Compromised'
+    ...
+
+tss_planner.py
+def plan_week(current_ctl, target_tsb, block_type):
+    # outputs weekly_tss_bike/run/swim
+    ...
+
+fueling_engine.py
+def compute_fueling(duration, intensity, sport, state):
+    # returns dict of cho_pre, cho_during, cho_post, fcs
+    ...
+
+recovery_engine.py
+def readiness_score(tsb, hrv, sleep, mood, fcs):
+    # returns readiness_score, recovery_type
+    ...
+
+taper_engine.py
+def taper_adjust(weeks_to_race, ctl, tsb):
+    # returns tss_modifiers, race_ready_flag
+    ...
+
+cognitive_core.py
+def generate_message(context, state, action):
+    # returns narrative string for athlete or coach
+    ...
+
+
+11.5 Database Schema (PostgreSQL)
+Table athletes
+CREATE TABLE athletes (
+  id UUID PRIMARY KEY,
+  name TEXT,
+  coach_id UUID,
+  zones JSONB,
+  current_block TEXT,
+  ctl NUMERIC,
+  atl NUMERIC,
+  tsb NUMERIC,
+  readiness NUMERIC,
+  stress_state TEXT,
+  fueling_score NUMERIC,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+Table workouts
+CREATE TABLE workouts (
+  id TEXT PRIMARY KEY,
+  athlete_id UUID REFERENCES athletes(id),
+  date DATE,
+  sport TEXT,
+  tss NUMERIC,
+  duration INTEGER,
+  intensity_factor NUMERIC,
+  metrics JSONB,
+  source TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+Table messages
+CREATE TABLE messages (
+  id SERIAL PRIMARY KEY,
+  athlete_id UUID,
+  role TEXT,
+  message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+
+11.6 AWS Deployment Steps
+RDS setup – PostgreSQL 15 multi-AZ.
+S3 buckets – echodevo-data (raw imports), echodevo-exports.
+Secrets Manager – store all OAuth tokens.
+Lambda functions –
+sync_trainingpeaks (cron 6 h)
+compute_daily (02:00 UTC)
+compute_weekly (Sun 23:00 UTC)
+ECS/Fargate – containerize core engine (Dockerfile Python 3.10 + FastAPI).
+API Gateway – public entry to Lambdas and ECS.
+CloudWatch – monitor execution, set alerts for error > 1 %.
+
+11.7 Security & Compliance
+All PII encrypted (AES-256 at rest, TLS in transit).
+Tokens rotated every 90 days.
+Role-based RBAC in Postgres (coach, athlete, admin).
+GDPR / CCPA export/delete endpoints (/athlete/{id}/erase).
+
+11.8 Coach Dashboard Data Model
+
+11.9 Athlete View Endpoints
+
+11.10 Sample Payloads
+Input → /compute/daily
+{
+  "athlete_id": "UUID",
+  "date": "2026-01-08",
+  "ctl": 86,
+  "atl": 94,
+  "tsb": -8,
+  "hrv_ratio": 0.92,
+  "sleep_hours": 7.2,
+  "mood_score": 4,
+  "fueling_score": 95,
+  "current_block": "Build"
+}
+
+Output
+{
+  "readiness": 78,
+  "stress_state": "Productive",
+  "recovery_type": "None",
+  "tss_plan": {"bike":520,"run":330,"swim":180},
+  "fueling_plan": {"cho_total":220,"protein_post":25},
+  "message": "You’re in productive fatigue — hold load steady and keep fueling well."
+}
+
+
+11.11 Front-End Integration
+Use React + Next.js + Tailwind for EchoDevo UI.
+WebSocket for real-time updates (/ws/athlete/{id}).
+Charts via Recharts or Plotly for TSS and readiness trends.
+Auth flow with Cognito or Auth0 (JWT).
+
+11.12 Testing & Validation
+Unit tests per module (pytest).
+Integration tests for TP OAuth and data ingest.
+Simulation suite to replay past weeks and check engine outputs.
+Load testing via Artillery → target 1000 athletes per minute.
+
+11.13 Deliverables for Developers
+✅ Git repository structure
+✅ Dockerfile + Lambda scripts
+✅ Environment template (.env.example)
+✅ Swagger/OpenAPI spec for all routes
+✅ Postman collection for endpoint testing
+✅ CloudFormation or Terraform stack templates
+✅ Comprehensive README for local setup
+
+11.14 Deployment Checklist
+RDS instance live & seeded
+API Gateway deployed
+Secrets Manager loaded with TP keys
+Lambda cron jobs active
+ECS service scaled 2× containers (min)
+Cognito/Auth0 auth tested
+SSL certs via ACM
+CloudWatch alarms configured
+Webhook validations for TP and Intervals
+Frontend connected to /coach and /athlete routes
+
+11.15 Scalability Roadmap
+
+✅ End of Part XI – Implementation Spec (Handoff)
+This gives your engineering team every technical element — endpoints, database, AWS deployment, environment variables, and example payloads — required to embed your Angela Coaching Engine fully inside EchoDevo and link seamlessly with TrainingPeaks and Intervals.
+

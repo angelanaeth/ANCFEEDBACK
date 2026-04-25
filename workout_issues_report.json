@@ -1,0 +1,175 @@
+{
+  "total_workouts": 10505,
+  "total_issues": 10367,
+  "issues_by_type": {
+    "warm_up_as_line": 10088,
+    "take_separate_line": 0,
+    "consecutive_kicks": 0,
+    "s_vs_sec": 49,
+    "missing_dash_prefix": 230,
+    "drill_set_combined": 0,
+    "cool_down_combined": 0
+  },
+  "sample_issues": {
+    "warm_up_as_line": [
+      [
+        "1",
+        "Endurance Build #1",
+        "2000"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "2500"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "3000"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "3500"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "3700"
+      ],
+      [
+        "2",
+        "Endurance Build #2",
+        "2000"
+      ],
+      [
+        "2",
+        "Endurance Build #2",
+        "2500"
+      ],
+      [
+        "2",
+        "Endurance Build #2",
+        "3000"
+      ],
+      [
+        "2",
+        "Endurance Build #2",
+        "3500"
+      ],
+      [
+        "3",
+        "Endurance Build #3",
+        "2000"
+      ]
+    ],
+    "take_separate_line": [],
+    "consecutive_kicks": [],
+    "s_vs_sec": [
+      [
+        "18",
+        "Open Water Skills #6",
+        "2000"
+      ],
+      [
+        "18",
+        "Open Water Skills #6",
+        "2500"
+      ],
+      [
+        "18",
+        "Open Water Skills #6",
+        "3000"
+      ],
+      [
+        "18",
+        "Open Water Skills #6",
+        "3500"
+      ],
+      [
+        "20",
+        "Speed and Power #7",
+        "2000"
+      ],
+      [
+        "20",
+        "Speed and Power #7",
+        "2500"
+      ],
+      [
+        "20",
+        "Speed and Power #7",
+        "3000"
+      ],
+      [
+        "20",
+        "Speed and Power #7",
+        "3500"
+      ],
+      [
+        "20",
+        "Speed and Power #7",
+        "4000"
+      ],
+      [
+        "18",
+        "Open Water Skills #6",
+        "2000"
+      ]
+    ],
+    "missing_dash_prefix": [
+      [
+        "1",
+        "Endurance Build #1",
+        "2000"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "2500"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "3000"
+      ],
+      [
+        "1",
+        "Endurance Build #1",
+        "3500"
+      ],
+      [
+        "2",
+        "Speed and Power #1",
+        "2000"
+      ],
+      [
+        "2",
+        "Speed and Power #1",
+        "2500"
+      ],
+      [
+        "2",
+        "Speed and Power #1",
+        "3000"
+      ],
+      [
+        "3",
+        "Open Water Skills #1",
+        "2000"
+      ],
+      [
+        "3",
+        "Open Water Skills #1",
+        "2500"
+      ],
+      [
+        "3",
+        "Open Water Skills #1",
+        "3000"
+      ]
+    ],
+    "drill_set_combined": [],
+    "cool_down_combined": []
+  }
+}

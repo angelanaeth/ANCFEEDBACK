@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-04-15T10:47:28.166224",
+  "file_size_bytes": 12589012,
+  "total_workouts": 16611,
+  "workouts_with_descriptions": 16611,
+  "verification_checks": {
+    "warm_up_as": {
+      "count": 0,
+      "status": "PASS"
+    },
+    "take_xs": {
+      "count": 0,
+      "status": "PASS"
+    },
+    "warm_up_header": {
+      "count": 15966,
+      "status": "INFO"
+    },
+    "take_sec": {
+      "count": 28601,
+      "status": "INFO"
+    }
+  },
+  "fixes_applied": {
+    "warm_up_as_removed": 15962,
+    "s_to_sec_converted": 45361,
+    "take_spacing_standardized": 16
+  },
+  "status": "ALL_CLEAR",
+  "deployment": {
+    "production_url": "https://angela-coach.pages.dev",
+    "latest_deploy": "https://c3476243.angela-coach.pages.dev",
+    "commit": "1cdde63"
+  }
+}

@@ -1,0 +1,6 @@
+-- Add basic missing columns to athlete_profiles
+-- Migration: 0010_add_basic_profile_columns.sql
+
+ALTER TABLE athlete_profiles ADD COLUMN sport TEXT DEFAULT 'Triathlon';
+ALTER TABLE athlete_profiles ADD COLUMN status TEXT DEFAULT 'Active';
+ALTER TABLE athlete_profiles ADD COLUMN age INTEGER;

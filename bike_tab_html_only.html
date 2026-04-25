@@ -1,0 +1,403 @@
+<!-- ========================================
+     BIKE TAB - COMPLETE REDESIGN
+     ======================================== -->
+<div class="tab-pane fade" id="bike" role="tabpanel">
+  
+  <!-- Main Metrics Cards Row -->
+  <div class="row g-3 mb-3">
+    <!-- Critical Power Card -->
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>Critical Power (CP)</h4>
+          <button class="btn-icon" onclick="toggleBikeCPEdit()" title="Edit">
+          <button class="btn-icon" onclick="toggleBikeCPEdit()" title="Edit">
+          <button class="btn-icon" onclick="toggleBikeCPEdit()" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+        </div>
+        <div class="metric-main">
+          <span class="metric-value" id="bikeCPValue">---</span>
+          <span class="metric-unit">watts</span>
+        </div>
+        <div class="metric-meta">
+          <span id="bikeCPSource">Not set</span>
+          <span id="bikeCPUpdated"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- W' Card -->
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>W' (Anaerobic Capacity)</h4>
+          <button class="btn-icon" onclick="toggleBikeWPrimeEdit()" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+        </div>
+        <div class="metric-main">
+          <span class="metric-value" id="bikeWPrimeValue">---</span>
+          <span class="metric-unit">joules</span>
+        </div>
+        <div class="metric-meta">
+          <span id="bikeWPrimeSource">Not set</span>
+          <span id="bikeWPrimeUpdated"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Power @ VO2max Card -->
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>Power @ VO₂max</h4>
+          <button class="btn-icon" onclick="toggleBikePVO2Edit()" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+        </div>
+        <div class="metric-main">
+          <span class="metric-value" id="bikePVO2Value">---</span>
+          <span class="metric-unit">watts</span>
+        </div>
+        <div class="metric-meta">
+          <span id="bikePVO2Source">Not set</span>
+          <span id="bikePVO2Updated"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LT1 and OGC Row -->
+  <div class="row g-3 mb-4">
+    <!-- LT1 Card -->
+    <div class="col-md-6">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>LT1 (Lactate Threshold 1)</h4>
+          <button class="btn-icon" onclick="toggleBikeLT1Edit()" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+        </div>
+        <div class="metric-main">
+          <span class="metric-value" id="bikeLT1Value">---</span>
+          <span class="metric-unit">watts</span>
+          <span class="metric-percent" id="bikeLT1Percent" style="margin-left: 8px; color: #6b7280; font-size: 14px;"></span>
+        </div>
+        <div class="metric-meta">
+          <span id="bikeLT1Source">Not set</span>
+          <span id="bikeLT1Updated"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- OGC Card -->
+    <div class="col-md-6">
+      <div class="metric-card">
+        <div class="metric-header">
+          <h4>OGC (Oxidative-Glycolytic Crossover)</h4>
+          <button class="btn-icon" onclick="toggleBikeOGCEdit()" title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+        </div>
+        <div class="metric-main">
+          <span class="metric-value" id="bikeOGCValue">---</span>
+          <span class="metric-unit">watts</span>
+          <span class="metric-percent" id="bikeOGCPercent" style="margin-left: 8px; color: #6b7280; font-size: 14px;"></span>
+        </div>
+        <div class="metric-meta">
+          <span id="bikeOGCSource">Not set</span>
+          <span id="bikeOGCUpdated"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Update Forms (Hidden by default) -->
+  <div id="bikeCPEditForm" class="edit-form-card" style="display: none;">
+    <h5>Update Critical Power</h5>
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input type="number" class="form-control" id="bikeCPInput" placeholder="280">
+      </div>
+      <div class="col-md-6">
+        <button class="btn btn-primary" onclick="saveBikeCPManual()">Save</button>
+        <button class="btn btn-secondary" onclick="toggleBikeCPEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CRITICAL POWER TEST HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-bolt"></i> Critical Power Test History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeCPTestManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>W' (J)</th>
+            <th>Test Data</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeCPHistoryBody">
+          <tr>
+            <td colspan="6" class="text-center text-muted">No test history. Use Toolkit to calculate.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== BIKE POWER ZONES HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-layer-group"></i> Power Zones Test History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeZonesTestManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>LT1 (W)</th>
+            <th>OGC (W)</th>
+            <th>Zones</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeZonesHistoryBody">
+          <tr>
+            <td colspan="7" class="text-center text-muted">No zone calculations. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== VO2 MAX INTERVALS HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-heartbeat"></i> VO₂ Max Intervals History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeVO2TestManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>W' (J)</th>
+            <th>pVO₂max (W)</th>
+            <th>Protocols</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeVO2HistoryBody">
+          <tr>
+            <td colspan="7" class="text-center text-muted">No VO₂ prescriptions. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== BEST EFFORT WATTAGE HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-rocket"></i> Best Effort Wattage History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeBestEffortManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>W' (J)</th>
+            <th>Interval Targets</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeBestEffortHistoryBody">
+          <tr>
+            <td colspan="6" class="text-center text-muted">No best effort data. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== LOW CADENCE HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-tachometer-alt"></i> Low Cadence Strength History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeLowCadenceManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>Target Cadence</th>
+            <th>Power Targets</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeLowCadenceHistoryBody">
+          <tr>
+            <td colspan="6" class="text-center text-muted">No low cadence data. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== CHO BURN HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-fire"></i> CHO Burn (Bike) History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeCHOManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Power (W)</th>
+            <th>Total kJ</th>
+            <th>CHO Burned (g)</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeCHOHistoryBody">
+          <tr>
+            <td colspan="7" class="text-center text-muted">No CHO burn data. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== TRAINING ZONES (LTHR) HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-heartbeat"></i> Training Zones (LTHR) History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeTrainingZonesManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Bike CP (W)</th>
+            <th>Run CP (W)</th>
+            <th>HR Zones</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeTrainingZonesHistoryBody">
+          <tr>
+            <td colspan="6" class="text-center text-muted">No training zones. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== LT1/OGC ANALYSIS HISTORY ===== -->
+  <div class="history-section">
+    <div class="history-header">
+      <h4><i class="fas fa-chart-line"></i> LT1/OGC Analysis History</h4>
+      <button class="btn btn-sm btn-success" onclick="addBikeLT1OGCManual()">
+        <i class="fas fa-plus"></i> Add Manual Test
+      </button>
+    </div>
+    <div class="table-responsive">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>CP (W)</th>
+            <th>LT1 (W)</th>
+            <th>OGC (W)</th>
+            <th>LT1 HR</th>
+            <th>OGC HR</th>
+            <th>Source</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bikeLT1OGCHistoryBody">
+          <tr>
+            <td colspan="8" class="text-center text-muted">No LT1/OGC analysis. Use Toolkit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bike Tools -->
+  <div class="card bg-light mt-3">
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-12">
+          <a href="#" onclick="openToolkit('bike'); return false;" class="btn btn-warning w-100">
+            <i class="fas fa-calculator me-2"></i>Open Bike Toolkit
+          </a>
+          <small class="text-muted d-block mt-1">Calculate CP, power zones, VO₂ intervals, and more</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========================================
+     BIKE TAB JAVASCRIPT
+     ======================================== -->
+<script>
+// ===== LOAD BIKE TEST HISTORIES =====
+async function loadBikeTestHistories() {
+  if (!window.athleteId) return;
+  
+  try {
+    // Load all bike test histories in parallel
+    const [cpTests, zonesTests, vo2Tests, bestEffortTests, lowCadenceTests, choTests, trainingZonesTests, lt1ogcTests] = await Promise.all([
+      fetchTestHistory('bike-cp'),
+      fetchTestHistory('bike-zones'),
+      fetchTestHistory('bike-vo2'),
+      fetchTestHistory('bike-best-effort'),
+      fetchTestHistory('bike-low-cadence'),
+      fetchTestHistory('bike-cho'),
+      fetchTestHistory('bike-training-zones'),
+      fetchTestHistory('bike-lt1-ogc')
+    ]);
+

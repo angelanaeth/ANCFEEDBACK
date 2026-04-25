@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Pacing Calculator - Echodevo Coach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --accent: #f97316;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            background: var(--background);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            background: var(--card-bg);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            color: white;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .split-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .split-table th {
+            background: var(--background);
+            padding: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .split-table td {
+            padding: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .alert-info {
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 8px;
+            color: var(--primary);
+        }
+
+        .save-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border: 2px solid var(--success);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .input-group-text {
+            background: var(--background);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/static/coach">
+                <i class="fas fa-tachometer-alt me-2"></i>Race Pacing Calculator
+            </a>
+            <div class="d-flex gap-2">
+                <a href="/static/coach" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h2 class="mb-2"><i class="fas fa-stopwatch me-2"></i>Race Pacing Calculator</h2>
+            <p class="text-secondary mb-0">Calculate optimal race pacing for triathlon, cycling, and running events</p>
+        </div>
+
+        <!-- Race Information -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Race Information
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Race Name *</label>
+                        <input type="text" class="form-control" id="raceName" placeholder="e.g., Ironman Arizona 2026" required>
+                        <small class="text-muted">Required for saving to athlete profile</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Race Type *</label>
+                        <select class="form-select" id="raceType">
+                            <option value="sprint">Sprint Triathlon</option>
+                            <option value="olympic">Olympic Triathlon</option>
+                            <option value="70.3">Half Ironman (70.3)</option>
+                            <option value="ironman">Ironman</option>
+                            <option value="marathon">Marathon</option>
+                            <option value="half-marathon">Half Marathon</option>
+                            <option value="10k">10K</option>
+                            <option value="custom">Custom Race</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Experience Level</label>
+                        <select class="form-select" id="experienceLevel">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate" selected>Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Athlete Data -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-circle me-2"></i>Athlete Data
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">FTP (Watts) *</label>
+                        <input type="number" class="form-control" id="ftp" placeholder="250" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Run CS (Pace/Mile)</label>
+                        <input type="text" class="form-control" id="runCS" placeholder="7:30">
+                        <small class="text-muted">Format: MM:SS</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Swim CS (Pace/100)</label>
+                        <input type="text" class="form-control" id="swimCS" placeholder="1:25">
+                        <small class="text-muted">Format: M:SS</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" class="form-control" id="weight" placeholder="70">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Profile -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-mountain me-2"></i>Course Profile
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Course Type</label>
+                        <select class="form-select" id="courseType">
+                            <option value="flat">Flat (0-500m gain)</option>
+                            <option value="rolling">Rolling (500-1000m gain)</option>
+                            <option value="hilly">Hilly (1000-2000m gain)</option>
+                            <option value="very-hilly">Very Hilly (2000-3000m gain)</option>
+                            <option value="mountainous">Mountainous (>3000m gain)</option>
+                            <option value="manual">Manual Input</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3" id="elevationGainDiv" style="display: none;">
+                        <label class="form-label">Elevation Gain (m)</label>
+                        <input type="number" class="form-control" id="elevationGain" placeholder="1500">
+                    </div>
+                    <div class="col-md-3 mb-3" id="elevationLossDiv" style="display: none;">
+                        <label class="form-label">Elevation Loss (m)</label>
+                        <input type="number" class="form-control" id="elevationLoss" placeholder="1500">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Conditions -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-cloud-sun me-2"></i>Weather Conditions
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Temperature vs Acclimated</label>
+                        <select class="form-select" id="temperature">
+                            <option value="0">Same as training</option>
+                            <option value="5">5°F warmer</option>
+                            <option value="10">10°F warmer</option>
+                            <option value="15">15°F warmer</option>
+                            <option value="20">20°F+ warmer</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Humidity vs Acclimated</label>
+                        <select class="form-select" id="humidity">
+                            <option value="0">Same as training</option>
+                            <option value="10">10% more humid</option>
+                            <option value="20">20% more humid</option>
+                            <option value="30">30%+ more humid</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculate Button -->
+        <div class="text-center mb-4">
+            <button class="btn btn-primary btn-lg" onclick="calculatePacing()">
+                <i class="fas fa-calculator me-2"></i>Calculate Race Pacing
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section">
+            <!-- Swim Results -->
+            <div class="card" id="swimResults" style="display: none;">
+                <div class="card-header">
+                    <i class="fas fa-swimmer me-2"></i>Swim Pacing
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">Target Pace per 100m</div>
+                                <div class="metric-value" id="swimPace">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">Estimated Swim Time</div>
+                                <div class="metric-value" id="swimTime">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">Sighting Adjustment</div>
+                                <div class="metric-value" id="swimSighting">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0" id="swimNotes">-</div>
+                </div>
+            </div>
+
+            <!-- Bike Results -->
+            <div class="card" id="bikeResults">
+                <div class="card-header">
+                    <i class="fas fa-bicycle me-2"></i>Bike Pacing
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Target Average Power</div>
+                                <div class="metric-value" id="bikeAvgPower">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">NP Ceiling</div>
+                                <div class="metric-value" id="bikeNP">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Intensity Factor (IF)</div>
+                                <div class="metric-value" id="bikeIF">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-label">Bike TSS</div>
+                                <div class="metric-value" id="bikeTSS">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Estimated Bike Time</div>
+                                <div class="metric-value" id="bikeTime">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Hill Power Range</div>
+                                <div class="metric-value" id="bikePowerRange">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0" id="bikeNotes">-</div>
+                </div>
+            </div>
+
+            <!-- Run Results -->
+            <div class="card" id="runResults">
+                <div class="card-header">
+                    <i class="fas fa-running me-2"></i>Run Pacing
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">Target Pace (per mile)</div>
+                                <div class="metric-value" id="runPace">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">Estimated Run Time</div>
+                                <div class="metric-value" id="runTime">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-card">
+                                <div class="metric-label">CHO Needs (g/hr)</div>
+                                <div class="metric-value" id="runCHO">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="split-table">
+                        <thead>
+                            <tr>
+                                <th>Split</th>
+                                <th>Target Pace</th>
+                                <th>Strategy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="runSplits">
+                        </tbody>
+                    </table>
+                    <div class="alert alert-info mt-3 mb-0" id="runNotes">-</div>
+                </div>
+            </div>
+
+            <!-- Overall Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-flag-checkered me-2"></i>Overall Race Summary
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Predicted Finish Time</div>
+                                <div class="metric-value" id="overallTime">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-card">
+                                <div class="metric-label">Total CHO Needs (g)</div>
+                                <div class="metric-value" id="totalCHO">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="split-table mt-3">
+                        <thead>
+                            <tr>
+                                <th>Segment</th>
+                                <th>Time</th>
+                                <th>Key Metrics</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overallSplits">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Save to Profile Section -->
+            <div class="save-section">
+                <h4 class="mb-3"><i class="fas fa-save me-2"></i>Save Race Plan to Athlete Profile</h4>
+                <p class="text-muted mb-3">Save this race pacing plan to the athlete's profile for future reference.</p>
+                <div class="row align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label">Athlete ID</label>
+                        <input type="number" class="form-control" id="athleteId" placeholder="427194">
+                        <small class="text-muted">Enter the TrainingPeaks athlete ID</small>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-success w-100" onclick="saveToProfile()">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Save to Profile
+                        </button>
+                    </div>
+                </div>
+                <div id="saveMessage" class="mt-3" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // Show/hide manual elevation inputs
+        document.getElementById('courseType').addEventListener('change', function() {
+            const isManual = this.value === 'manual';
+            document.getElementById('elevationGainDiv').style.display = isManual ? 'block' : 'none';
+            document.getElementById('elevationLossDiv').style.display = isManual ? 'block' : 'none';
+        });
+
+        // Global variable to store calculation results
+        let calculationResults = null;
+
+        // Race distances (in appropriate units)
+        const raceDistances = {
+            'sprint': { swim: 750, bike: 20000, run: 5000, t1: 2, t2: 1.5 },
+            'olympic': { swim: 1500, bike: 40000, run: 10000, t1: 3, t2: 2 },
+            '70.3': { swim: 1900, bike: 90000, run: 21097.5, t1: 5, t2: 3 },
+            'ironman': { swim: 3800, bike: 180000, run: 42195, t1: 8, t2: 5 },
+            'marathon': { swim: 0, bike: 0, run: 42195, t1: 0, t2: 0 },
+            'half-marathon': { swim: 0, bike: 0, run: 21097.5, t1: 0, t2: 0 },
+            '10k': { swim: 0, bike: 0, run: 10000, t1: 0, t2: 0 }
+        };
+
+        // IF ranges by race type and experience
+        const intensityFactors = {
+            'sprint': { beginner: 0.90, intermediate: 0.92, advanced: 0.95 },
+            'olympic': { beginner: 0.85, intermediate: 0.87, advanced: 0.90 },
+            '70.3': { beginner: 0.75, intermediate: 0.77, advanced: 0.80 },
+            'ironman': { beginner: 0.68, intermediate: 0.70, advanced: 0.72 }
+        };
+
+        function parseTime(timeStr) {
+            const parts = timeStr.split(':').map(p => parseInt(p));
+            if (parts.length === 2) {
+                return parts[0] * 60 + parts[1]; // MM:SS -> seconds
+            }
+            return 0;
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            if (hours > 0) {
+                return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatPace(secondsPerMile) {
+            const mins = Math.floor(secondsPerMile / 60);
+            const secs = Math.floor(secondsPerMile % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function getCourseProfile() {
+            const courseType = document.getElementById('courseType').value;
+            if (courseType === 'manual') {
+                const gain = parseInt(document.getElementById('elevationGain').value) || 0;
+                return { 
+                    type: 'manual', 
+                    gain: gain,
+                    loss: parseInt(document.getElementById('elevationLoss').value) || gain,
+                    vi: gain > 2000 ? 1.08 : gain > 1000 ? 1.05 : gain > 500 ? 1.03 : 1.01,
+                    ifAdjustment: gain > 2000 ? -0.04 : gain > 1000 ? -0.03 : gain > 500 ? -0.02 : 0
+                };
+            }
+            
+            const profiles = {
+                'flat': { gain: 250, loss: 250, vi: 1.01, ifAdjustment: 0 },
+                'rolling': { gain: 750, loss: 750, vi: 1.03, ifAdjustment: -0.02 },
+                'hilly': { gain: 1500, loss: 1500, vi: 1.05, ifAdjustment: -0.03 },
+                'very-hilly': { gain: 2500, loss: 2500, vi: 1.08, ifAdjustment: -0.04 },
+                'mountainous': { gain: 4000, loss: 4000, vi: 1.12, ifAdjustment: -0.05 }
+            };
+            return { type: courseType, ...profiles[courseType] };
+        }
+
+        function getWeatherDegradation() {
+            const temp = parseInt(document.getElementById('temperature').value);
+            const humidity = parseInt(document.getElementById('humidity').value);
+            
+            // Degradation mapping (percentage)
+            const degradationMap = {
+                0: { 0: 0, 10: 0, 20: 0.5, 30: 1 },
+                5: { 0: 0.5, 10: 1, 20: 2, 30: 3 },
+                10: { 0: 1, 10: 2, 20: 3, 30: 4 },
+                15: { 0: 2, 10: 3, 20: 4, 30: 5 },
+                20: { 0: 3, 10: 4, 20: 5, 30: 7 }
+            };
+            
+            return (degradationMap[temp] || {})[humidity] || 0;
+        }
+
+        function calculatePacing() {
+            // Get inputs
+            const raceName = document.getElementById('raceName').value.trim();
+            const raceType = document.getElementById('raceType').value;
+            const experience = document.getElementById('experienceLevel').value;
+            const ftp = parseFloat(document.getElementById('ftp').value);
+            const runCS = document.getElementById('runCS').value;
+            const swimCS = document.getElementById('swimCS').value;
+            const weight = parseFloat(document.getElementById('weight').value) || 70;
+
+            // Validation
+            if (!raceName) {
+                alert('Please enter a race name');
+                return;
+            }
+            if (!ftp || ftp <= 0) {
+                alert('Please enter a valid FTP');
+                return;
+            }
+
+            const distances = raceDistances[raceType] || raceDistances['olympic'];
+            const courseProfile = getCourseProfile();
+            const weatherDegradation = getWeatherDegradation();
+
+            // Calculate bike pacing
+            let baseIF = intensityFactors[raceType]?.[experience] || 0.75;
+            baseIF += courseProfile.ifAdjustment;
+            const adjustedIF = baseIF * (1 - weatherDegradation / 100);
+            
+            const targetAvgPower = Math.round(ftp * adjustedIF);
+            const targetNP = Math.round(targetAvgPower * courseProfile.vi);
+            const bikeDurationHours = distances.bike / 1000 / (30 * adjustedIF); // Rough estimate: 30 km/h at IF 1.0
+            const bikeTSS = Math.round(bikeDurationHours * adjustedIF * adjustedIF * 100);
+            const bikeDurationSeconds = bikeDurationHours * 3600;
+
+            // Power ranges for hills
+            const hillPowerLow = Math.round(targetAvgPower * 1.05);
+            const hillPowerHigh = Math.round(targetAvgPower * 1.15);
+
+            // Calculate run pacing
+            let runPaceSeconds = 0;
+            let runDurationSeconds = 0;
+            let runCHOPerHour = 0;
+            let runSplitsData = [];
+
+            if (runCS && distances.run > 0) {
+                const baseRunPacePerMile = parseTime(runCS);
+                // Degradation from bike IF
+                const bikeDegradation = Math.max(0, (adjustedIF - 0.72) * 15); // % degradation
+                // Apply degradations
+                const totalDegradation = bikeDegradation + weatherDegradation;
+                runPaceSeconds = baseRunPacePerMile * (1 + totalDegradation / 100);
+                
+                const runDistanceMiles = distances.run / 1609.34;
+                runDurationSeconds = runPaceSeconds * runDistanceMiles;
+
+                // Negative split strategy
+                const firstHalfPace = runPaceSeconds * 1.02;
+                const secondHalfPace = runPaceSeconds * 0.98;
+
+                runSplitsData = [
+                    { label: 'First Half', pace: formatPace(firstHalfPace), strategy: 'Conservative start, settle in' },
+                    { label: 'Second Half', pace: formatPace(secondHalfPace), strategy: 'Increase effort if feeling good' },
+                    { label: 'Final 10K', pace: formatPace(runPaceSeconds * 0.97), strategy: 'Push to finish' }
+                ];
+
+                // CHO calculation
+                const runIntensity = 0.75 + (adjustedIF - 0.70) * 0.5; // Rough run intensity based on bike IF
+                runCHOPerHour = Math.round(60 + runIntensity * 80);
+            }
+
+            // Calculate swim pacing
+            let swimPaceSeconds = 0;
+            let swimDurationSeconds = 0;
+            let swimSightingSeconds = 0;
+
+            if (swimCS && distances.swim > 0) {
+                const baseSwimPacePer100 = parseTime(swimCS);
+                // Effort level by race type
+                const effortLevels = {
+                    'sprint': 0.98, 'olympic': 0.95, '70.3': 0.92, 'ironman': 0.90
+                };
+                const effortLevel = effortLevels[raceType] || 0.92;
+                swimPaceSeconds = baseSwimPacePer100 / effortLevel;
+                
+                const num100s = distances.swim / 100;
+                swimDurationSeconds = swimPaceSeconds * num100s;
+                
+                // Open water adjustments (sighting, wetsuit)
+                swimSightingSeconds = Math.round(num100s * 2); // 2 seconds per 100m for sighting
+                swimDurationSeconds += swimSightingSeconds;
+            }
+
+            // Total time
+            const totalTime = (swimDurationSeconds || 0) + (distances.t1 * 60) + (bikeDurationSeconds || 0) + 
+                             (distances.t2 * 60) + (runDurationSeconds || 0);
+            
+            // Total CHO
+            const bikeHours = bikeDurationSeconds / 3600;
+            const runHours = runDurationSeconds / 3600;
+            const bikeCHO = Math.round(bikeHours * (70 + adjustedIF * 50));
+            const runCHO = Math.round(runHours * runCHOPerHour);
+            const totalCHO = bikeCHO + runCHO;
+
+            // Store results
+            calculationResults = {
+                race_name: raceName,
+                race_type: raceType,
+                experience_level: experience,
+                course_profile: courseProfile,
+                elevation_gain: courseProfile.gain,
+                elevation_loss: courseProfile.loss,
+                temperature: parseInt(document.getElementById('temperature').value),
+                humidity: parseInt(document.getElementById('humidity').value),
+                weather_degradation: weatherDegradation,
+                athlete_data: {
+                    ftp: ftp,
+                    run_cs: runCS,
+                    swim_cs: swimCS,
+                    weight_kg: weight
+                },
+                pacing_plan: {
+                    swim: {
+                        target_pace: swimCS ? formatPace(swimPaceSeconds) : null,
+                        estimated_time_seconds: swimDurationSeconds,
+                        sighting_adjustment_seconds: swimSightingSeconds
+                    },
+                    bike: {
+                        target_avg_power: targetAvgPower,
+                        target_np: targetNP,
+                        intensity_factor: adjustedIF.toFixed(3),
+                        variability_index: courseProfile.vi,
+                        hill_power_range: `${hillPowerLow}-${hillPowerHigh}W`,
+                        estimated_time_seconds: bikeDurationSeconds,
+                        tss: bikeTSS,
+                        cho_per_hour: Math.round(bikeCHO / bikeHours)
+                    },
+                    run: {
+                        target_pace: runCS ? formatPace(runPaceSeconds) : null,
+                        first_half_pace: runCS ? formatPace(runPaceSeconds * 1.02) : null,
+                        second_half_pace: runCS ? formatPace(runPaceSeconds * 0.98) : null,
+                        estimated_time_seconds: runDurationSeconds,
+                        cho_per_hour: runCHOPerHour,
+                        degradation_from_bike: Math.round((adjustedIF - 0.72) * 15)
+                    },
+                    totals: {
+                        predicted_finish_seconds: totalTime,
+                        total_cho_grams: totalCHO
+                    }
+                }
+            };
+
+            // Display results
+            displayResults();
+        }
+
+        function displayResults() {
+            const results = calculationResults;
+            const pacing = results.pacing_plan;
+
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+
+            // Swim results
+            if (pacing.swim.target_pace) {
+                document.getElementById('swimResults').style.display = 'block';
+                document.getElementById('swimPace').textContent = pacing.swim.target_pace + '/100m';
+                document.getElementById('swimTime').textContent = formatTime(pacing.swim.estimated_time_seconds);
+                document.getElementById('swimSighting').textContent = `+${pacing.swim.sighting_adjustment_seconds}s`;
+                document.getElementById('swimNotes').textContent = 
+                    `Start controlled, settle into rhythm. Sight every 6-8 strokes on open water.`;
+            } else {
+                document.getElementById('swimResults').style.display = 'none';
+            }
+
+            // Bike results
+            document.getElementById('bikeAvgPower').textContent = pacing.bike.target_avg_power + 'W';
+            document.getElementById('bikeNP').textContent = pacing.bike.target_np + 'W';
+            document.getElementById('bikeIF').textContent = pacing.bike.intensity_factor;
+            document.getElementById('bikeTSS').textContent = pacing.bike.tss;
+            document.getElementById('bikeTime').textContent = formatTime(pacing.bike.estimated_time_seconds);
+            document.getElementById('bikePowerRange').textContent = pacing.bike.hill_power_range;
+            document.getElementById('bikeNotes').textContent = 
+                `Maintain steady power. On hills, surge to ${pacing.bike.hill_power_range} for short climbs. ` +
+                `Target CHO: ${pacing.bike.cho_per_hour}g/hr. VI: ${pacing.bike.variability_index}.`;
+
+            // Run results
+            if (pacing.run.target_pace) {
+                document.getElementById('runPace').textContent = pacing.run.target_pace + '/mi';
+                document.getElementById('runTime').textContent = formatTime(pacing.run.estimated_time_seconds);
+                document.getElementById('runCHO').textContent = pacing.run.cho_per_hour + ' g/hr';
+                
+                const runSplitsHTML = `
+                    <tr>
+                        <td>First Half</td>
+                        <td>${pacing.run.first_half_pace}/mi</td>
+                        <td>Conservative start, settle in</td>
+                    </tr>
+                    <tr>
+                        <td>Second Half</td>
+                        <td>${pacing.run.second_half_pace}/mi</td>
+                        <td>Increase effort if feeling good</td>
+                    </tr>
+                `;
+                document.getElementById('runSplits').innerHTML = runSplitsHTML;
+                
+                document.getElementById('runNotes').textContent = 
+                    `Bike IF of ${pacing.bike.intensity_factor} causes ~${pacing.run.degradation_from_bike}% run pace degradation. ` +
+                    `Weather adds ${results.weather_degradation}% total degradation.`;
+            }
+
+            // Overall summary
+            document.getElementById('overallTime').textContent = formatTime(pacing.totals.predicted_finish_seconds);
+            document.getElementById('totalCHO').textContent = pacing.totals.total_cho_grams + 'g';
+
+            const overallSplitsHTML = `
+                ${pacing.swim.target_pace ? `<tr><td>Swim</td><td>${formatTime(pacing.swim.estimated_time_seconds)}</td><td>${pacing.swim.target_pace}/100m</td></tr>` : ''}
+                <tr><td>Bike</td><td>${formatTime(pacing.bike.estimated_time_seconds)}</td><td>${pacing.bike.target_avg_power}W avg, ${pacing.bike.target_np}W NP</td></tr>
+                ${pacing.run.target_pace ? `<tr><td>Run</td><td>${formatTime(pacing.run.estimated_time_seconds)}</td><td>${pacing.run.target_pace}/mi</td></tr>` : ''}
+            `;
+            document.getElementById('overallSplits').innerHTML = overallSplitsHTML;
+        }
+
+        async function saveToProfile() {
+            const athleteId = document.getElementById('athleteId').value;
+            
+            if (!athleteId) {
+                alert('Please enter an athlete ID');
+                return;
+            }
+
+            if (!calculationResults) {
+                alert('Please calculate race pacing first');
+                return;
+            }
+
+            try {
+                const response = await axios.post(
+                    `/api/coach/athlete/${athleteId}/race-note`,
+                    {
+                        note_type: 'race_pacing',
+                        race_name: calculationResults.race_name,
+                        content: calculationResults
+                    }
+                );
+
+                if (response.data.success) {
+                    const messageDiv = document.getElementById('saveMessage');
+                    messageDiv.style.display = 'block';
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Success!</strong> Race plan saved to athlete profile.
+                        <a href="/static/athlete-profile.html?athlete=${athleteId}" class="alert-link ms-2">
+                            View Profile <i class="fas fa-external-link-alt ms-1"></i>
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                const messageDiv = document.getElementById('saveMessage');
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Error!</strong> ${error.response?.data?.error || 'Failed to save race plan'}
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

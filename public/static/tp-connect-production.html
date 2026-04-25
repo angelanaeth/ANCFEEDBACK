@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrainingPeaks Connection - Echodevo Coach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .connect-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .step-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px 16px 0 0;
+        }
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            margin-right: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .btn-tp {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-tp:hover {
+            background: #ff5522;
+            transform: translateY(-2px);
+            color: white;
+        }
+        .alert-info {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+        }
+        .code-box {
+            background: #f5f5f5;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 13px;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .success-message {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .error-message {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="connect-container">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h1 class="text-white mb-2">
+                <i class="bi bi-lightning-charge-fill"></i>
+                Connect TrainingPeaks
+            </h1>
+            <p class="text-white-50">Use your existing TrainingPeaks coach account</p>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-primary">
+                    <i class="bi bi-info-circle-fill"></i>
+                    Requirements
+                </h5>
+                <ul class="mb-0">
+                    <li>You must have an <strong>existing TrainingPeaks coach account</strong></li>
+                    <li>Your account should have athletes you want to manage</li>
+                    <li>You'll authorize Echodevo to access your athlete data</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Step 1: Generate OAuth URL -->
+        <div class="card">
+            <div class="step-header">
+                <h4 class="mb-0">
+                    <span class="step-number">1</span>
+                    Generate Authorization Link
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    Click the button below to generate your TrainingPeaks authorization link.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-tp btn-lg" id="generateBtn" onclick="generateOAuthURL()">
+                        <i class="bi bi-link-45deg"></i>
+                        Generate OAuth URL
+                    </button>
+                </div>
+
+                <div id="generatedURL" class="mt-3" style="display:none;">
+                    <p class="fw-bold">Your Authorization URL:</p>
+                    <div class="code-box" id="urlDisplay"></div>
+                    <div class="mt-3 text-center">
+                        <button class="btn btn-success" onclick="openOAuthWindow()">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            Open in New Tab
+                        </button>
+                        <button class="btn btn-outline-secondary ms-2" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard"></i>
+                            Copy URL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Authorize -->
+        <div class="card">
+            <div class="step-header">
+                <h4 class="mb-0">
+                    <span class="step-number">2</span>
+                    Authorize with TrainingPeaks
+                </h4>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Open the authorization URL in a new tab</li>
+                    <li>Log in with your <strong>TrainingPeaks coach account</strong></li>
+                    <li>Review the permissions being requested</li>
+                    <li>Click <strong>"Allow"</strong> or <strong>"Authorize"</strong></li>
+                </ol>
+
+                <div class="warning-box">
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    <strong>Expected Behavior:</strong> After authorizing, TrainingPeaks will try to redirect to 
+                    <code>http://127.0.0.1:5000/...</code> which will show an error (this is normal since we're not running on localhost).
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Complete Authorization -->
+        <div class="card">
+            <div class="step-header">
+                <h4 class="mb-0">
+                    <span class="step-number">3</span>
+                    Complete Authorization
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    After clicking "Allow", copy the <strong>entire URL</strong> from your browser's address bar and paste it below.
+                </p>
+
+                <div class="mb-3">
+                    <label for="callbackURL" class="form-label fw-bold">Paste the callback URL here:</label>
+                    <textarea 
+                        class="form-control" 
+                        id="callbackURL" 
+                        rows="3" 
+                        placeholder="http://127.0.0.1:5000/handle_trainingpeaks_authorization?code=ABC123XYZ...&state=coach_..."></textarea>
+                    <small class="text-muted">
+                        The URL should start with <code>http://127.0.0.1:5000/handle_trainingpeaks_authorization?code=...</code>
+                    </small>
+                </div>
+
+                <div class="d-grid">
+                    <button class="btn btn-success btn-lg" onclick="completeAuthorization()">
+                        <i class="bi bi-check-circle"></i>
+                        Complete Authorization
+                    </button>
+                </div>
+
+                <div id="statusMessage" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="card">
+            <div class="card-body text-center">
+                <a href="/static/coach" class="btn btn-outline-primary">
+                    <i class="bi bi-house"></i>
+                    Back to Dashboard
+                </a>
+                <a href="/static/demo-mode.html" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-play-circle"></i>
+                    Try Demo Mode
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let generatedState = '';
+        let oauthURL = '';
+
+        function generateOAuthURL() {
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+
+            // Generate state parameter for CSRF protection
+            generatedState = 'coach_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+            
+            // Build OAuth URL for PRODUCTION - COACH SCOPES ONLY
+            const params = new URLSearchParams({
+                client_id: 'qt2systems',
+                response_type: 'code',
+                redirect_uri: 'https://angela-coach.pages.dev/handle_trainingpeaks_authorization',
+                scope: 'coach:athletes coach:attach-athletes coach:create-athletes coach:detach-athletes coach:search-athletes events:read events:write coach:plans workouts:read workouts:details workouts:plan',
+                state: generatedState
+            });
+
+            oauthURL = `https://oauth.trainingpeaks.com/OAuth/Authorize?${params.toString()}`;
+            
+            console.log('🚀 Generated TrainingPeaks OAuth URL');
+            console.log('State:', generatedState);
+            
+            // Store state in sessionStorage for verification
+            sessionStorage.setItem('tp_oauth_state', generatedState);
+            
+            // Display the URL
+            document.getElementById('urlDisplay').textContent = oauthURL;
+            document.getElementById('generatedURL').style.display = 'block';
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>URL Generated';
+            btn.classList.remove('btn-tp');
+            btn.classList.add('btn-success');
+        }
+
+        function openOAuthWindow() {
+            window.open(oauthURL, '_blank');
+        }
+
+        function copyToClipboard() {
+            navigator.clipboard.writeText(oauthURL).then(() => {
+                alert('URL copied to clipboard!');
+            });
+        }
+
+        async function completeAuthorization() {
+            const callbackURL = document.getElementById('callbackURL').value.trim();
+            const statusDiv = document.getElementById('statusMessage');
+
+            if (!callbackURL) {
+                statusDiv.innerHTML = `
+                    <div class="error-message">
+                        <i class="bi bi-x-circle-fill me-2"></i>
+                        Please paste the callback URL from TrainingPeaks.
+                    </div>
+                `;
+                return;
+            }
+
+            statusDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+                    Processing authorization...
+                </div>
+            `;
+
+            try {
+                // Extract code from URL
+                const url = new URL(callbackURL);
+                const code = url.searchParams.get('code');
+                const state = url.searchParams.get('state');
+
+                if (!code) {
+                    throw new Error('No authorization code found in URL');
+                }
+
+                // Verify state parameter
+                const savedState = sessionStorage.getItem('tp_oauth_state');
+                if (savedState && savedState !== state) {
+                    throw new Error('State mismatch - possible security issue. Please try again.');
+                }
+
+                console.log('📥 Received authorization code:', code.substring(0, 20) + '...');
+                console.log('📥 State:', state);
+
+                // Exchange code for tokens
+                const response = await axios.post('/api/tp-callback-manual', {
+                    code: code
+                });
+
+                console.log('✅ Token exchange successful:', response.data);
+
+                // Show success message
+                statusDiv.innerHTML = `
+                    <div class="success-message">
+                        <h5><i class="bi bi-check-circle-fill me-2"></i>Success!</h5>
+                        <p class="mb-2">Your TrainingPeaks account has been connected.</p>
+                        <p class="mb-0">
+                            <strong>Account Type:</strong> ${response.data.account_type || 'coach'}<br>
+                        </p>
+                        <hr>
+                        <p class="mb-0">Redirecting to dashboard in 3 seconds...</p>
+                    </div>
+                `;
+
+                // Clear state
+                sessionStorage.removeItem('tp_oauth_state');
+
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = '/static/coach';
+                }, 3000);
+
+            } catch (error) {
+                console.error('❌ Authorization failed:', error);
+                const errorMessage = error.response?.data?.error || error.message;
+                statusDiv.innerHTML = `
+                    <div class="error-message">
+                        <h5><i class="bi bi-x-circle-fill me-2"></i>Error</h5>
+                        <p class="mb-0">${errorMessage}</p>
+                        <hr>
+                        <p class="mb-2 small">Common issues:</p>
+                        <ul class="small mb-0">
+                            <li>Authorization code has expired (they expire quickly)</li>
+                            <li>Code has already been used (codes are single-use)</li>
+                            <li>Invalid URL format</li>
+                        </ul>
+                        <hr>
+                        <button class="btn btn-danger btn-sm" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Start Over
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

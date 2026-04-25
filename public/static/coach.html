@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Echodevo Coach - Multi-Athlete Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #2C5F6F;
+      --secondary: #FF8C42;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+    
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .navbar {
+      background: #ffffff;
+      box-shadow: none;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0.25rem 0;
+    }
+    
+    .navbar .container-fluid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    
+    .logo-image {
+      height: 224px;
+      width: auto;
+    }
+    
+    .navbar-actions {
+      position: absolute;
+      right: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      .navbar .container-fluid {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .navbar-actions {
+        position: static;
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .logo-image {
+        height: 160px;
+      }
+    }
+    
+    .sidebar {
+      min-height: calc(100vh - 56px);
+      background: white;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+      padding: 1.5rem 0;
+    }
+    
+    .sidebar-item {
+      padding: 0.75rem 1.5rem;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    
+    .sidebar-item:hover, .sidebar-item.active {
+      background: #f3f4f6;
+      color: var(--primary);
+      border-left-color: var(--primary);
+    }
+    
+    .sidebar-item i {
+      width: 24px;
+      margin-right: 0.75rem;
+    }
+    
+    .stat-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+    }
+    
+    .athlete-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .athlete-card:hover {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .block-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .metric-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .action-btn {
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .modal-lg {
+      max-width: 900px;
+    }
+    
+    .filter-btn {
+      border-radius: 20px;
+      padding: 0.5rem 1.25rem;
+      border: 2px solid #e5e7eb;
+      background: white;
+      color: #6b7280;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 3rem;
+    }
+    
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container-fluid px-4">
+      <img src="/static/echodevo-logo.png" alt="EchoDevo" class="logo-image">
+      <div class="d-flex align-items-center gap-3 navbar-actions">
+        <button class="btn btn-sm btn-outline-primary" onclick="syncAllAthletes()">
+          <i class="fas fa-sync me-1"></i>Sync All
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="fas fa-user-circle me-1"></i>Coach Account
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-key me-2"></i>API Keys</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Main Content (Full Width) -->
+      <div class="col-12 py-4">
+        <!-- Athlete Selector (Always Visible) -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-body py-3">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <label for="athlete-search" class="form-label fw-bold mb-1" style="font-size: 0.9rem;">
+                  <i class="fas fa-search me-1" style="font-size: 0.85rem;"></i>Search & Select Athlete
+                </label>
+                <input 
+                  type="text" 
+                  id="athlete-search" 
+                  class="form-control mb-2" 
+                  placeholder="Type to search by name..." 
+                  oninput="filterAthletes(this.value)"
+                  style="font-size: 0.95rem; padding: 0.5rem 0.75rem;"
+                />
+                <select id="athlete-dropdown" class="form-select" onchange="loadFullAthleteDashboard(this.value)" style="font-size: 0.95rem; padding: 0.5rem 0.75rem;">
+                  <option value="">-- Loading athletes... --</option>
+                </select>
+              </div>
+              <div class="col-md-4 text-end">
+                <button id="refresh-btn" class="btn btn-primary" onclick="refreshCurrentAthlete()" disabled style="padding: 0.5rem 1rem; font-size: 0.95rem;">
+                  <i class="fas fa-sync me-1"></i>Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-5" style="display:none;">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Loading athlete dashboard...</p>
+        </div>
+
+        <!-- No Athlete Selected -->
+        <div id="no-selection-state" class="text-center py-5">
+          <i class="fas fa-user-circle fa-5x text-muted mb-3"></i>
+          <h4 class="text-muted">Select an athlete to view their dashboard</h4>
+          <p class="text-muted">Use the dropdown above to choose an athlete</p>
+        </div>
+
+        <!-- Full Athlete Dashboard -->
+        <div id="athlete-dashboard" style="display:none;">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Force fresh load if version changed
+    const APP_VERSION = '2026-01-12-v2';
+    const storedVersion = localStorage.getItem('app_version');
+    if (storedVersion !== APP_VERSION) {
+      console.log('New version detected, clearing cache...');
+      localStorage.setItem('app_version', APP_VERSION);
+      // Don't force reload on first visit
+      if (storedVersion) {
+        window.location.reload(true);
+      }
+    }
+    
+    let currentAthleteId = null;
+    let allAthletes = [];
+    let filteredAthletes = [];
+
+    // Check TrainingPeaks connection before allowing access
+    async function checkTrainingPeaksConnection() {
+      try {
+        const response = await axios.get('/api/coach/me');
+        if (!response.data.logged_in) {
+          // Not connected - redirect to TrainingPeaks connection page
+          alert('Please connect to TrainingPeaks first!');
+          window.location.href = '/static/tp-connect-production.html';
+          throw new Error('Not connected to TrainingPeaks');
+        }
+        console.log('✅ Connected to TrainingPeaks as:', response.data.coach_name);
+        return true;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // On error, redirect to connection page to be safe
+        if (!error.message.includes('Not connected')) {
+          alert('Unable to verify TrainingPeaks connection. Redirecting to connection page...');
+        }
+        window.location.href = '/static/tp-connect-production.html';
+        throw error;
+      }
+    }
+
+    // Load athletes on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      // TEMPORARILY DISABLED: Check if user is connected to TrainingPeaks first
+      // await checkTrainingPeaksConnection();
+      
+      loadAthletes();
+      
+      // Check if athlete is in URL parameter or localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const athleteIdFromUrl = urlParams.get('athlete');
+      const athleteIdFromStorage = localStorage.getItem('selectedAthleteId');
+      
+      if (athleteIdFromUrl) {
+        // URL takes priority
+        localStorage.setItem('selectedAthleteId', athleteIdFromUrl);
+        // Will auto-load after athletes are loaded
+      } else if (athleteIdFromStorage) {
+        // Restore from localStorage
+        // Will auto-load after athletes are loaded
+      }
+    });
+
+    // Load athletes from API
+    async function loadAthletes() {
+      try {
+        const response = await axios.get('/api/coach/athletes');
+        const data = response.data;
+        allAthletes = data.athletes || [];
+        filteredAthletes = allAthletes;
+        
+        populateAthleteDropdown(filteredAthletes);
+        
+        // Auto-load athlete if one is stored
+        const urlParams = new URLSearchParams(window.location.search);
+        const athleteIdFromUrl = urlParams.get('athlete');
+        const athleteIdFromStorage = localStorage.getItem('selectedAthleteId');
+        const athleteIdToLoad = athleteIdFromUrl || athleteIdFromStorage;
+        
+        if (athleteIdToLoad && allAthletes.find(a => a.id === athleteIdToLoad)) {
+          document.getElementById('athlete-dropdown').value = athleteIdToLoad;
+          await loadFullAthleteDashboard(athleteIdToLoad);
+        }
+
+      } catch (error) {
+        console.error('Error loading athletes:', error);
+        const dropdown = document.getElementById('athlete-dropdown');
+        
+        // Check if it's a 401 (no coach account) or 404 (endpoint not found)
+        if (error.response && error.response.status === 401) {
+          dropdown.innerHTML = '<option value="">No coach account found</option>';
+          // Don't show alert - just log to console
+          console.warn('No coach account found. Please connect to TrainingPeaks first.');
+        } else {
+          dropdown.innerHTML = '<option value="">Error loading athletes</option>';
+          // Only show alert for unexpected errors
+          console.error('Unexpected error loading athletes:', error);
+        }
+      }
+    }
+
+    // Filter athletes based on search
+    function filterAthletes(searchTerm) {
+      const term = searchTerm.toLowerCase().trim();
+      
+      if (term === '') {
+        filteredAthletes = allAthletes;
+      } else {
+        filteredAthletes = allAthletes.filter(athlete => 
+          athlete.name.toLowerCase().includes(term) ||
+          athlete.id.toString().toLowerCase().includes(term) ||
+          (athlete.email && athlete.email.toLowerCase().includes(term))
+        );
+      }
+      
+      populateAthleteDropdown(filteredAthletes);
+      
+      // If current athlete is filtered out, clear selection
+      if (currentAthleteId && !filteredAthletes.find(a => a.id === currentAthleteId)) {
+        document.getElementById('athlete-dropdown').value = '';
+      }
+    }
+
+    // Populate athlete dropdown
+    function populateAthleteDropdown(athletes) {
+      const dropdown = document.getElementById('athlete-dropdown');
+      const currentSelection = dropdown.value;
+      
+      dropdown.innerHTML = '<option value="">-- Choose an athlete --</option>';
+      
+      // Sort athletes by name
+      const sortedAthletes = athletes.sort((a, b) => a.name.localeCompare(b.name));
+      
+      sortedAthletes.forEach(athlete => {
+        const option = document.createElement('option');
+        option.value = athlete.id;
+        option.textContent = `${athlete.name}`;
+        dropdown.appendChild(option);
+      });
+      
+      // Restore selection if still in filtered list
+      if (currentSelection && athletes.find(a => a.id === currentSelection)) {
+        dropdown.value = currentSelection;
+      }
+      
+      // Show count
+      if (athletes.length < allAthletes.length) {
+        const countOption = document.createElement('option');
+        countOption.disabled = true;
+        countOption.textContent = `─── Showing ${athletes.length} of ${allAthletes.length} athletes ───`;
+        dropdown.insertBefore(countOption, dropdown.firstChild.nextSibling);
+      }
+    }
+
+    // Load full athlete dashboard
+    async function loadFullAthleteDashboard(athleteId) {
+      if (!athleteId) {
+        document.getElementById('no-selection-state').style.display = 'block';
+        document.getElementById('athlete-dashboard').style.display = 'none';
+        document.getElementById('refresh-btn').disabled = true;
+        document.getElementById('notepad-card').style.display = 'none';
+        currentAthleteId = null;
+        currentNotepadAthleteId = null;
+        localStorage.removeItem('selectedAthleteId');
+        return;
+      }
+
+      // Store selected athlete for persistence
+      localStorage.setItem('selectedAthleteId', athleteId);
+      currentAthleteId = athleteId;
+      const athlete = allAthletes.find(a => a.id === athleteId);
+      if (!athlete) return;
+
+      // Hide no-selection, show loading
+      document.getElementById('no-selection-state').style.display = 'none';
+      document.getElementById('athlete-dashboard').style.display = 'none';
+      document.getElementById('loading-state').style.display = 'block';
+      document.getElementById('refresh-btn').disabled = false;
+
+      try {
+        // Fetch full athlete data from TrainingPeaks (90 days)
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const response = await axios.post('/api/gpt/fetch', {
+          athlete_id: athleteId,
+          start_date: startDate,
+          end_date: endDate
+        });
+
+        const data = response.data;
+        
+        // DEBUG: Log wellness data structure
+        console.log('=== WELLNESS DATA DEBUG ===');
+        console.log('Has wellness:', !!data.wellness);
+        console.log('Has wellness.history:', !!data.wellness?.history);
+        console.log('History length:', data.wellness?.history?.length || 0);
+        console.log('Sample history:', data.wellness?.history?.slice(0, 2));
+        console.log('Has wellness.latest:', !!data.wellness?.latest);
+        console.log('==========================');
+
+        // Hide loading, show dashboard
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('athlete-dashboard').style.display = 'block';
+
+        // Render full dashboard
+        renderFullAthleteDashboard(athlete, data);
+        
+        // Load coach notepad
+        loadCoachNotes(athleteId);
+
+      } catch (error) {
+        console.error('Error loading athlete dashboard:', error);
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('athlete-dashboard').innerHTML = `
+          <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Dashboard</h5>
+            <p>${error.response?.data?.error || error.message}</p>
+          </div>
+        `;
+        document.getElementById('athlete-dashboard').style.display = 'block';
+      }
+    }
+
+    // Refresh current athlete
+    async function refreshCurrentAthlete() {
+      if (currentAthleteId) {
+        await loadFullAthleteDashboard(currentAthleteId);
+      }
+    }
+
+    // Render full athlete dashboard
+
+function renderFullAthleteDashboard(athlete, data) {
+  const metrics = data.metrics || {};
+  const weeklyMetrics = data.weekly_metrics || {};
+  const workouts = data.workouts || [];
+  const athleteProfile = data.athlete || {};
+  
+  // Extract workouts from athlete object
+  const futureWorkouts = athleteProfile.future_planned_workouts || [];
+  const nextWeekWorkouts = athleteProfile.next_week_planned_workouts || [];
+  
+  // Helper to format metric value
+  const fmt = (val) => (val || 0).toFixed(1);
+  const fmtInt = (val) => Math.round(val || 0);
+
+  const html = `
+    <!-- Athlete Header -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2 class="mb-1">${athlete.name}</h2>
+            <p class="text-muted mb-2">
+              <i class="fas fa-envelope me-2"></i>${athlete.email || 'No email'}
+              <span class="ms-3"><i class="fas fa-id-badge me-2"></i>ID: ${athlete.id}</span>
+              <span class="ms-3"><i class="fas fa-dumbbell me-2"></i>${athlete.sport || 'Triathlon'}</span>
+            </p>
+          </div>
+          <div class="col-md-4 text-end">
+            <!-- Top Action Row -->
+            <div class="d-flex gap-2 justify-content-end flex-wrap mb-2">
+              <a href="/static/echodevo-insight?athlete=${athlete.id}" class="btn btn-dark btn-sm">
+                <i class="fas fa-brain me-1"></i>Echodevo Insight
+              </a>
+              <a href="https://echodevo.com/dashboard/" target="_blank" class="btn btn-success btn-sm">
+                <i class="fas fa-table-list me-1"></i>TSS Planner
+              </a>
+              <a href="/static/swim-planner.html?athlete=${athlete.id}" class="btn btn-info btn-sm">
+                <i class="fas fa-swimmer me-1"></i>Swim Planner
+              </a>
+              <a href="/static/athlete-profile-v3.html?athlete=${athlete.id}" class="btn btn-info btn-sm">
+                <i class="fas fa-user-edit me-1"></i>Profile
+              </a>
+              <a href="/static/wellness?athlete=${athlete.id}" class="btn btn-warning btn-sm">
+                <i class="fas fa-heartbeat me-1"></i>Wellness
+              </a>
+              <a href="https://chatgpt.com/g/g-69620c7454588191a659a39ce4b9a7d1-echodevo-trainingpeaks-coach-v5" target="_blank" class="btn btn-primary btn-sm">
+                <i class="fas fa-robot me-1"></i>GPT Brain
+              </a>
+            </div>
+            <!-- Fuel Controls Row -->
+            <div class="d-flex gap-2 justify-content-end align-items-center mb-2">
+              <span class="badge bg-danger" style="font-size: 0.8rem; padding: 0.35rem 0.6rem;">FUEL</span>
+              <select class="form-select form-select-sm" id="fuel-range-${athlete.id}" style="max-width: 140px;">
+                <option value="next-week" selected>Next Week</option>
+                <option value="rest-of-week">Rest of Week</option>
+                <option value="all-future">All Future</option>
+              </select>
+              <button onclick="fuelWithRange('${athlete.id}'); return false;" class="btn btn-danger btn-sm" id="fuel-btn-${athlete.id}">
+                <i class="fas fa-bolt me-1"></i>Go
+              </button>
+            </div>
+            <!-- Calculator Row -->
+            <div class="d-flex gap-2 justify-content-end flex-wrap">
+              <a href="/static/athlete-calculators.html?athlete=${athlete.id}" class="btn btn-outline-success btn-sm" target="_blank">
+                <i class="fas fa-toolbox me-1"></i>Coach Toolkit
+              </a>
+              <a href="/static/race-pacing-calculator.html" class="btn btn-outline-danger btn-sm" target="_blank">
+                <i class="fas fa-flag-checkered me-1"></i>Race Pacing
+              </a>
+              <a href="/static/taper-calculator.html" class="btn btn-outline-warning btn-sm" target="_blank">
+                <i class="fas fa-calendar-check me-1"></i>Taper
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coach Notes - Horizontal Dropdown -->
+    <div class="card mb-4 shadow-sm" id="notepad-card" style="display: none;">
+      <div class="card-body py-2">
+        <div class="row align-items-center">
+          <div class="col-md-9">
+            <div class="dropdown d-inline-block">
+              <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" 
+                      id="notepadDropdown" data-bs-toggle="dropdown" 
+                      aria-expanded="false">
+                <i class="fas fa-sticky-note me-1"></i>Coach Notes
+              </button>
+              <div class="dropdown-menu p-3" aria-labelledby="notepadDropdown" 
+                   style="width: 500px; max-height: 400px; overflow-y: auto;" 
+                   onclick="event.stopPropagation();">
+                <h6 class="mb-2">
+                  <i class="fas fa-sticky-note me-2"></i>Coach Notes
+                  <small id="notepad-status" class="float-end text-muted" style="font-size: 0.75rem;">Ready</small>
+                </h6>
+                <textarea id="coach-notepad" class="form-control mb-2" rows="10" 
+                          placeholder="Your coaching notes for this athlete..."
+                          style="font-size: 0.9rem; resize: vertical;"></textarea>
+                <div class="d-flex justify-content-between align-items-center">
+                  <small id="notepad-char-count" class="text-muted" style="font-size: 0.75rem;">0 characters</small>
+                  <button class="btn btn-sm btn-primary" onclick="saveCoachNotesManually()">
+                    <i class="fas fa-save me-1"></i>Save Now
+                  </button>
+                </div>
+              </div>
+            </div>
+            <span class="text-muted ms-2 small">Click to view/edit notes for this athlete</span>
+          </div>
+          <div class="col-md-3 text-end">
+            <small id="notepad-last-saved" class="text-muted"></small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comprehensive TrainingPeaks Dashboard -->
+    <div class="accordion mb-4" id="trainingPeaksAccordion">
+      
+      <!-- Section 1: Today's Fitness (Current Day) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tpOverview">
+            <i class="fas fa-calendar-day me-2"></i><strong>📅 Today's Fitness (Current)</strong>
+          </button>
+        </h2>
+        <div id="tpOverview" class="accordion-collapse collapse show" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <div class="alert alert-info mb-3">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Current Day Values</strong> - Today's actual CTL/ATL/TSB based on completed workouts.
+              TSB uses yesterday's CTL and ATL (TrainingPeaks standard).
+            </div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">CTL (Fitness)</h6>
+                    <h2 class="text-primary">${fmt(weeklyMetrics.combined?.today?.metrics?.ctl)}</h2>
+                    <small class="text-muted">42-day average</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">ATL (Fatigue)</h6>
+                    <h2 class="text-warning">${fmt(weeklyMetrics.combined?.today?.metrics?.atl)}</h2>
+                    <small class="text-muted">7-day average</small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">TSB (Form)</h6>
+                    <h2 class="text-${getTSBColor(weeklyMetrics.combined?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.today?.metrics?.tsb)}</h2>
+                    <small class="text-muted">CTL - ATL</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Weekly Projections (Sunday End-of-Week) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#timeline">
+            <i class="fas fa-calendar-week me-2"></i><strong>📊 Weekly Projections (Sunday End-of-Week)</strong>
+          </button>
+        </h2>
+        <div id="timeline" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <div class="alert alert-warning mb-3">
+              <i class="fas fa-info-circle me-2"></i>
+              <strong>Sunday End-of-Week Projections</strong> - These match TrainingPeaks calendar right-side values.
+              Shows expected CTL/ATL/TSB at end of week assuming all planned workouts completed.
+            </div>
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Week</th>
+                  <th>CTL (Fitness)</th>
+                  <th>ATL (Fatigue)</th>
+                  <th>TSB (Form)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>📅 Last Week (Sun)</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}</td>
+                </tr>
+                <tr class="table-info">
+                  <td><strong>📊 This Week (Sun Projection)</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}</td>
+                </tr>
+                <tr>
+                  <td><strong>📈 Next Week (Sun Projection)</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.nextWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.tsb)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Combined Metrics (All Sports) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#combined">
+            <i class="fas fa-layer-group me-2"></i><strong>Combined Metrics (All Sports)</strong>
+          </button>
+        </h2>
+        <div id="combined" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.combined?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.combined?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.combined?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.combined?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.combined?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Run Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#run">
+            <i class="fas fa-running me-2"></i><strong>🏃 Run Metrics</strong>
+          </button>
+        </h2>
+        <div id="run" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.run?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.run?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.run?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.run?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.run?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.run?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.run?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.run?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Bike Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bike">
+            <i class="fas fa-biking me-2"></i><strong>🚴 Bike Metrics</strong>
+          </button>
+        </h2>
+        <div id="bike" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.bike?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.bike?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.bike?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.bike?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.bike?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: Swim Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#swim">
+            <i class="fas fa-swimmer me-2"></i><strong>🏊 Swim Metrics</strong>
+          </button>
+        </h2>
+        <div id="swim" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.swim?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.swim?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.swim?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.swim?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.swim?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 7: Recent Workouts (Last 10 Completed) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workouts">
+            <i class="fas fa-check-circle me-2 text-success"></i><strong>Recent Workouts (Last 10 Completed)</strong>
+          </button>
+        </h2>
+        <div id="workouts" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            ${data.recent_completed_workouts && data.recent_completed_workouts.length > 0 ? `
+              <p class="text-muted mb-3">
+                <i class="fas fa-info-circle me-1"></i>
+                Showing the last 10 completed workouts to confirm sync status
+              </p>
+              <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Sport</th>
+                      <th>Title</th>
+                      <th>Duration</th>
+                      <th>TSS</th>
+                      <th>IF</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.recent_completed_workouts.map(w => `
+                      <tr>
+                        <td><strong>${w.date}</strong></td>
+                        <td><i class="fas fa-${getSportIcon(w.sport)} me-1"></i>${w.sport.charAt(0).toUpperCase() + w.sport.slice(1)}</td>
+                        <td>${w.title || 'Untitled'}</td>
+                        <td>${formatDuration(w.duration)}</td>
+                        <td><span class="badge bg-primary">${Math.round(w.tss || 0)}</span></td>
+                        <td>${w.if ? w.if.toFixed(2) : '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : '<p class="text-muted text-center py-4"><i class="fas fa-exclamation-circle me-2"></i>No completed workouts found. Sync may be incomplete.</p>'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 7b: Future Planned Workouts (Next Week) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#planned-workouts">
+            <i class="fas fa-calendar-week me-2 text-info"></i><strong>Future Planned Workouts (Next Mon-Sun)</strong>
+          </button>
+        </h2>
+        <div id="planned-workouts" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            ${nextWeekWorkouts && nextWeekWorkouts.length > 0 ? `
+              <p class="text-muted mb-3">
+                <i class="fas fa-info-circle me-1"></i>
+                Showing planned workouts for upcoming Monday through Sunday
+              </p>
+              <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Sport</th>
+                      <th>Title</th>
+                      <th>Duration</th>
+                      <th>TSS</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${nextWeekWorkouts.map(w => `
+                      <tr>
+                        <td><strong>${w.date}</strong></td>
+                        <td><i class="fas fa-${getSportIcon(w.sport)} me-1"></i>${w.sport.charAt(0).toUpperCase() + w.sport.slice(1)}</td>
+                        <td>${w.title || 'Planned Workout'}</td>
+                        <td>${formatDuration(w.duration)}</td>
+                        <td><span class="badge bg-info">${Math.round(w.tss || 0)}</span></td>
+                        <td><span class="badge bg-warning text-dark">Planned</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : '<p class="text-muted text-center py-4"><i class="fas fa-calendar-times me-2"></i>No workouts planned for next week (Mon-Sun).</p>'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 8: Wellness Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#wellness">
+            <i class="fas fa-heartbeat me-2"></i><strong>Wellness & Recovery (Weekly View)</strong>
+          </button>
+        </h2>
+        <div id="wellness" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            ${data.wellness && data.wellness.history && Array.isArray(data.wellness.history) && data.wellness.history.length > 0 ? `
+              <!-- Weekly Wellness Metrics -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h5 class="mb-3"><i class="fas fa-calendar-week me-2"></i>Current Week Wellness (${getCurrentWeekRange()})</h5>
+                  <p class="text-muted small">Showing weekly averages with daily trend graphs • Data from TrainingPeaks</p>
+                </div>
+              </div>
+              
+              ${(() => {
+                const weekData = getWeeklyWellnessData(data.wellness.history);
+                return generateWellnessMetricCards(weekData);
+              })()}
+              
+              ${(() => {
+                const weekNotes = data.wellness.history
+                  .filter(w => w.date >= getCurrentWeekStart() && w.notes)
+                  .map(w => `<strong>${w.date}:</strong> ${w.notes}`)
+                  .join('<br>');
+                return weekNotes ? `
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <div class="alert alert-secondary">
+                        <strong><i class="fas fa-sticky-note me-2"></i>Week Notes:</strong><br>
+                        ${weekNotes}
+                      </div>
+                    </div>
+                  </div>
+                ` : '';
+              })()}
+            ` : data.wellness && data.wellness.latest ? `
+              <!-- Current Day Wellness -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h5 class="mb-3"><i class="fas fa-calendar-day me-2"></i>Today's Wellness (${data.wellness.latest.date})</h5>
+                </div>
+              </div>
+              
+              <div class="row g-3 mb-4">
+                <!-- HRV -->
+                <div class="col-md-3">
+                  <div class="card text-center h-100">
+                    <div class="card-body">
+                      <i class="fas fa-heart-pulse fa-2x mb-2 text-${getHRVColorSimple(data.wellness.latest.hrv_rmssd)}"></i>
+                      <h3 class="text-${getHRVColorSimple(data.wellness.latest.hrv_rmssd)}">${data.wellness.latest.hrv_rmssd || '-'}</h3>
+                      <p class="text-muted mb-1">HRV (RMSSD ms)</p>
+                      <small class="text-muted">Heart Rate Variability</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Resting HR -->
+                <div class="col-md-3">
+                  <div class="card text-center h-100">
+                    <div class="card-body">
+                      <i class="fas fa-heartbeat fa-2x mb-2 text-${getRestingHRColor(data.wellness.latest.resting_hr)}"></i>
+                      <h3 class="text-${getRestingHRColor(data.wellness.latest.resting_hr)}">${data.wellness.latest.resting_hr || '-'}</h3>
+                      <p class="text-muted mb-1">Resting HR (bpm)</p>
+                      <small class="text-muted">Morning Heart Rate</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Sleep -->
+                <div class="col-md-3">
+                  <div class="card text-center h-100">
+                    <div class="card-body">
+                      <i class="fas fa-bed fa-2x mb-2 text-${getSleepColor(data.wellness.latest.sleep_hours)}"></i>
+                      <h3 class="text-${getSleepColor(data.wellness.latest.sleep_hours)}">${data.wellness.latest.sleep_hours?.toFixed(1) || '-'}h</h3>
+                      <p class="text-muted mb-1">Sleep Duration</p>
+                      <small class="text-muted">Hours of Sleep</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Weight -->
+                <div class="col-md-3">
+                  <div class="card text-center h-100">
+                    <div class="card-body">
+                      <i class="fas fa-weight fa-2x mb-2 text-info"></i>
+                      <h3 class="text-info">${data.wellness.latest.weight_kg?.toFixed(1) || '-'}</h3>
+                      <p class="text-muted mb-1">Weight (kg)</p>
+                      <small class="text-muted">Body Weight</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Additional Wellness Metrics (if available) -->
+              ${data.wellness.latest.stress_score || data.wellness.latest.fatigue || data.wellness.latest.mood ? `
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h6 class="mb-3">Additional Metrics (TrainingPeaks)</h6>
+                  <div class="row g-2">
+                    ${data.wellness.latest.stress_score ? `
+                    <div class="col-md-3">
+                      <small class="text-muted">Stress Score</small>
+                      <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-warning" style="width: ${(data.wellness.latest.stress_score || 0) * 10}%">${data.wellness.latest.stress_score || '-'}</div>
+                      </div>
+                    </div>
+                    ` : ''}
+                    ${data.wellness.latest.fatigue ? `
+                    <div class="col-md-3">
+                      <small class="text-muted">Fatigue</small>
+                      <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-warning" style="width: ${(data.wellness.latest.fatigue || 0) * 10}%">${data.wellness.latest.fatigue || '-'}</div>
+                      </div>
+                    </div>
+                    ` : ''}
+                    ${data.wellness.latest.mood ? `
+                    <div class="col-md-3">
+                      <small class="text-muted">Mood</small>
+                      <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-info" style="width: ${(data.wellness.latest.mood || 0) * 10}%">${data.wellness.latest.mood || '-'}</div>
+                      </div>
+                    </div>
+                    ` : ''}
+                    ${data.wellness.latest.soreness ? `
+                    <div class="col-md-3">
+                      <small class="text-muted">Soreness</small>
+                      <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-danger" style="width: ${(data.wellness.latest.soreness || 0) * 10}%">${data.wellness.latest.soreness || '-'}</div>
+                      </div>
+                    </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+              ` : ''}
+              
+              <!-- Wellness Trends -->
+              ${data.wellness.summary ? `
+                <div class="row">
+                  <div class="col-12">
+                    <h6 class="mb-3">30-Day Averages (TrainingPeaks Data)</h6>
+                    <div class="alert alert-info">
+                      <i class="fas fa-chart-line me-2"></i>
+                      ${data.wellness.summary.hrv_avg > 0 ? `<strong>HRV:</strong> ${data.wellness.summary.hrv_avg} ms | ` : ''}
+                      ${data.wellness.summary.resting_hr_avg > 0 ? `<strong>Resting HR:</strong> ${data.wellness.summary.resting_hr_avg} bpm | ` : ''}
+                      ${data.wellness.summary.sleep_avg > 0 ? `<strong>Sleep:</strong> ${data.wellness.summary.sleep_avg?.toFixed(1)} hrs | ` : ''}
+                      ${data.wellness.summary.weight_avg > 0 ? `<strong>Weight:</strong> ${data.wellness.summary.weight_avg?.toFixed(1)} kg` : ''}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${data.wellness.latest.notes ? `
+                <div class="row mt-3">
+                  <div class="col-12">
+                    <div class="alert alert-secondary">
+                      <strong>Notes:</strong> ${data.wellness.latest.notes}
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            ` : `
+              <!-- No Wellness Data -->
+              <div class="text-center py-5">
+                <i class="fas fa-heartbeat fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No Wellness Data Available</h5>
+                <p class="text-muted mb-4">Wellness metrics (HRV, sleep, resting HR, weight) are automatically pulled from TrainingPeaks.</p>
+                <div class="alert alert-info text-start">
+                  <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>How to Add Wellness Data</h6>
+                  <p class="mb-2">To see wellness metrics here, athletes must log data in TrainingPeaks:</p>
+                  <ol class="mb-0">
+                    <li>Log in to <strong>TrainingPeaks</strong> (web or mobile app)</li>
+                    <li>Go to <strong>Dashboard → Metrics</strong></li>
+                    <li>Add daily wellness entries:
+                      <ul>
+                        <li><strong>HRV (RMSSD)</strong> - from compatible device/app</li>
+                        <li><strong>Resting Heart Rate</strong> - morning HR</li>
+                        <li><strong>Sleep Hours</strong> - total sleep duration</li>
+                        <li><strong>Weight</strong> - body weight</li>
+                        <li><strong>Stress, Fatigue, Mood</strong> (optional)</li>
+                      </ul>
+                    </li>
+                    <li>Metrics will automatically sync and display here</li>
+                  </ol>
+                </div>
+              </div>
+              
+              <!-- Wellness Benefits -->
+              <div class="row mt-4">
+                <div class="col-12">
+                  <h6 class="mb-3">Why Track Wellness in TrainingPeaks?</h6>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i><strong>HRV (Heart Rate Variability):</strong> Indicates autonomic nervous system recovery and readiness</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i><strong>Resting HR:</strong> Low RHR = good recovery; elevated RHR = stress/fatigue</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i><strong>Sleep:</strong> Essential for adaptation, performance, and recovery</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i><strong>Weight Tracking:</strong> Monitor body composition trends</li>
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i><strong>Subjective Metrics:</strong> Stress, fatigue, mood guide training adjustments</li>
+                  </ul>
+                </div>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById('athlete-dashboard').innerHTML = html;
+}
+
+    // Helper functions
+    function getTSBColor(tsb) {
+      if (tsb < -25) return 'danger';
+      if (tsb < -10) return 'warning';
+      if (tsb > 10) return 'success';
+      return 'info';
+    }
+
+    function getDurabilityColor(score) {
+      // Score is 0-100 (representing 0.00 to 1.00 fraction)
+      // >70% = strong aerobic foundation (green)
+      if (score >= 70) return 'success';
+      if (score >= 60) return 'info';
+      if (score >= 50) return 'warning';
+      return 'danger';
+    }
+
+    function getSportIcon(sport) {
+      const icons = {
+        'Swim': 'swimmer',
+        'Bike': 'biking',
+        'Run': 'running',
+        'Strength': 'dumbbell',
+        'Other': 'heartbeat'
+      };
+      return icons[sport] || 'heartbeat';
+    }
+
+    function formatDuration(minutes) {
+      if (!minutes) return '-';
+      const hours = Math.floor(minutes / 60);
+      const mins = Math.round(minutes % 60);
+      return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    }
+
+    // ATL/CTL Ratio helpers
+    function getATLCTLColor(ratio) {
+      if (ratio < 0.95) return 'secondary'; // Under-training
+      if (ratio <= 1.05) return 'success';  // Optimal
+      if (ratio <= 1.15) return 'info';     // Productive overreach
+      if (ratio <= 1.25) return 'warning';  // Functional overreach
+      return 'danger'; // Non-functional overreach
+    }
+    
+    function getATLCTLStatus(ratio) {
+      if (ratio < 0.95) return 'Under-training';
+      if (ratio <= 1.05) return 'Optimal';
+      if (ratio <= 1.15) return 'Productive';
+      if (ratio <= 1.25) return 'Overreach';
+      return 'Critical';
+    }
+    
+    function renderATLCTLGauge(ratio, label, small = false) {
+      // Normalize ratio to 0-150% range for visualization
+      const normalizedRatio = Math.min(150, ratio * 100);
+      
+      // Determine color based on ratio
+      const color = getATLCTLColor(ratio);
+      const bgColorMap = {
+        'secondary': '#6c757d',
+        'success': '#198754',
+        'info': '#0dcaf0',
+        'warning': '#ffc107',
+        'danger': '#dc3545'
+      };
+      
+      return `
+        <div class="progress-bar bg-${color}" 
+             role="progressbar" 
+             style="width: ${normalizedRatio}%"
+             aria-valuenow="${ratio}" 
+             aria-valuemin="0" 
+             aria-valuemax="1.5">
+          ${!small ? ratio.toFixed(2) : ''}
+        </div>
+      `;
+    }
+    
+    // Aerobic Decoupling helpers
+    function getDecouplingColor(decoupling) {
+      if (decoupling <= 3) return 'success';  // Excellent
+      if (decoupling <= 5) return 'info';     // Good
+      if (decoupling <= 8) return 'warning';  // Fair
+      return 'danger'; // Poor
+    }
+    
+    function getDecouplingStatus(decoupling) {
+      if (decoupling <= 3) return 'Excellent aerobic efficiency';
+      if (decoupling <= 5) return 'Good aerobic base';
+      if (decoupling <= 8) return 'Fair - needs aerobic work';
+      return 'Poor - prioritize Zone 2';
+    }
+    
+    // Wellness color helpers
+    function getHRVColor(ratio) {
+      if (!ratio) return 'secondary';
+      if (ratio >= 1.1) return 'success';
+      if (ratio >= 0.8) return 'info';
+      if (ratio >= 0.7) return 'warning';
+      return 'danger';
+    }
+    
+    function getHRVColorSimple(hrv) {
+      if (!hrv) return 'secondary';
+      if (hrv >= 60) return 'success';
+      if (hrv >= 40) return 'info';
+      if (hrv >= 20) return 'warning';
+      return 'danger';
+    }
+    
+    function getRestingHRColor(hr) {
+      if (!hr) return 'secondary';
+      if (hr <= 50) return 'success';
+      if (hr <= 60) return 'info';
+      if (hr <= 70) return 'warning';
+      return 'danger';
+    }
+    
+    function getSleepColor(hours) {
+      if (!hours) return 'secondary';
+      if (hours >= 7.5) return 'success';
+      if (hours >= 6.5) return 'info';
+      if (hours >= 5.5) return 'warning';
+      return 'danger';
+    }
+    
+    function getWellnessColor(score) {
+      if (!score) return 'secondary';
+      if (score >= 75) return 'success';
+      if (score >= 60) return 'info';
+      if (score >= 45) return 'warning';
+      return 'danger';
+    }
+
+    // ============================================================================
+    // WELLNESS WEEKLY DATA HELPERS
+    // ============================================================================
+
+    function getCurrentWeekStart() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      return monday.toISOString().split('T')[0];
+    }
+
+    function getCurrentWeekEnd() {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const sunday = new Date(now);
+      sunday.setDate(now.getDate() + (dayOfWeek === 0 ? 0 : 7 - dayOfWeek));
+      sunday.setHours(23, 59, 59, 999);
+      return sunday.toISOString().split('T')[0];
+    }
+
+    function getCurrentWeekRange() {
+      const start = getCurrentWeekStart();
+      const end = getCurrentWeekEnd();
+      return `${start} to ${end}`;
+    }
+
+    function getWeeklyWellnessData(history) {
+      if (!history || history.length === 0) return null;
+      
+      const weekStart = getCurrentWeekStart();
+      const weekEnd = getCurrentWeekEnd();
+      
+      const weekData = history.filter(entry => {
+        return entry.date >= weekStart && entry.date <= weekEnd;
+      });
+      
+      if (weekData.length === 0) return null;
+      
+      const metrics = {
+        hrv_rmssd: { values: [], avg: 0, unit: 'ms', icon: 'heart-pulse', color: 'primary' },
+        resting_hr: { values: [], avg: 0, unit: 'bpm', icon: 'heartbeat', color: 'danger' },
+        sleep_hours: { values: [], avg: 0, unit: 'hrs', icon: 'bed', color: 'info' },
+        sleep_quality: { values: [], avg: 0, unit: '/10', icon: 'star', color: 'warning' },
+        weight_kg: { values: [], avg: 0, unit: 'kg', icon: 'weight', color: 'secondary' },
+        body_fat: { values: [], avg: 0, unit: '%', icon: 'percent', color: 'secondary' },
+        fatigue: { values: [], avg: 0, unit: '/7', icon: 'battery-half', color: 'warning' },
+        mood: { values: [], avg: 0, unit: '/7', icon: 'smile', color: 'success' },
+        energy: { values: [], avg: 0, unit: '/7', icon: 'bolt', color: 'warning' },
+        soreness: { values: [], avg: 0, unit: '/7', icon: 'person-running', color: 'danger' },
+        stress_score: { values: [], avg: 0, unit: '/7', icon: 'brain', color: 'danger' },
+        motivation: { values: [], avg: 0, unit: '/7', icon: 'fire', color: 'success' }
+      };
+      
+      weekData.forEach(day => {
+        Object.keys(metrics).forEach(key => {
+          if (day[key] != null && day[key] !== '') {
+            const parsed = parseFloat(day[key]);
+            // Only push valid numbers (not NaN, not Infinity)
+            if (!isNaN(parsed) && isFinite(parsed)) {
+              metrics[key].values.push(parsed);
+            }
+          }
+        });
+      });
+      
+      Object.keys(metrics).forEach(key => {
+        const values = metrics[key].values;
+        if (values.length > 0) {
+          metrics[key].avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+        }
+      });
+      
+      return { metrics, weekData, weekStart, weekEnd };
+    }
+
+    function generateSparkline(values, color = '#667eea', width = 80, height = 30) {
+      if (!values || values.length === 0) return '';
+      
+      // Filter out any NaN or invalid values
+      const validValues = values.filter(v => !isNaN(v) && isFinite(v));
+      if (validValues.length === 0) return '';
+      
+      const max = Math.max(...validValues);
+      const min = Math.min(...validValues);
+      const range = max - min || 1;
+      
+      const points = validValues.map((val, idx) => {
+        // Handle single value case (avoid division by zero)
+        const x = validValues.length === 1 ? width / 2 : (idx / (validValues.length - 1)) * width;
+        const y = height - ((val - min) / range) * height;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      }).join(' ');
+      
+      return `<svg width="${width}" height="${height}" style="display: inline-block; vertical-align: middle;"><polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+
+    function generateWellnessMetricCards(weekData) {
+      if (!weekData) return '<p class="text-muted">No wellness data for current week</p>';
+      
+      const { metrics } = weekData;
+      
+      const metricLabels = {
+        hrv_rmssd: 'HRV',
+        resting_hr: 'Resting HR',
+        sleep_hours: 'Sleep',
+        sleep_quality: 'Sleep Quality',
+        weight_kg: 'Weight',
+        body_fat: 'Body Fat',
+        fatigue: 'Fatigue',
+        mood: 'Mood',
+        energy: 'Energy',
+        soreness: 'Soreness',
+        stress_score: 'Stress',
+        motivation: 'Motivation'
+      };
+      
+      let html = '<div class="row g-3">';
+      
+      Object.keys(metrics).forEach(key => {
+        const metric = metrics[key];
+        if (metric.values.length === 0) return;
+        
+        const sparkline = generateSparkline(metric.values, getMetricColorHex(metric.color));
+        
+        html += `
+          <div class="col-md-3 col-sm-6">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <small class="text-muted text-uppercase">${metricLabels[key]}</small>
+                    <h4 class="mb-0 text-${metric.color}">${metric.avg}${metric.unit}</h4>
+                  </div>
+                  <i class="fas fa-${metric.icon} fa-2x text-${metric.color} opacity-25"></i>
+                </div>
+                <div class="mt-2">
+                  ${sparkline}
+                  <small class="text-muted ms-2">${metric.values.length} days</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      return html;
+    }
+
+    function getMetricColorHex(bootstrapColor) {
+      const colorMap = {
+        'primary': '#667eea',
+        'danger': '#ef4444',
+        'info': '#3b82f6',
+        'warning': '#f59e0b',
+        'success': '#10b981',
+        'secondary': '#6b7280'
+      };
+      return colorMap[bootstrapColor] || '#667eea';
+    }
+    
+    function getReadinessColor(status) {
+      if (!status || status === 'unknown') return 'secondary';
+      if (status === 'optimal' || status === 'ready') return 'success';
+      if (status === 'normal' || status === 'moderate') return 'info';
+      if (status === 'caution') return 'warning';
+      return 'danger';
+    }
+
+    // Show section
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
+      
+      // Remove active from all sidebar items
+      document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+      
+      // Show selected section (handle both with and without -section suffix)
+      const targetSection = document.getElementById(sectionId + '-section') || document.getElementById(sectionId);
+      if (targetSection) {
+        targetSection.style.display = 'block';
+      } else {
+        console.error('Section not found:', sectionId);
+        // Fallback to overview
+        const overview = document.getElementById('overview-section');
+        if (overview) overview.style.display = 'block';
+      }
+      
+      // Set active sidebar item
+      const sidebarItem = document.querySelector(`.sidebar-item[data-section="${sectionId}"]`);
+      if (sidebarItem) {
+        sidebarItem.classList.add('active');
+      }
+    }
+
+    // Open athlete detail
+    async function openAthleteDetail(athleteId) {
+      const modal = new bootstrap.Modal(document.getElementById('athleteDetailModal'));
+      const modalTitle = document.getElementById('athleteModalTitle');
+      const modalContent = document.getElementById('athleteDetailContent');
+      
+      modalContent.innerHTML = `
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading athlete data...</p>
+        </div>
+      `;
+      
+      modal.show();
+
+      try {
+        const response = await axios.get(`/api/coach/athlete/${athleteId}`);
+        const data = response.data;
+
+        modalTitle.textContent = data.athlete.name;
+        
+        // Format the comprehensive athlete dashboard
+        const metrics = data.metrics.current;
+        const summary = data.summary;
+        
+        modalContent.innerHTML = `
+          <!-- Athlete Profile Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0"><i class="fas fa-user me-2"></i>Athlete Profile</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>ID:</strong> ${data.athlete.id}</p>
+                      <p><strong>Email:</strong> ${data.athlete.email || 'N/A'}</p>
+                      <p><strong>Gender:</strong> ${data.athlete.gender || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>FTP:</strong> ${data.athlete.ftp || 'N/A'} watts</p>
+                      <p><strong>LTHR:</strong> ${data.athlete.lactate_threshold_heart_rate || 'N/A'} bpm</p>
+                      <p><strong>Weight:</strong> ${data.athlete.weight || 'N/A'} kg</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Load Metrics -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Training Load - Sport-Specific CTL/ATL/TSB</h5>
+                </div>
+                <div class="card-body">
+                  
+                  <!-- TOTAL -->
+                  <h6 class="fw-bold mb-3">TOTAL (All Sports)</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-primary">${Math.round(metrics.total.ctl)}</div>
+                        <small class="text-muted">CTL (Fitness)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-warning">${Math.round(metrics.total.atl)}</div>
+                        <small class="text-muted">ATL (Fatigue)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-${metrics.total.tsb < -25 ? 'danger' : metrics.total.tsb > 10 ? 'success' : 'warning'}">${Math.round(metrics.total.tsb)}</div>
+                        <small class="text-muted">TSB (Form)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SWIM -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-swimmer me-2"></i>SWIM</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- BIKE -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-bicycle me-2"></i>BIKE</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- RUN -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-running me-2"></i>RUN</h6>
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wellness Metrics (HRV, RHR, Sleep) -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Wellness & Recovery Metrics</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-danger">${summary.latest_hrv || 'N/A'}</div>
+                        <small class="text-muted">Latest HRV</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-danger">${summary.latest_rhr || 'N/A'}</div>
+                        <small class="text-muted">Resting HR (bpm)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-info">${summary.avg_sleep ? summary.avg_sleep.toFixed(1) : 'N/A'}</div>
+                        <small class="text-muted">Avg Sleep (hours)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  ${data.wellness && data.wellness.length > 0 ? `
+                    <h6 class="mt-4 mb-3">Recent Wellness Data (Last 30 Days)</h6>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                      <table class="table table-sm table-hover">
+                        <thead class="sticky-top bg-white">
+                          <tr>
+                            <th>Date</th>
+                            <th>HRV</th>
+                            <th>RHR</th>
+                            <th>Sleep</th>
+                            <th>Feeling</th>
+                            <th>Weight</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.wellness.slice(0, 30).map(w => `
+                            <tr>
+                              <td>${w.date}</td>
+                              <td>${w.hrv_score || '-'}</td>
+                              <td>${w.resting_heart_rate || '-'}</td>
+                              <td>${w.hours_of_sleep ? w.hours_of_sleep.toFixed(1) + 'h' : '-'}</td>
+                              <td>${w.feeling ? getFeelingEmoji(w.feeling) : '-'}</td>
+                              <td>${w.weight ? w.weight.toFixed(1) + 'kg' : '-'}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : '<p class="text-muted">No wellness data available</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Summary -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-warning">
+                  <h5 class="mb-0"><i class="fas fa-dumbbell me-2"></i>Training Summary (Last 90 Days)</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.total_workouts}</div>
+                        <small>Total Workouts</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.avg_tss ? Math.round(summary.avg_tss) : 'N/A'}</div>
+                        <small>Avg TSS</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.total_hours ? Math.round(summary.total_hours) : 'N/A'}</div>
+                        <small>Total Hours</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h6 mb-0">
+                          <i class="fas fa-swimmer me-1"></i>${summary.workouts_by_sport.swim}<br>
+                          <i class="fas fa-bicycle me-1"></i>${summary.workouts_by_sport.bike}<br>
+                          <i class="fas fa-running me-1"></i>${summary.workouts_by_sport.run}
+                        </div>
+                        <small>By Sport</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Workouts -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-secondary text-white">
+                  <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Workouts</h5>
+                </div>
+                <div class="card-body">
+                  ${data.workouts && data.workouts.length > 0 ? `
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                      <table class="table table-sm table-hover">
+                        <thead class="sticky-top bg-white">
+                          <tr>
+                            <th>Date</th>
+                            <th>Sport</th>
+                            <th>Title</th>
+                            <th>TSS</th>
+                            <th>Duration</th>
+                            <th>Distance</th>
+                            <th>HR Avg</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.workouts.slice(0, 30).map(w => `
+                            <tr>
+                              <td>${w.WorkoutDay}</td>
+                              <td><span class="badge bg-${getSportBadgeColor(w.WorkoutType)}">${w.WorkoutType}</span></td>
+                              <td>${w.Title || '-'}</td>
+                              <td><strong>${w.TssActual ? Math.round(w.TssActual) : '-'}</strong></td>
+                              <td>${w.TotalTime ? formatDuration(w.TotalTime) : '-'}</td>
+                              <td>${w.Distance ? formatDistance(w.Distance) : '-'}</td>
+                              <td>${w.HeartRateAverage ? Math.round(w.HeartRateAverage) + ' bpm' : '-'}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : '<p class="text-muted">No workout data available</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading athlete details:', error);
+        modalContent.innerHTML = `
+          <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Data</h5>
+            <p>${error.response?.data?.error || error.message}</p>
+            <button class="btn btn-primary mt-3" onclick="openAthleteDetail(${athleteId})">
+              <i class="fas fa-sync me-1"></i>Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Helper functions for formatting
+    function getFeelingEmoji(feeling) {
+      if (feeling >= 4) return '😊 Great';
+      if (feeling >= 3) return '🙂 Good';
+      if (feeling >= 2) return '😐 OK';
+      if (feeling >= 1) return '😕 Poor';
+      return '😞 Bad';
+    }
+
+    function getSportBadgeColor(sport) {
+      const sportLower = (sport || '').toLowerCase();
+      if (sportLower.includes('swim')) return 'primary';
+      if (sportLower.includes('bike') || sportLower.includes('cycle')) return 'success';
+      if (sportLower.includes('run')) return 'danger';
+      return 'secondary';
+    }
+
+    function formatDuration(hours) {
+      if (!hours) return '-';
+      const totalMinutes = Math.round(hours * 60);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+
+    function formatDistance(meters) {
+      if (!meters) return '-';
+      if (meters >= 1000) {
+        return `${(meters / 1000).toFixed(2)} km`;
+      }
+      return `${Math.round(meters)} m`;
+    }
+
+    // Open TSS Planner
+    // Helper function: Get next Sunday
+    function getNextSunday(fromDate = new Date()) {
+      const date = new Date(fromDate);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      if (dayOfWeek === 0) {
+        // Already Sunday, get next Sunday
+        date.setDate(date.getDate() + 7);
+      } else {
+        // Move to next Sunday
+        date.setDate(date.getDate() + (7 - dayOfWeek));
+      }
+      
+      return date;
+    }
+
+    // Helper function: Get next Wednesday (mid-week)
+    function getNextWednesday(fromDate = new Date()) {
+      const date = new Date(fromDate);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 3 = Wednesday
+      
+      if (dayOfWeek < 3) {
+        // Before Wednesday this week, go to this Wednesday
+        date.setDate(date.getDate() + (3 - dayOfWeek));
+      } else {
+        // After Wednesday, go to next Wednesday
+        date.setDate(date.getDate() + (10 - dayOfWeek));
+      }
+      
+      return date;
+    }
+
+    // Helper function: Project CTL/ATL forward using Angela Engine v5.1 EWMA
+    function projectMetrics(currentCTL, currentATL, daysForward) {
+      const TAU_CTL = 42; // Days - slow decay
+      const TAU_ATL = 7;  // Days - fast decay
+      
+      let ctl = currentCTL;
+      let atl = currentATL;
+      
+      // Project forward assuming no workouts (TSS = 0)
+      for (let day = 0; day < daysForward; day++) {
+        ctl = ctl + (0 - ctl) / TAU_CTL;
+        atl = atl + (0 - atl) / TAU_ATL;
+      }
+      
+      return {
+        ctl: ctl,
+        atl: atl,
+        tsb: ctl - atl
+      };
+    }
+
+    /**
+     * Fuel Next Week: Queue fueling for next Monday-Sunday
+     */
+    
+    /**
+     * Load and display fueling guidance from the queue
+     */
+    // New function with date range selection
+    async function fuelWithRange(athleteId) {
+      const rangeSelect = document.getElementById(`fuel-range-${athleteId}`);
+      const dateRange = rangeSelect.value;
+      const btn = document.getElementById(`fuel-btn-${athleteId}`);
+      const originalHTML = btn.innerHTML;
+      
+      try {
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Fueling...';
+        
+        const response = await axios.post('/api/fuel/next-week', {
+          athlete_id: athleteId,
+          date_range: dateRange  // 'next-week', 'rest-of-week', or 'all-future'
+        });
+        
+        if (response.data.success) {
+          const { queued, updated, total_planned, week_range } = response.data;
+          const totalProcessed = queued + updated;
+          
+          // Show success message
+          btn.innerHTML = '<i class="fas fa-check me-1"></i>Done!';
+          btn.classList.remove('btn-danger');
+          btn.classList.add('btn-success');
+          
+          // Show toast notification
+          let message = `✅ Fueled ${totalProcessed} workout${totalProcessed !== 1 ? 's' : ''} (${week_range})`;
+          showToast('success', message);
+          
+          // Reset button after 3 seconds
+          setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-danger');
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error(response.data.error || 'Failed to fuel workouts');
+        }
+      } catch (error) {
+        console.error('Fuel workouts error:', error);
+        btn.innerHTML = '<i class="fas fa-times me-1"></i>Failed';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-warning');
+        
+        showToast('error', `❌ Fuel Error: ${error.response?.data?.error || error.message}`);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.classList.remove('btn-warning');
+          btn.classList.add('btn-danger');
+          btn.disabled = false;
+        }, 3000);
+      }
+    }
+
+    // Legacy function - still works for backward compatibility
+    async function fuelNextWeek(athleteId) {
+      const btn = document.getElementById(`fuel-btn-${athleteId}`);
+      const originalHTML = btn.innerHTML;
+      
+      try {
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Queueing...';
+        
+        const response = await axios.post('/api/fuel/next-week', {
+          athlete_id: athleteId
+        });
+        
+        if (response.data.success) {
+          const { queued, updated, total_planned, week_range } = response.data;
+          const totalProcessed = queued + updated;
+          
+          // Show success message
+          btn.innerHTML = '<i class="fas fa-check me-1"></i>Queued!';
+          btn.classList.remove('btn-danger');
+          btn.classList.add('btn-success');
+          
+          // Show toast notification with simple message
+          let message = `Fueled workouts updated (${week_range})`;
+          showToast('success', message);
+          
+          // Reset button after 3 seconds
+          setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-danger');
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          throw new Error(response.data.error || 'Failed to queue fueling');
+        }
+      } catch (error) {
+        console.error('Fuel next week error:', error);
+        btn.innerHTML = '<i class="fas fa-times me-1"></i>Failed';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-warning');
+        
+        showToast('error', `❌ Fuel Error: ${error.response?.data?.error || error.message}`);
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.classList.remove('btn-warning');
+          btn.classList.add('btn-danger');
+          btn.disabled = false;
+        }, 3000);
+      }
+    }
+    
+    /**
+     * Show toast notification
+     */
+    function showToast(type, message) {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      toast.style.position = 'fixed';
+      toast.style.top = '20px';
+      toast.style.right = '20px';
+      toast.style.zIndex = '9999';
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove from DOM after hidden
+      toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+      });
+    }
+
+    async function openTSSPlanner(athleteId) {
+      try {
+        // Fetch athlete's current metrics
+        const athlete = allAthletes.find(a => a.id === athleteId);
+        
+        if (!athlete) {
+          alert('Athlete not found. Please sync the athlete first.');
+          return;
+        }
+
+        // Show the TSS Planner section
+        showSection('tss-planner');
+
+        // Open the modal
+        const modal = new bootstrap.Modal(document.getElementById('trainingStressModal'));
+        modal.show();
+
+        // Calculate projection dates
+        const today = new Date();
+        const comingSunday = getNextSunday(today);
+        const midWeekWednesday = getNextWednesday(today);
+        
+        // Get metrics date (default to today if not available)
+        const metricsDate = athlete.last_updated ? new Date(athlete.last_updated) : today;
+        
+        // Calculate days forward from metrics date
+        const daysToSunday = Math.max(0, Math.ceil((comingSunday - metricsDate) / (1000 * 60 * 60 * 24)));
+        const daysToWednesday = Math.max(0, Math.ceil((midWeekWednesday - metricsDate) / (1000 * 60 * 60 * 24)));
+        
+        console.log(`📅 Date Context:`, {
+          metricsDate: metricsDate.toISOString().split('T')[0],
+          today: today.toISOString().split('T')[0],
+          comingSunday: comingSunday.toISOString().split('T')[0],
+          midWeekWednesday: midWeekWednesday.toISOString().split('T')[0],
+          daysToSunday,
+          daysToWednesday
+        });
+
+        // Project TOTAL metrics to Sunday and Wednesday
+        const totalCurrent = { ctl: athlete.ctl || 0, atl: athlete.atl || 0, tsb: (athlete.ctl || 0) - (athlete.atl || 0) };
+        const totalSunday = projectMetrics(totalCurrent.ctl, totalCurrent.atl, daysToSunday);
+        const totalWednesday = projectMetrics(totalCurrent.ctl, totalCurrent.atl, daysToWednesday);
+        
+        // Project BIKE metrics
+        const bikeCurrent = athlete.bike_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const bikeSunday = projectMetrics(bikeCurrent.ctl, bikeCurrent.atl, daysToSunday);
+        
+        // Project RUN metrics
+        const runCurrent = athlete.run_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const runSunday = projectMetrics(runCurrent.ctl, runCurrent.atl, daysToSunday);
+        
+        // Project SWIM metrics
+        const swimCurrent = athlete.swim_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const swimSunday = projectMetrics(swimCurrent.ctl, swimCurrent.atl, daysToSunday);
+
+        console.log(`📊 Projected Metrics:`, {
+          total: { current: totalCurrent, sunday: totalSunday, wednesday: totalWednesday },
+          bike: { current: bikeCurrent, sunday: bikeSunday },
+          run: { current: runCurrent, sunday: runSunday }
+        });
+
+        // Store athlete ID and PROJECTED sport-specific metrics for the TSS planner
+        window.currentTSSAthleteId = athleteId;
+        window.currentTSSAthleteMetrics = {
+          total: { 
+            ctl: totalSunday.ctl, 
+            atl: totalSunday.atl, 
+            tsb: totalWednesday.tsb  // Use Wednesday TSB for mid-week
+          },
+          swim: swimSunday,
+          bike: bikeSunday,
+          run: runSunday
+        };
+
+        // Pre-populate with TOTAL PROJECTED values initially
+        document.getElementById('ctl_value').value = Math.round(totalSunday.ctl);
+        document.getElementById('atl_value').value = Math.round(totalSunday.atl);
+        document.getElementById('wtsb_value').value = Math.round(totalWednesday.tsb);
+
+        console.log(`✅ TSS Planner opened for athlete ${athleteId} with PROJECTED values:`, window.currentTSSAthleteMetrics);
+
+        // Add event listener for sport type changes
+        const sportRadios = document.querySelectorAll('input[name="sport_type"]');
+        sportRadios.forEach(radio => {
+          radio.addEventListener('change', function() {
+            const selectedSport = this.value;
+            const metrics = window.currentTSSAthleteMetrics[selectedSport];
+            
+            if (metrics) {
+              document.getElementById('ctl_value').value = Math.round(metrics.ctl || 0);
+              document.getElementById('atl_value').value = Math.round(metrics.atl || 0);
+              document.getElementById('wtsb_value').value = Math.round(metrics.tsb || 0);
+              
+              console.log(`Switched to ${selectedSport} with PROJECTED values:`, metrics);
+            }
+          });
+        });
+
+      } catch (error) {
+        console.error('Error opening TSS Planner:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    // Load athlete notes
+    async function loadAthleteNotes(athleteId) {
+      try {
+        const response = await axios.get(`/api/coach/athlete/${athleteId}/notes`);
+        const data = response.data;
+        
+        const notesTextarea = document.getElementById(`athlete-notes-${athleteId}`);
+        if (notesTextarea) {
+          notesTextarea.value = data.notes || '';
+        }
+        
+        // Update both timestamp displays
+        const notesStatus = document.getElementById('notes-status');
+        const saveStatus = document.getElementById(`notes-save-status-${athleteId}`);
+        
+        if (data.updated_at) {
+          const updatedDate = new Date(data.updated_at);
+          const timestamp = `${updatedDate.toLocaleDateString()} ${updatedDate.toLocaleTimeString()}`;
+          
+          notesStatus.innerHTML = `<i class="fas fa-clock me-1"></i>Last saved: ${timestamp}`;
+          notesStatus.className = 'text-success small';
+          
+          saveStatus.textContent = `✓ Loaded (saved ${timestamp})`;
+          saveStatus.className = 'text-success small';
+        } else {
+          notesStatus.innerHTML = `<i class="fas fa-clock me-1"></i>Not saved yet`;
+          notesStatus.className = 'text-muted small';
+          
+          saveStatus.textContent = '';
+        }
+        
+      } catch (error) {
+        console.error('Error loading notes:', error);
+      }
+    }
+
+    // Save athlete notes
+    async function saveAthleteNotes(athleteId) {
+      const notesTextarea = document.getElementById(`athlete-notes-${athleteId}`);
+      const saveStatus = document.getElementById(`notes-save-status-${athleteId}`);
+      
+      if (!notesTextarea) {
+        console.error('Notes textarea not found for athlete:', athleteId);
+        return;
+      }
+      
+      const notes = notesTextarea.value;
+      
+      try {
+        saveStatus.textContent = 'Saving...';
+        saveStatus.className = 'text-primary small';
+        
+        const response = await axios.post(`/api/coach/athlete/${athleteId}/notes`, { notes });
+        
+        const now = new Date();
+        const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+        
+        // Keep save status visible permanently
+        saveStatus.textContent = `✓ Saved at ${timestamp}`;
+        saveStatus.className = 'text-success small fw-bold';
+        
+        // Update timestamp in header
+        const notesStatus = document.getElementById('notes-status');
+        if (notesStatus) {
+          notesStatus.innerHTML = `<i class="fas fa-check-circle me-1"></i>Last saved: ${timestamp}`;
+          notesStatus.className = 'text-success small fw-bold';
+        }
+        
+        console.log('Notes saved successfully for athlete:', athleteId);
+        
+      } catch (error) {
+        console.error('Error saving notes for athlete', athleteId, ':', error);
+        console.error('Error details:', error.response?.data || error.message);
+        
+        const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+        saveStatus.textContent = `✗ Error: ${errorMsg}`;
+        saveStatus.className = 'text-danger small fw-bold';
+      }
+    }
+
+    // ========================================
+    // NOTEPAD DROPDOWN FUNCTIONALITY
+    // ========================================
+    
+    let notepadTimer = null;
+    let currentNotepadAthleteId = null;
+
+    // Load coach notes from API
+    async function loadCoachNotes(athleteId) {
+      if (!athleteId) return;
+      
+      currentNotepadAthleteId = athleteId;
+      const notepad = document.getElementById('coach-notepad');
+      const notepadCard = document.getElementById('notepad-card');
+      const status = document.getElementById('notepad-status');
+      
+      if (!notepad || !notepadCard) {
+        console.error('❌ Notepad elements not found:', { notepad: !!notepad, notepadCard: !!notepadCard });
+        return;
+      }
+      
+      try {
+        // Show notepad card
+        notepadCard.style.display = 'block';
+        
+        // Fetch notes
+        const response = await axios.get(`/api/coach/athlete/${athleteId}/notes`);
+        notepad.value = response.data.notes || '';
+        updateCharCount();
+        
+        status.textContent = 'Ready';
+        status.className = 'text-success small';
+        
+        // Update last saved time if available
+        const lastSaved = document.getElementById('notepad-last-saved');
+        if (lastSaved && response.data.updated_at) {
+          lastSaved.textContent = `Last saved: ${new Date(response.data.updated_at).toLocaleString()}`;
+        }
+        
+        console.log('✅ Notes loaded for athlete:', athleteId);
+      } catch (error) {
+        console.error('❌ Error loading notes:', error);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        notepad.value = '';
+        status.textContent = 'Error loading';
+        status.className = 'text-danger small';
+      }
+    }
+
+    // Save coach notes with auto-save
+    async function saveCoachNotes() {
+      if (!currentNotepadAthleteId) return;
+      
+      const notepad = document.getElementById('coach-notepad');
+      const status = document.getElementById('notepad-status');
+      
+      if (!notepad || !status) return;
+      
+      const notes = notepad.value;
+      
+      try {
+        status.textContent = 'Saving...';
+        status.className = 'text-primary small';
+        
+        await axios.post(`/api/coach/athlete/${currentNotepadAthleteId}/notes`, { notes });
+        
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString();
+        
+        status.textContent = `✓ Saved at ${timestamp}`;
+        status.className = 'text-success small';
+        
+        // Update last saved display
+        const lastSaved = document.getElementById('notepad-last-saved');
+        if (lastSaved) {
+          lastSaved.textContent = `✓ Last saved: ${now.toLocaleString()}`;
+          lastSaved.className = 'text-success small';
+        }
+        
+        console.log('✅ Notes saved successfully for athlete:', currentNotepadAthleteId);
+        
+      } catch (error) {
+        console.error('❌ Error saving notes - Full details:');
+        console.error('Error object:', error);
+        console.error('Error type:', typeof error);
+        console.error('Error string:', String(error));
+        console.error('Error message:', error.message);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        console.error('Error stack:', error.stack);
+        
+        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || String(error) || 'Unknown error';
+        status.textContent = `✗ Error: ${errorMsg}`;
+        status.className = 'text-danger small';
+        
+        // Also show error in last saved
+        const lastSaved = document.getElementById('notepad-last-saved');
+        if (lastSaved) lastSaved.textContent = `❌ ${errorMsg}`;
+      }
+    }
+
+    // Manual save button
+    function saveCoachNotesManually() {
+      clearTimeout(notepadTimer);
+      saveCoachNotes();
+    }
+
+    // Update character count
+    function updateCharCount() {
+      const notepad = document.getElementById('coach-notepad');
+      const charCount = document.getElementById('notepad-char-count');
+      
+      if (notepad && charCount) {
+        const count = notepad.value.length;
+        charCount.textContent = `${count} character${count !== 1 ? 's' : ''}`;
+      }
+    }
+
+    // Setup notepad auto-save and char counter
+    document.addEventListener('DOMContentLoaded', () => {
+      const notepad = document.getElementById('coach-notepad');
+      
+      if (notepad) {
+        // Auto-save on typing (debounced 2 seconds)
+        notepad.addEventListener('input', () => {
+          updateCharCount();
+          clearTimeout(notepadTimer);
+          notepadTimer = setTimeout(saveCoachNotes, 2000);
+        });
+        
+        // Prevent dropdown from closing when clicking inside
+        const dropdownMenu = notepad.closest('.dropdown-menu');
+        if (dropdownMenu) {
+          dropdownMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+        }
+      }
+    });
+
+    // Open post workout modal
+    function openPostWorkout(athleteId) {
+      document.getElementById('workout-athlete-id').value = athleteId;
+      document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+      
+      const modal = new bootstrap.Modal(document.getElementById('postWorkoutModal'));
+      modal.show();
+    }
+
+    // Submit workout
+    async function submitWorkout() {
+      const athleteId = document.getElementById('workout-athlete-id').value;
+      const workoutData = {
+        date: document.getElementById('workout-date').value,
+        title: document.getElementById('workout-title').value,
+        description: document.getElementById('workout-description').value,
+        tss: parseFloat(document.getElementById('workout-tss').value),
+        duration: parseInt(document.getElementById('workout-duration').value),
+        sport: document.getElementById('workout-sport').value,
+        block_type: 'General'
+      };
+
+      try {
+        const response = await axios.post(`/api/coach/athlete/${athleteId}/workout`, workoutData);
+        
+        if (response.data.success) {
+          alert('Workout posted successfully!');
+          bootstrap.Modal.getInstance(document.getElementById('postWorkoutModal')).hide();
+          document.getElementById('postWorkoutForm').reset();
+        }
+      } catch (error) {
+        console.error('Error posting workout:', error);
+        alert(`Error: ${error.response?.data?.error || error.message}`);
+      }
+    }
+
+    // Sync single athlete
+    async function syncSingleAthlete(athleteId) {
+      if (!confirm(`Sync athlete ${athleteId} from TrainingPeaks?\n\nThis will fetch their workout history and calculate CTL/ATL/TSB.`)) {
+        return;
+      }
+
+      try {
+        // Show loading indicator on the athlete card
+        const athleteCard = document.querySelector(`[onclick*="openAthleteDetail('${athleteId}')"]`);
+        if (athleteCard) {
+          athleteCard.style.opacity = '0.5';
+          athleteCard.style.pointerEvents = 'none';
+        }
+
+        const response = await axios.post(`/api/coach/athlete/${athleteId}/sync`);
+        
+        if (response.data.success) {
+          const data = response.data;
+          const message = `✅ Synced athlete ${athleteId}!
+
+📊 TOTAL (${data.workouts} workouts):
+  CTL: ${Math.round(data.total.ctl)}  |  ATL: ${Math.round(data.total.atl)}  |  TSB: ${Math.round(data.total.tsb)}
+
+🏊 SWIM (${data.swim.workouts} workouts):
+  CTL: ${Math.round(data.swim.ctl)}  |  ATL: ${Math.round(data.swim.atl)}  |  TSB: ${Math.round(data.swim.tsb)}
+
+🚴 BIKE (${data.bike.workouts} workouts):
+  CTL: ${Math.round(data.bike.ctl)}  |  ATL: ${Math.round(data.bike.atl)}  |  TSB: ${Math.round(data.bike.tsb)}
+
+🏃 RUN (${data.run.workouts} workouts):
+  CTL: ${Math.round(data.run.ctl)}  |  ATL: ${Math.round(data.run.atl)}  |  TSB: ${Math.round(data.run.tsb)}`;
+          
+          alert(message);
+          loadAthletes(); // Reload the list to show updated data
+        }
+      } catch (error) {
+        console.error('Error syncing athlete:', error);
+        alert(`❌ Error syncing athlete:\n${error.response?.data?.error || error.message}`);
+        loadAthletes(); // Reload anyway to restore UI
+      }
+    }
+
+    // Sync all athletes (legacy - not recommended)
+    async function syncAllAthletes() {
+      if (!confirm('Refresh all athlete data from TrainingPeaks? This may take a moment.')) {
+        return;
+      }
+      await loadAthletes();
+      alert('Athletes refreshed!');
+    }
+  </script>
+  
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

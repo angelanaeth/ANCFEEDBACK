@@ -1,0 +1,226 @@
+<!-- CLEAN RUN TAB STRUCTURE -->
+<!-- This will replace the Run tab section in athlete-profile-v3.html -->
+
+      <!-- RUN TAB -->
+      <div class="tab-pane fade" id="run" role="tabpanel">
+        
+        <!-- Top Metrics Cards (4 cards: CS, LT1, OGC, D') -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          
+          <!-- Critical Speed Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              Critical Speed (CS)
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editRunCS()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="runCS_Value">--:-- /mi</div>
+            <div class="metric-info" id="runCS_PerKm" style="font-size: 14px; color: #6b7280; margin-top: 4px;"></div>
+            <div class="metric-source" id="runCS_Source">Not set</div>
+          </div>
+          
+          <!-- LT1 Pace Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              LT1 Pace
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editRunLT1()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="runLT1_Value">--:-- /mi</div>
+            <div class="metric-info" id="runLT1_PercentCS" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-info" id="runLT1_PerKm" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-source" id="runLT1_Source">Not set</div>
+          </div>
+          
+          <!-- OGC Pace Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              OGC Pace
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editRunOGC()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="runOGC_Value">--:-- /mi</div>
+            <div class="metric-info" id="runOGC_PercentCS" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-info" id="runOGC_PerKm" style="font-size: 14px; color: #6b7280; margin-top: 2px;"></div>
+            <div class="metric-source" id="runOGC_Source">Not set</div>
+          </div>
+          
+          <!-- D' (Distance Prime) Card -->
+          <div class="metric-card">
+            <div class="metric-label">
+              D' (Distance Capacity)
+              <button class="btn btn-sm btn-outline-secondary float-end" onclick="window.editRunDPrime()" style="padding: 2px 8px; font-size: 12px;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="metric-value" id="runDPrime_Value">--- m</div>
+            <div class="metric-info" id="runDPrime_Feet" style="font-size: 14px; color: #6b7280; margin-top: 4px;"></div>
+            <div class="metric-source" id="runDPrime_Source">Not set</div>
+          </div>
+          
+        </div>
+
+        <!-- Inline Edit Forms (collapsed by default) -->
+        <!-- Edit CS Form -->
+        <div class="data-table-container mb-3" id="editRunCSForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit Critical Speed</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">CS (MM:SS per mile)</label>
+                <input type="text" class="form-control" id="editRunCS_Input" placeholder="e.g., 7:30">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editRunCS_Date">
+              </div>
+              <div>
+                <label class="form-label">Source</label>
+                <select class="form-control" id="editRunCS_Source">
+                  <option value="2-point test">2-point test</option>
+                  <option value="3-point test">3-point test</option>
+                  <option value="Manual entry">Manual entry</option>
+                  <option value="Calculator">Calculator</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveRunCSEdit()">Save CS</button>
+              <button class="btn btn-secondary" onclick="window.cancelRunCSEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit LT1 Form -->
+        <div class="data-table-container mb-3" id="editRunLT1Form" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit LT1 Pace</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">LT1 Pace (MM:SS per mile)</label>
+                <input type="text" class="form-control" id="editRunLT1_Pace" placeholder="e.g., 8:30">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editRunLT1_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveRunLT1Edit()">Save LT1</button>
+              <button class="btn btn-secondary" onclick="window.cancelRunLT1Edit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit OGC Form -->
+        <div class="data-table-container mb-3" id="editRunOGCForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit OGC Pace</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">OGC Pace (MM:SS per mile)</label>
+                <input type="text" class="form-control" id="editRunOGC_Pace" placeholder="e.g., 7:00">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editOGC_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveRunOGCEdit()">Save OGC</button>
+              <button class="btn btn-secondary" onclick="window.cancelRunOGCEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit D' Form -->
+        <div class="data-table-container mb-3" id="editRunDPrimeForm" style="display: none;">
+          <div class="data-table-header">
+            <h3>Edit D' (Distance Capacity)</h3>
+          </div>
+          <div style="padding: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label class="form-label">D' (meters)</label>
+                <input type="number" class="form-control" id="editRunDPrime_Input" placeholder="e.g., 350">
+              </div>
+              <div>
+                <label class="form-label">Test Date</label>
+                <input type="date" class="form-control" id="editRunDPrime_Date">
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="window.saveRunDPrimeEdit()">Save D'</button>
+              <button class="btn btn-secondary" onclick="window.cancelRunDPrimeEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pace Zones Section (Collapsible) -->
+        <div class="data-table-container mb-3">
+          <div class="data-table-header" style="cursor: pointer;" onclick="window.toggleRunPaceZones()" id="runPaceZonesHeader">
+            <h3>
+              <i class="fas fa-chevron-down me-2" id="runPaceZonesIcon"></i>
+              Pace Zones
+            </h3>
+            <p>Training zones calculated from your Critical Speed</p>
+            <div class="mt-2">
+              <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); window.calculateRunPaceZones()">
+                <i class="fas fa-calculator me-1"></i>Calculate Zones from CS
+              </button>
+            </div>
+          </div>
+          
+          <!-- Zones Table (hidden by default) -->
+          <div id="runPaceZonesContent" style="display: none;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Zone</th>
+                  <th>Name</th>
+                  <th>Pace Range (per mile)</th>
+                  <th style="width: 120px;">Pace Range (per km)</th>
+                  <th style="width: 100px;">% CS</th>
+                  <th style="width: 80px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="runPaceZonesBody">
+                <tr>
+                  <td colspan="6" class="text-center text-muted" style="padding: 32px;">
+                    No zones calculated yet. Click "Calculate Zones from CS" above.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div id="paceZonesFooter" style="padding: 16px; background: var(--gray-50); margin-top: 16px; display: none;">
+              <p style="margin: 0; font-size: 14px; color: #6b7280;" id="paceZonesSourceInfo"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Run Toolkit Button -->
+        <div class="card bg-light mt-3">
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-md-12">
+                <button onclick="window.openToolkit('run'); return false;" class="btn btn-warning w-100 btn-lg">
+                  <i class="fas fa-calculator me-2"></i>Open Run Toolkit
+                </button>
+                <small class="text-muted d-block mt-1 text-center">
+                  Calculate CS, D', LT1/OGC, pace zones, intervals, and VO2max prescriptions
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>

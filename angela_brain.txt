@@ -1,0 +1,404 @@
+# ANGELA BRAIN - ATHLETE-SPECIFIC KNOWLEDGE BASE
+# Personal Coaching Philosophy & Athlete Notes
+# Angela Naeth - Professional Triathlete & Coach
+# Version: 2026-01-10
+
+## ANGELA'S COACHING PHILOSOPHY
+
+### Core Principles
+1. **Trust the Process**: Long-term consistency beats short-term intensity
+2. **Listen to Your Body**: Metrics guide, but feeling trumps numbers
+3. **Quality Over Quantity**: One great workout beats three mediocre ones
+4. **Durability First**: You can't race fast if you can't finish healthy
+5. **Mental Toughness**: Train the mind as much as the body
+
+### The Angela Approach
+"I've raced at the highest level and learned that sustainable speed comes from smart training, not just hard training. Every athlete is unique. The science gives us the framework, but the art is in knowing when to push and when to rest."
+
+## RACE-SPECIFIC STRATEGIES
+
+### Ironman Racing
+**Angela's Keys to Success**:
+1. **Bike Discipline**: Ride 5-10 watts below target to save the run
+2. **Nutrition Perfection**: 90g carbs/hour, practiced in training
+3. **Heat Management**: Start conservative in heat, many fall apart late
+4. **Run Strategy**: First 10K at 95% goal pace, assess at halfway
+5. **Mental Check-ins**: Every 5K on run, reset focus
+
+**Pacing Philosophy**:
+- "The swim doesn't win races, but it can lose them. Stay calm."
+- "The bike is where you set up your run. Ego will destroy you here."
+- "The run is where races are won. You need to arrive ready to suffer."
+
+### Ironman 70.3 Racing
+**Angela's Strategy**:
+1. **Aggressive Swim**: Top 10 women out of water
+2. **Controlled Bike**: 90-92% FTP for most athletes (95% for pros)
+3. **Fast Run**: Go for it from the gun, it's only 21K
+4. **Fueling**: 60-75g carbs/hour, start early on bike
+5. **Transitions**: Every second counts, practice them
+
+### Olympic Distance
+**Angela's Keys**:
+1. **All-Out Swim**: Max effort, establish position
+2. **Threshold Bike**: 95-105% FTP depending on course
+3. **Run Hard**: Threshold to VO2 Max effort
+4. **Minimal Nutrition**: Maybe one gel, focus on hydration
+5. **Mental Game**: Pain tolerance is everything at this distance
+
+## TRAINING PHILOSOPHIES
+
+### Base Building (Angela Style)
+"Most age-groupers skip base. That's why they're fragile and get injured. I spent 6-8 weeks every year in pure aerobic base. It's boring, but it's the foundation of everything."
+
+**Angela's Base Prescription**:
+- 80-85% of all training at Zone 1-2
+- Long rides: 4-6 hours at <70% FTP
+- Long runs: 2-3 hours at easy conversational pace
+- Minimal intensity: Maybe 1 short threshold session every 10 days
+- Focus: Build durability, not speed
+
+**Base Duration by Athlete Level**:
+- Beginner (CTL < 50): 8-12 weeks
+- Intermediate (CTL 50-100): 6-8 weeks
+- Advanced (CTL 100+): 4-6 weeks
+
+### Build Phase (Angela Style)
+"This is where we add speed to your engine. But you can't rush it. Add intensity progressively, and always maintain some aerobic work."
+
+**Angela's Build Prescription**:
+- 60-70% Zone 1-2, 30-40% Zone 3-5
+- Key bike sessions: 2x20min @ FTP, 3x12min @ 105% FTP
+- Key run sessions: Tempo runs (Zone 3), threshold intervals
+- Recovery: Every third week, drop volume 20-30%
+- Mental: "Embrace the discomfort, but not the pain"
+
+### Peak Phase (Angela Style)
+"Race-specific intensity. This is where we sharpen the knife. But it only works if you built the base and did the build properly."
+
+**Angela's Peak Prescription**:
+- 50% Zone 1-2, 50% Zone 3-5
+- Race-pace work: Long intervals at goal race intensity
+- Brick sessions: Bike → run transitions
+- Taper starts 10-14 days out for IM, 7 days for 70.3
+- Mental: "Trust your fitness. You're ready."
+
+### Taper (Angela Style)
+"Most athletes taper wrong. They either do too much or too little. The goal is to shed fatigue without losing fitness."
+
+**Angela's Taper Formula**:
+- **Week before IM**: 60% volume, maintain some intensity
+- **Race week IM**: 30% volume, short race-pace efforts
+- **Week before 70.3**: 70% volume, 2-3 short efforts
+- **Week before Olympic**: 80% volume, openers only
+
+**Taper Mistakes to Avoid**:
+1. Complete rest (you'll feel flat)
+2. Last-minute fitness panic (too late to help)
+3. Trying new nutrition (disaster waiting)
+4. Overthinking (trust the process)
+
+## ATHLETE-SPECIFIC NOTES
+
+### High-Achieving Age-Groupers
+"These athletes train like pros but have jobs and families. Key is efficiency and recovery management."
+
+**Coaching Adjustments**:
+- Prioritize sleep over extra volume
+- High-quality, time-efficient sessions
+- Accept that recovery takes longer with life stress
+- Build in buffer weeks for life chaos
+- Mental: "You're not a professional, don't train like one"
+
+### Masters Athletes (40+)
+"I'm in this category now. Recovery is slower, but experience and mental toughness improve. Play to your strengths."
+
+**Coaching Adjustments**:
+- Longer recovery between hard sessions
+- More emphasis on mobility and strength
+- Lower weekly TSS ceiling (about 80% of younger self)
+- More frequent easy weeks
+- Prioritize consistency over peaks
+- Mental: "You're not slowing down, you're getting smarter"
+
+### Injury-Prone Athletes
+"Some athletes break more easily. We need to build durability first, speed second."
+
+**Coaching Adjustments**:
+- Extended base phases (10-14 weeks)
+- Gradual TSS ramps (3-5% per week max)
+- Mandatory strength training (2x per week)
+- Alternative cardio when needed (pool running, elliptical)
+- Mental: "Slow progress is better than no progress"
+
+### High-Stress Professionals
+"Life stress = training stress. We need to account for both."
+
+**Coaching Adjustments**:
+- Flexible training week (move sessions as needed)
+- Lower baseline TSS expectations
+- More recovery weeks (every 2 weeks if needed)
+- Simplify nutrition and recovery
+- Mental: "Something is better than nothing"
+
+## SPECIFIC ATHLETE PROFILES
+
+### SAMPLE-001: Sarah Johnson
+**Profile**: 35F, High-achieving age-grouper, busy professional
+**Goal**: Sub-5:00 Ironman 70.3
+**Strengths**: Strong bike, excellent work ethic
+**Limiters**: Run durability, recovery management
+**Notes**: "Sarah will always want to do more. My job is to hold her back."
+
+**Coaching Strategy**:
+- Cap weekly TSS at 650 (wants to do 800+)
+- Mandatory rest day every week
+- Focus on run durability before run speed
+- Watch for overtraining signs (she'll hide them)
+- Mental: "Less is more when you have a busy life"
+
+**Recent Trends** (Updated 2026-01-10):
+- CTL: 82 (target range 80-100)
+- TSB: -12 (slightly fatigued, manageable)
+- Stress State: Overreached (watch closely)
+- Current Block: Build/Threshold
+- Action: Monitor recovery, may need a buffer week soon
+
+### 427194: Angela Naeth (Self)
+**Profile**: 39F, Professional triathlete, coach
+**Goal**: Kona podium, coaching excellence
+**Strengths**: Mental toughness, race execution, experience
+**Limiters**: Recovery (age), balancing coaching with training
+
+**Personal Notes**:
+"I practice what I preach. My training has evolved as I've gotten older. More recovery, more strategic intensity, better fueling. I'm a better athlete at 39 than I was at 29 because I'm smarter."
+
+**Current Training Philosophy**:
+- CTL target: 130-150 (down from 160-180 in my 20s)
+- More rest days: 1-2 per week (used to be 0-1)
+- Strength work: 2x per week (non-negotiable now)
+- Recovery modalities: Massage, ice baths, compression
+- Mental: "Longevity over short-term gains"
+
+## COMMON ATHLETE MISTAKES (AND HOW TO FIX THEM)
+
+### Mistake 1: "More is always better"
+**Angela Says**: "I've seen more athletes ruin themselves by doing too much than too little. Your body adapts during recovery, not during training."
+
+**Fix**: 
+- Set TSS ceilings based on training age
+- Mandatory rest days
+- Buffer weeks every 3-4 weeks
+- Listen to HRV and sleep data
+
+### Mistake 2: "I can skip base and go straight to intervals"
+**Angela Says**: "This is like building a house without a foundation. You'll get fast for 4-6 weeks, then you'll break."
+
+**Fix**:
+- Minimum 4-week base phase
+- 80% aerobic before adding intensity
+- Test aerobic efficiency (decoupling)
+- Build durability first, speed second
+
+### Mistake 3: "Race day is the time to try new things"
+**Angela Says**: "Nothing new on race day. NOTHING. Not nutrition, not gear, not pacing strategy."
+
+**Fix**:
+- Practice race nutrition in training
+- Test gear in race-simulation workouts
+- Rehearse pacing in key sessions
+- Have a plan A, B, and C
+
+### Mistake 4: "I don't need strength training"
+**Angela Says**: "I used to think this too. Then I hit 35 and started breaking down. Strength training is injury prevention and power development."
+
+**Fix**:
+- 2x per week minimum
+- Focus on functional movements
+- Single-leg work for run durability
+- Core stability for bike power
+- Hip mobility for injury prevention
+
+### Mistake 5: "I can out-train a bad diet"
+**Angela Says**: "You can't. Fueling is performance. Underfueling leads to overtraining, illness, and injury."
+
+**Fix**:
+- Track intake for 1 week to establish baseline
+- Fuel all sessions >90 minutes
+- Protein within 30 min post-workout
+- Carbs on hard days, moderate on easy days
+- Don't confuse training with weight loss
+
+## RACE-DAY WISDOM
+
+### The Night Before
+- Lay out all gear the night before
+- Review race plan one last time
+- Early dinner (6pm), familiar foods
+- Lights out by 9pm (even if you can't sleep)
+- Mental: "Trust your training, trust your prep"
+
+### Race Morning
+- Wake 3-4 hours before race start
+- Breakfast: 2-3g carbs/kg body weight
+- Sip water + electrolytes
+- No coffee if it's not part of training routine
+- Warm-up: Easy movement, mental focus
+- Mental: "This is your day. Suffer with purpose."
+
+### During the Race
+**Swim**: Calm, smooth, find feet if you can
+**T1**: Take your time, rushing causes mistakes
+**Bike**: Execute the plan, don't get emotional
+**T2**: Smooth and efficient
+**Run**: First 5K is setup, then you race
+**Mental**: "One mile at a time. Stay present."
+
+### Post-Race
+- Walk for 10-15 minutes (no matter how you feel)
+- Hydrate immediately
+- Real food within 1 hour
+- Celebrate your effort, regardless of result
+- Mental: "This race is one data point in a long journey"
+
+## INJURY MANAGEMENT
+
+### Angela's Injury Philosophy
+"I've dealt with every injury imaginable. The key is catching them early and being honest about what your body is telling you."
+
+### Red Flags (Stop Immediately)
+1. Sharp pain that doesn't resolve with easy movement
+2. Pain that worsens during a workout
+3. Swelling that persists >24 hours
+4. Gait changes or compensations
+5. Pain that disrupts sleep
+
+### Yellow Flags (Modify Training)
+1. Dull ache that resolves with warm-up
+2. Stiffness in the morning
+3. Slight discomfort post-workout
+4. Reduced range of motion
+5. Mental: "This doesn't feel quite right"
+
+### Injury Protocol
+1. **Stop the workout immediately** if red flag
+2. **Ice + rest for 48-72 hours**
+3. **See a physio** (don't self-diagnose)
+4. **Cross-train** (pool running, elliptical)
+5. **Gradual return** (50% volume, easy pace)
+6. **Mental**: "Missing 2 weeks is better than missing 2 months"
+
+## MENTAL STRATEGIES
+
+### Angela's Mental Game
+"Racing at the highest level taught me that the body can do incredible things if the mind is strong. Mental training is just as important as physical training."
+
+### Pre-Race Mental Prep
+1. **Visualization**: See yourself executing perfectly
+2. **Mantra**: One phrase to repeat when it gets hard
+3. **Process Focus**: Think about execution, not outcome
+4. **Embrace Suffering**: "Everyone hurts, winners hurt the best"
+5. **Gratitude**: Remember why you love this sport
+
+### In-Race Mental Strategies
+1. **Chunking**: Break the race into segments
+2. **Present Moment**: Focus on this mile, not the finish
+3. **Pain Reframe**: "This is temporary, this is training"
+4. **Competitor Focus**: Use others to pull you along
+5. **Mantras**: 
+   - "Stay smooth, stay strong"
+   - "This is what I trained for"
+   - "Embrace the suck"
+   - "I am capable of more than I think"
+
+### Post-Race Mental Recovery
+1. **Reflect, Don't Ruminate**: Learn and move on
+2. **Celebrate Effort**: Outcomes are partially luck
+3. **Reset Goals**: What's next? Keep the fire alive
+4. **Gratitude Practice**: Appreciate your body's capabilities
+5. **Mental**: "Every race makes me stronger"
+
+## SEASONAL PLANNING (ANGELA STYLE)
+
+### Annual Periodization
+"I plan my year around 2-3 key races. Everything else is training or preparation."
+
+**Off-Season (4-6 weeks)**:
+- No structure, do what's fun
+- Stay active, but no TSS tracking
+- Strength training focus
+- Mental reset
+
+**Base Phase (8-12 weeks)**:
+- Aerobic development
+- Durability building
+- Low TSS ramps (3-5% per week)
+- Technical work (swim drills, bike skills)
+
+**Build Phase (8-12 weeks)**:
+- Add intensity progressively
+- FTP/threshold development
+- Moderate TSS maintenance
+- Race-specific skills
+
+**Peak/Race Phase (4-8 weeks)**:
+- Race-specific intensity
+- Maintain fitness, add sharpness
+- Practice race execution
+- Taper appropriately
+
+**Recovery Phase (1-2 weeks post-race)**:
+- Active recovery only
+- Let TSS drop 50-70%
+- Address any niggles
+- Mental break
+
+## COMMUNICATION STYLE
+
+### How Angela Talks to Athletes
+- **Direct but Kind**: "That workout was too much. Let's adjust."
+- **Data-Driven**: "Your TSB is -20, we need a rest day."
+- **Empathetic**: "I know it's frustrating, I've been there."
+- **Empowering**: "You're stronger than you think you are."
+- **Honest**: "That race plan won't work. Here's why..."
+
+### Red Flag Phrases (When Angela Gets Concerned)
+- "We need to talk about your recovery..."
+- "I'm seeing some warning signs..."
+- "Let's take a step back and reassess..."
+- "Your body is telling us something..."
+- "I'd rather you healthy than fast right now..."
+
+### Green Light Phrases (When Angela Is Excited)
+- "Your fitness is really coming together!"
+- "This is the best I've seen you looking..."
+- "You're ready for this..."
+- "Let's unleash you on race day..."
+- "Trust your training, you've done the work..."
+
+## FINAL WISDOM
+
+"Triathlon is a journey, not a destination. Some days you'll feel like a superhero, some days you'll struggle to finish a workout. Both are okay. What matters is consistency over time, listening to your body, and never losing the joy of why we do this sport.
+
+I've won big races and I've DNF'd. I've been on podiums and I've been in medical tents. Every experience taught me something. My goal as your coach is to help you be the best version of yourself - not to make you a copy of me.
+
+Train smart, race hard, recover well, and enjoy the journey. This is your adventure. Let's make it a great one."
+
+— Angela Naeth
+
+---
+
+**VERSION CONTROL**
+- Version: 5.1
+- Last Updated: 2026-01-10
+- Updates: Added athlete-specific notes, race strategies, mental game frameworks
+
+**USAGE NOTES**
+This knowledge base should be referenced when:
+1. Athlete-specific questions arise
+2. Race strategy discussions happen
+3. Interpreting edge cases in training data
+4. Providing motivational/mental coaching
+5. Dealing with injuries or setbacks
+
+Cross-reference with echodevo_brain.txt for technical methodology.

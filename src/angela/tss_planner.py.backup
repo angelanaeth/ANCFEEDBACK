@@ -1,0 +1,1111 @@
+COMMON_OPTIONS = {
+    "no_issue": 0,
+    "minor_issue": -1,
+    "major_issue": -1.5,
+    "unknown": -0.5,
+}
+
+# Block type configurations
+BLOCK_CONFIGS = {
+    "bike": {
+        "base_durability": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.95},
+                {"value": 1, "low": 0.9501, "high": 1.05},
+                {"value": 0, "low": 1.0501, "high": 1.1},
+                {"value": -1, "low": 1.1001, "high": 1.15},
+                {"value": -2, "low": 1.1501, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1.501, "high": 10},
+                {"value": 1, "low": 0.001, "high": 1.5},
+                {"value": 0, "low": -1.5, "high": 0},
+                {"value": -1, "low": -2.5, "high": -1.501},
+                {"value": -2, "low": -10, "high": -2.501},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 5, "high": 100},
+                {"value": 1, "low": 0, "high": 4.999},
+                {"value": 0, "low": -5, "high": -0.0001},
+                {"value": -1, "low": -15, "high": -5.001},
+                {"value": -2, "low": -1000, "high": -15.001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.1,
+                    "high_change": 1.15,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 0,
+                    "high": 6,
+                    "low_change": 1.05,
+                    "high_change": 1.1,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -3,
+                    "high": -0.0001,
+                    "low_change": 0.98,
+                    "high_change": 1.02,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -6,
+                    "high": -4,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -7,
+                    "low_change": 0.5,
+                    "high_change": 0.7,
+                },
+            ],
+        },
+        "build_th": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.95},
+                {"value": 1, "low": 0.9501, "high": 1.03},
+                {"value": 0, "low": 1.0301, "high": 1.08},
+                {"value": -1, "low": 1.0801, "high": 1.13},
+                {"value": -2, "low": 1.1301, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1.501, "high": 10},
+                {"value": 1, "low": 0.001, "high": 1.5},
+                {"value": 0, "low": -1, "high": 0},
+                {"value": -1, "low": -2, "high": -1.001},
+                {"value": -2, "low": -10, "high": -2.001},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 5, "high": 100},
+                {"value": 1, "low": 1, "high": 4.99999},
+                {"value": 0, "low": -5, "high": -0.99999},
+                {"value": -1, "low": -10, "high": -5.00001},
+                {"value": -2, "low": -1000, "high": -10.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.08,
+                    "high_change": 1.12,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 0,
+                    "high": 6,
+                    "low_change": 1.04,
+                    "high_change": 1.08,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -2,
+                    "high": -0.0001,
+                    "low_change": 0.97,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -5,
+                    "high": -3,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -6,
+                    "low_change": 0.6,
+                    "high_change": 0.7,
+                },
+            ],
+        },
+        "vo2_max": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.95},
+                {"value": 1, "low": 0.9501, "high": 1},
+                {"value": 0, "low": 1.0001, "high": 1.04},
+                {"value": -1, "low": 1.0401, "high": 1.08},
+                {"value": -2, "low": 1.0801, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1.501, "high": 10},
+                {"value": 1, "low": 0, "high": 1.5},
+                {"value": 0, "low": -1, "high": -0.00001},
+                {"value": -1, "low": -2, "high": -1.001},
+                {"value": -2, "low": -10, "high": -2.001},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 5, "high": 100},
+                {"value": 1, "low": 1, "high": 4.99999},
+                {"value": 0, "low": -5, "high": -0.99999},
+                {"value": -1, "low": -10, "high": -5.00001},
+                {"value": -2, "low": -1000, "high": -10.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "slight_increase",
+                    "low": 6,
+                    "high": 1000,
+                    "low_change": 1.03,
+                    "high_change": 1.05,
+                },
+                {
+                    "recommendation": "hold_to_slight_increase",
+                    "low": 1,
+                    "high": 5,
+                    "low_change": 1,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -2,
+                    "high": 0,
+                    "low_change": 0.98,
+                    "high_change": 1,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -5,
+                    "high": -3,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -6,
+                    "low_change": 0.6,
+                    "high_change": 0.75,
+                },
+            ],
+        },
+        "specificity": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 1},
+                {"value": 1, "low": 1.0001, "high": 1.05},
+                {"value": 0, "low": 1.05001, "high": 1.08},
+                {"value": -1, "low": 1.08001, "high": 1.12},
+                {"value": -2, "low": 1.12001, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1, "high": 10},
+                {"value": 1, "low": 0, "high": 0.9999},
+                {"value": 0, "low": -1, "high": -0.00001},
+                {"value": -1, "low": -2, "high": -1.001},
+                {"value": -2, "low": -100, "high": -2.0001},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 10, "high": 100},
+                {"value": 1, "low": 3, "high": 9.99999},
+                {"value": 0, "low": -3, "high": 2.99999},
+                {"value": -1, "low": -100, "high": -3.00001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "slight_increase",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.03,
+                    "high_change": 1.05,
+                },
+                {
+                    "recommendation": "hold_to_slight_increase",
+                    "low": 2,
+                    "high": 6,
+                    "low_change": 1,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -2,
+                    "high": 1,
+                    "low_change": 0.95,
+                    "high_change": 0.99,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -6,
+                    "high": -3,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -7,
+                    "low_change": 0.6,
+                    "high_change": 0.75,
+                },
+            ],
+        },
+        "hybrid": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.95},
+                {"value": 1, "low": 0.9501, "high": 1.015},
+                {"value": 0, "low": 1.01501, "high": 1.06},
+                {"value": -1, "low": 1.0601, "high": 1.105},
+                {"value": -2, "low": 1.10501, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1.501, "high": 10},
+                {"value": 1, "low": 0, "high": 1.5},
+                {"value": 0, "low": -1, "high": -0.00001},
+                {"value": -1, "low": -2, "high": -0.9999},
+                {"value": -2, "low": -100, "high": -2.0001},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 5, "high": 100},
+                {"value": 1, "low": 1, "high": 4.99999},
+                {"value": 0, "low": -5, "high": 0.99999},
+                {"value": -1, "low": -10, "high": -5.00001},
+                {"value": -2, "low": -1000, "high": -10.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 6,
+                    "high": 1000,
+                    "low_change": 1.055,
+                    "high_change": 1.085,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 2,
+                    "high": 5,
+                    "low_change": 1.02,
+                    "high_change": 1.055,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -2,
+                    "high": 1,
+                    "low_change": 0.975,
+                    "high_change": 1.015,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -6,
+                    "high": -3,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -7,
+                    "low_change": 0.6,
+                    "high_change": 0.725,
+                },
+            ],
+        },
+    },
+    "run": {
+        "base_durability": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 1},
+                {"value": 1, "low": 1.0001, "high": 1.08},
+                {"value": 0, "low": 1.0801, "high": 1.12},
+                {"value": -1, "low": 1.1201, "high": 1.16},
+                {"value": -2, "low": 1.1601, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1, "high": 10},
+                {"value": 1, "low": 0, "high": 0.9999},
+                {"value": 0, "low": -1.5, "high": -0.00001},
+                {"value": -1, "low": -2.5, "high": -1.501},
+                {"value": -2, "low": -10, "high": -2.501},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 8, "high": 100},
+                {"value": 1, "low": 2, "high": 7.999},
+                {"value": 0, "low": -4, "high": 1.999},
+                {"value": -1, "low": -8, "high": -4.001},
+                {"value": -2, "low": -1000, "high": -8.001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "orthopedic_flags_scoring": [
+                {"value": 0, "of_str": "no_pain_no_issues"},
+                {"value": -1, "of_str": "mild_tightness_or_soreness"},
+                {"value": -3, "of_str": "new_pain_persistent_niggles_limping_limbo"},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.1,
+                    "high_change": 1.15,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 0,
+                    "high": 6,
+                    "low_change": 1.05,
+                    "high_change": 1.1,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -3,
+                    "high": -0.0001,
+                    "low_change": 0.98,
+                    "high_change": 1.02,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -6,
+                    "high": -4,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -7,
+                    "low_change": 0.5,
+                    "high_change": 0.7,
+                },
+            ],
+        },
+        "build_th": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 1},
+                {"value": 1, "low": 1.0001, "high": 1.06},
+                {"value": 0, "low": 1.0601, "high": 1.1},
+                {"value": -1, "low": 1.1001, "high": 1.15},
+                {"value": -2, "low": 1.1501, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 0.5, "high": 10},
+                {"value": 1, "low": -0.5, "high": 0.4999},
+                {"value": 0, "low": -1.5, "high": -0.50001},
+                {"value": -1, "low": -2.25, "high": -1.5001},
+                {"value": -2, "low": -10, "high": -2.2501},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 10, "high": 100},
+                {"value": 1, "low": 5, "high": 9.99999},
+                {"value": 0, "low": -2, "high": 4.99999},
+                {"value": -1, "low": -5, "high": -2.00001},
+                {"value": -2, "low": -1000, "high": -5.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "orthopedic_flags_scoring": [
+                {"value": 0, "of_str": "no_pain_no_issues"},
+                {"value": -1, "of_str": "mild_tightness_or_soreness"},
+                {"value": -3, "of_str": "new_pain_persistent_niggles_limping_limbo"},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.1,
+                    "high_change": 1.15,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 2,
+                    "high": 6,
+                    "low_change": 1.05,
+                    "high_change": 1.1,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -1,
+                    "high": 1.9999,
+                    "low_change": 1,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -4,
+                    "high": -1.0001,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -4.0001,
+                    "low_change": 0.6,
+                    "high_change": 0.75,
+                },
+            ],
+        },
+        "vo2_max": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.95},
+                {"value": 1, "low": 0.9501, "high": 1.05},
+                {"value": -1, "low": 1.05001, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 1.5, "high": 10},
+                {"value": 1, "low": 0.5, "high": 1.4999},
+                {"value": 0, "low": -1.5, "high": 0.4999},
+                {"value": -1, "low": -2.5, "high": -1.5001},
+                {"value": -2, "low": -10, "high": -2.501},
+            ],
+            "EowTSB": [
+                {"value": 1, "low": 8, "high": 100},
+                {"value": 0, "low": 0, "high": 7.99999},
+                {"value": -1, "low": -100, "high": -0.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "orthopedic_flags_scoring": [
+                {"value": 0, "of_str": "no_pain_no_issues"},
+                {"value": -1, "of_str": "mild_tightness_or_soreness"},
+                {"value": -3, "of_str": "new_pain_persistent_niggles_limping_limbo"},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "slight_increase",
+                    "low": 6,
+                    "high": 1000,
+                    "low_change": 1.05,
+                    "high_change": 1.08,
+                },
+                {
+                    "recommendation": "hold_to_slight_increase",
+                    "low": 2,
+                    "high": 5,
+                    "low_change": 1,
+                    "high_change": 1.02,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -1,
+                    "high": 1,
+                    "low_change": 0.93,
+                    "high_change": 0.97,
+                },
+                {
+                    "recommendation": "decrease_moderately",
+                    "low": -4,
+                    "high": -2,
+                    "low_change": 0.83,
+                    "high_change": 0.9,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -5,
+                    "low_change": 0.6,
+                    "high_change": 0.7,
+                },
+            ],
+        },
+        "specificity": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 1},
+                {"value": 1, "low": 1.0001, "high": 1.1},
+                {"value": -1, "low": 1.1001, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 0.5, "high": 10},
+                {"value": 1, "low": 0, "high": 0.4999},
+                {"value": -2, "low": -1000, "high": -0.00001},
+            ],
+            "EowTSB": [
+                {"value": 1, "low": 5, "high": 100},
+                {"value": 0, "low": -3, "high": 4.999},
+                {"value": -1, "low": -1000, "high": -3.0001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "orthopedic_flags_scoring": [
+                {"value": 0, "of_str": "no_pain_no_issues"},
+                {"value": -1, "of_str": "mild_tightness_or_soreness"},
+                {"value": -3, "of_str": "new_pain_persistent_niggles_limping_limbo"},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "slight_increase",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.05,
+                    "high_change": 1.1,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": 1,
+                    "high": 6,
+                    "low_change": 1,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -3,
+                    "high": 0,
+                    "low_change": 0.9,
+                    "high_change": 0.96,
+                },
+                {
+                    "recommendation": "decrease_moderately",
+                    "low": -5,
+                    "high": -4,
+                    "low_change": 0.83,
+                    "high_change": 0.9,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -6,
+                    "low_change": 0.6,
+                    "high_change": 0.7,
+                },
+            ],
+        },
+        "hybrid": {
+            "atl_ctl_ratio": [
+                {"value": 2, "low": 0, "high": 0.99},
+                {"value": 1, "low": 0.9901, "high": 1.05},
+                {"value": 0, "low": 1.0501, "high": 1.09},
+                {"value": -1, "low": 1.0901, "high": 1.14},
+                {"value": -2, "low": 1.1401, "high": 10},
+            ],
+            "5_day_tsb_trend": [
+                {"value": 2, "low": 0.8, "high": 10},
+                {"value": 1, "low": -0.2, "high": 0.7999},
+                {"value": 0, "low": -1.5, "high": -0.20001},
+                {"value": -1, "low": -2.33, "high": -1.5001},
+                {"value": -2, "low": -10, "high": -2.3301},
+            ],
+            "EowTSB": [
+                {"value": 2, "low": 9, "high": 100},
+                {"value": 1, "low": 4.5, "high": 8.99999},
+                {"value": 0, "low": -1.5, "high": 4.49999},
+                {"value": -1, "low": -4.5, "high": -1.49999},
+                {"value": -2, "low": -1000, "high": -4.50001},
+            ],
+            "workout_execution": [
+                {"value": 2, "we_str": "fully_completed_rpe_low"},
+                {"value": 1, "we_str": "fully_completed_as_intended"},
+                {"value": 0, "we_str": "hit_or_miss_but_mostly_hit"},
+                {"value": -1, "we_str": "hit_or_miss_but_mostly_miss"},
+                {"value": -2, "we_str": "missed_multiple"},
+            ],
+            "subjective_scoring": [
+                {"value": 1, "low": -1, "high": 0},
+                {"value": 0, "low": -2, "high": -1.0001},
+                {"value": -1, "low": -3, "high": -2.0001},
+                {"value": -2, "low": -100, "high": -3.0001},
+            ],
+            "life_stress_scoring": [
+                {"value": 1, "ls_str": "minimal"},
+                {"value": 0, "ls_str": "normal"},
+                {"value": -1, "ls_str": "moderate"},
+                {"value": -2, "ls_str": "high"},
+            ],
+            "training_stress_recommendation_scale": [
+                {
+                    "recommendation": "increase_a_lot",
+                    "low": 7,
+                    "high": 1000,
+                    "low_change": 1.1,
+                    "high_change": 1.15,
+                },
+                {
+                    "recommendation": "increase_a_little",
+                    "low": 2,
+                    "high": 6,
+                    "low_change": 1.05,
+                    "high_change": 1.1,
+                },
+                {
+                    "recommendation": "hold_steady",
+                    "low": -1,
+                    "high": 1.9999,
+                    "low_change": 1,
+                    "high_change": 1.03,
+                },
+                {
+                    "recommendation": "decrease_a_little",
+                    "low": -4,
+                    "high": -1.0001,
+                    "low_change": 0.85,
+                    "high_change": 0.95,
+                },
+                {
+                    "recommendation": "decrease_a_lot",
+                    "low": -1000,
+                    "high": -4.0001,
+                    "low_change": 0.6,
+                    "high_change": 0.75,
+                },
+            ],
+        },
+    },
+}
+
+MAX_RANGE_DAYS = 45
+MAX_CHUNK_DAYS = 45
+
+CTL_TAU = 42
+ATL_TAU = 7
+HISTORY_DAYS = max(365, 5 * CTL_TAU)
+
+
+import math
+from datetime import date, timedelta
+
+
+def ewma(vals, tau, seed_with_first=True):
+    """Calculate EWMA values"""
+    alpha = 1 - math.exp(-1.0 / tau)
+    y = []
+    if not vals:
+        return y
+    prev = vals[0] if seed_with_first else 0.0
+    prev = prev + alpha * (vals[0] - prev)
+    y.append(prev)
+    for x in vals[1:]:
+        prev = prev + alpha * (x - prev)
+        y.append(prev)
+    return y
+
+
+def normalize_sport(workout, target_sport):
+    """Normalize sport type"""
+    sport_raw = workout.get("WorkoutType") or ""
+    sport = sport_raw.strip().lower()
+    if target_sport == "run" and "run" in sport:
+        return True
+    if target_sport == "bike" and ("bike" in sport or "mtb" in sport):
+        return True
+    return False
+
+
+def get_next_sunday(from_date=None):
+    """Get the coming Sunday from a given date"""
+    if from_date is None:
+        from_date = date.today()
+
+    days_until_sunday = (6 - from_date.weekday()) % 7
+    if days_until_sunday == 0:
+        days_until_sunday = 7
+    return from_date + timedelta(days=days_until_sunday)
+
+
+def get_wednesday_before_sunday(sunday_date):
+    """Get wednesday before the given Sunday"""
+    return sunday_date - timedelta(days=4)
+
+
+def find_score_in_range(value, ranges):
+    """Find score based on value in renges."""
+    for item in ranges:
+        if item["low"] <= value <= item["high"]:
+            return item["value"]
+    return 0
+
+
+def find_score_by_string(string_val, items, key="we_str"):
+    """Find score by string match"""
+    for item in items:
+        if item.get(key) == string_val:
+            return item["value"]
+    return 0
+
+
+@dashboard_bp.route("/api/training-stress-recommendation", methods=["POST"])
+def training_stress_recommendation():
+    """Calculate training stress recommendation (Bike + Run, with orthopedic scoring for Run only)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        print("DATA ====>", data)
+
+        # Extract inputs
+        athlete_id = data.get("selected_athlete")
+        sport_type = data.get("sport_type")  # 'run' or 'bike'
+        block_type = data.get("block_type")
+        key_workouts = data.get("key_workouts")
+        soreness = data.get("soreness")
+        mood_irritability = data.get("mood_irritability")
+        sleep = data.get("sleep")
+        hrv_rhr = data.get("hrv_rhr")
+        motivation = data.get("motivation")
+        life_stress = data.get("life_stress")
+        orthopedic_flags = data.get("orthopedic_flags")  # Only relevant for Run
+
+        # Validation
+        if not athlete_id:
+            return jsonify({"error": "No athlete selected"}), 400
+
+        required_fields = [
+            block_type,
+            sport_type,
+            key_workouts,
+            soreness,
+            mood_irritability,
+            sleep,
+            hrv_rhr,
+            motivation,
+            life_stress,
+        ]
+        if not all(required_fields):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        if sport_type not in BLOCK_CONFIGS:
+            return jsonify({"error": "Invalid sport type"}), 400
+
+        if block_type not in BLOCK_CONFIGS[sport_type]:
+            return (
+                jsonify({"error": f"Invalid block type for sport: {sport_type}"}),
+                400,
+            )
+
+        # Select block config based on sport
+        config = BLOCK_CONFIGS[sport_type][block_type]
+
+        # Calculate key dates
+        today = date.today()
+        coming_sunday = get_next_sunday(today)
+        mid_week_wednesday = get_wednesday_before_sunday(coming_sunday)
+
+        # Fetch workouts within range
+        fetch_from = today - timedelta(days=HISTORY_DAYS)
+        fetch_to = coming_sunday
+        workouts = []
+        current_start = fetch_from
+
+        while current_start <= fetch_to:
+            current_end = min(
+                current_start + timedelta(days=MAX_CHUNK_DAYS - 1), fetch_to
+            )
+            api_url = f'/v2/workouts/{athlete_id}/{current_start.strftime("%Y-%m-%d")}/{current_end.strftime("%Y-%m-%d")}'
+
+            try:
+                result = tp_request(endpoint=api_url, method="GET")
+                result.raise_for_status()
+                chunk_data = result.json() or []
+                workouts.extend(chunk_data)
+            except requests.RequestException as e:
+                return jsonify({"error": f"Failed to fetch workouts: {str(e)}"}), 502
+
+            current_start = current_end + timedelta(days=1)
+
+        # Aggregate TSS data
+        daily = defaultdict(lambda: {"actual": 0.0, "planned": 0.0})
+        for w in workouts:
+            try:
+                day_str = w.get("WorkoutDay")
+                if not day_str:
+                    continue
+
+                d = date.fromisoformat(day_str.split("T")[0])
+                if d < fetch_from or d > fetch_to:
+                    continue
+
+                if not normalize_sport(w, sport_type):
+                    continue
+
+                tss_actual = float(w.get("TssActual") or 0.0)
+                tss_planned = float(w.get("TssPlanned") or 0.0)
+                completed = bool(w.get("Completed") or False)
+
+                if completed:
+                    daily[d]["actual"] += tss_actual
+                    daily[d]["planned"] += tss_planned
+                else:
+                    daily[d]["planned"] += tss_planned
+            except Exception:
+                continue
+
+        # Build daily TSS series
+        all_days = []
+        tss_values = []
+        d = fetch_from
+
+        while d <= fetch_to:
+            all_days.append(d)
+            entry = daily.get(d, {"actual": 0.0, "planned": 0.0})
+            if d < today:
+                tss_val = entry.get("actual", 0.0)
+            else:
+                tss_val = entry.get("planned", 0.0)
+            tss_values.append(tss_val)
+            d += timedelta(days=1)
+
+        # Compute CTL / ATL / TSB
+        ctl_values = ewma(tss_values, CTL_TAU, seed_with_first=True)
+        atl_values = ewma(tss_values, ATL_TAU, seed_with_first=True)
+
+        tsb_values = [None]
+        for i in range(1, len(ctl_values)):
+            tsb_values.append(ctl_values[i - 1] - atl_values[i - 1])
+
+        # Sunday and Wednesday values
+        sunday_idx = (coming_sunday - fetch_from).days
+        wednesday_idx = (mid_week_wednesday - fetch_from).days
+
+        ctl_sunday = ctl_values[sunday_idx]
+        atl_sunday = atl_values[sunday_idx]
+        wtsb = tsb_values[wednesday_idx] if wednesday_idx < len(tsb_values) else 0
+
+        # Derived metrics
+        echo_estimate = (7 * ctl_sunday) / 0.965
+        eow_tsb = ctl_sunday - atl_sunday
+        tsb_slope_5d = (wtsb - eow_tsb) / 5
+        atl_ctl_ratio = atl_sunday / ctl_sunday if ctl_sunday != 0 else 0
+
+        # Component scores
+        atl_ctl_score = find_score_in_range(atl_ctl_ratio, config["atl_ctl_ratio"])
+        tsb_trend_score = find_score_in_range(tsb_slope_5d, config["5_day_tsb_trend"])
+        eow_tsb_score = find_score_in_range(eow_tsb, config["EowTSB"])
+        workout_execution_score = find_score_by_string(
+            key_workouts, config["workout_execution"], "we_str"
+        )
+
+        # Subjective metrics
+        subjective_total = (
+            COMMON_OPTIONS.get(soreness, 0)
+            + COMMON_OPTIONS.get(mood_irritability, 0)
+            + COMMON_OPTIONS.get(sleep, 0)
+            + COMMON_OPTIONS.get(hrv_rhr, 0)
+            + COMMON_OPTIONS.get(motivation, 0)
+        )
+        subjective_score = find_score_in_range(
+            subjective_total, config["subjective_scoring"]
+        )
+
+        # Life stress
+        life_stress_score = find_score_by_string(
+            life_stress, config["life_stress_scoring"], "ls_str"
+        )
+
+        # Orthopedic flags — only for Run
+        orthopedic_score = 0
+        if sport_type == "run" and orthopedic_flags:
+            orthopedic_score = find_score_by_string(
+                orthopedic_flags, config.get("orthopedic_flags_scoring", []), "of_str"
+            )
+
+        # Combine total
+        overall_score = (
+            atl_ctl_score
+            + tsb_trend_score
+            + eow_tsb_score
+            + workout_execution_score
+            + subjective_score
+            + life_stress_score
+            + orthopedic_score  # include only for run
+        )
+
+        # Find recommendation
+        recommendation_data = next(
+            (
+                rec
+                for rec in config["training_stress_recommendation_scale"]
+                if rec["low"] <= overall_score <= rec["high"]
+            ),
+            None,
+        )
+
+        if not recommendation_data:
+            return jsonify({"error": "Could not determine recommendation"}), 500
+
+        # Compute percent change
+        low_change = recommendation_data["low_change"]
+        high_change = recommendation_data["high_change"]
+        percentage_change = ((low_change + high_change) / 2) - 1
+
+        # Final response
+        return jsonify(
+            {
+                "status": "ok",
+                "ctl": int(round(ctl_sunday)),
+                "atl": int(round(atl_sunday)),
+                "wtsb": int(round(wtsb)),
+                "echo_estimate": int(round(echo_estimate)),
+                "eow_tsb": int(round(eow_tsb)),
+                "tsb_slope_5d": int(round(tsb_slope_5d)),
+                "atl_ctl_ratio": round(atl_ctl_ratio, 4),
+                "overall_score": int(round(overall_score)),
+                "recommendation": recommendation_data["recommendation"],
+                "percentage_change": int(round(percentage_change * 100)),
+                "coming_sunday": coming_sunday.strftime("%Y-%m-%d"),
+                "mid_week_wednesday": mid_week_wednesday.strftime("%Y-%m-%d"),
+                "orthopedic_score": orthopedic_score if sport_type == "run" else None,
+                "low_change": recommendation_data["low_change"],
+                "high_change": recommendation_data["high_change"],
+            }
+        )
+
+    except Exception as e:
+        print("Error:", e)
+        return jsonify({"error": f"Unexpected server error: {str(e)}"}), 500

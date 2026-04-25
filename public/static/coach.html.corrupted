@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echodevo Coach - Multi-Athlete Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    :root {
+      --primary: #667eea;
+      --secondary: #764ba2;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+    
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar {
+      min-height: calc(100vh - 56px);
+      background: white;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+      padding: 1.5rem 0;
+    }
+    
+    .sidebar-item {
+      padding: 0.75rem 1.5rem;
+      color: #6b7280;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    
+    .sidebar-item:hover, .sidebar-item.active {
+      background: #f3f4f6;
+      color: var(--primary);
+      border-left-color: var(--primary);
+    }
+    
+    .sidebar-item i {
+      width: 24px;
+      margin-right: 0.75rem;
+    }
+    
+    .stat-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+    }
+    
+    .athlete-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .athlete-card:hover {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .stress-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .stress-Recovered { background: #d1fae5; color: #059669; }
+    .stress-Productive { background: #dbeafe; color: #2563eb; }
+    .stress-Overreached { background: #fed7aa; color: #ea580c; }
+    .stress-Compromised { background: #fee2e2; color: #dc2626; }
+    .stress-Detraining { background: #e5e7eb; color: #6b7280; }
+    .stress-Unknown { background: #f3f4f6; color: #9ca3af; }
+    
+    .block-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: #374151;
+    }
+    
+    .metric-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .metric-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .action-btn {
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .modal-lg {
+      max-width: 900px;
+    }
+    
+    .filter-btn {
+      border-radius: 20px;
+      padding: 0.5rem 1.25rem;
+      border: 2px solid #e5e7eb;
+      background: white;
+      color: #6b7280;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 3rem;
+    }
+    
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar navbar-dark">
+    <div class="container-fluid px-4">
+      <span class="navbar-brand mb-0 h1">
+        <i class="fas fa-brain me-2"></i>Echodevo Coach v5.1
+      </span>
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-light" onclick="syncAllAthletes()">
+          <i class="fas fa-sync me-1"></i>Sync All
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="fas fa-user-circle me-1"></i>Coach Account
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-key me-2"></i>API Keys</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Main Content (Full Width) -->
+      <div class="col-12 py-4">
+        <!-- Athlete Selector (Always Visible) -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <label for="athlete-dropdown" class="form-label fw-bold mb-2">
+                  <i class="fas fa-user me-2"></i>Select Athlete
+                </label>
+                <select id="athlete-dropdown" class="form-select form-select-lg" onchange="loadFullAthleteDashboard(this.value)">
+                  <option value="">-- Loading athletes... --</option>
+                </select>
+              </div>
+              <div class="col-md-4 text-end">
+                <button id="refresh-btn" class="btn btn-primary btn-lg" onclick="refreshCurrentAthlete()" disabled>
+                  <i class="fas fa-sync me-2"></i>Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-5" style="display:none;">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Loading athlete dashboard...</p>
+        </div>
+
+        <!-- No Athlete Selected -->
+        <div id="no-selection-state" class="text-center py-5">
+          <i class="fas fa-user-circle fa-5x text-muted mb-3"></i>
+          <h4 class="text-muted">Select an athlete to view their dashboard</h4>
+          <p class="text-muted">Use the dropdown above to choose an athlete</p>
+        </div>
+
+        <!-- Full Athlete Dashboard -->
+        <div id="athlete-dashboard" style="display:none;">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+                <i class="fas fa-external-link-alt me-2"></i>Open Echodevo GPT
+              </h5>
+              <p class="mb-3">
+                Your custom GPT is connected and ready to analyze all 79 athletes in your roster.
+              </p>
+              <a href="https://chatgpt.com/g/g-69620c7454588191a659a39ce4b9a7d1-echodevo-trainingpeaks-coach-v5" 
+                 target="_blank" 
+                 class="btn btn-lg btn-primary">
+                <i class="fas fa-robot me-2"></i>
+                Launch Echodevo GPT
+              </a>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-lightbulb me-2"></i>What You Can Ask
+              </h5>
+              <ul class="mb-0">
+                <li><strong>Athlete Analysis:</strong> "Analyze Angela 1A from the last 90 days"</li>
+                <li><strong>Training Load:</strong> "Show me who is compromised or overreached"</li>
+                <li><strong>TSS Planning:</strong> "What should Zaven's TSS be this week?"</li>
+                <li><strong>Multi-Athlete:</strong> "Compare training load for my top 5 athletes"</li>
+                <li><strong>Projections:</strong> "What happens if Hussein does 600 TSS this week?"</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-database me-2"></i>Connected Data Sources
+              </h5>
+              <div class="row">
+                <div class="col-md-6">
+                  <ul class="list-unstyled">
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      TrainingPeaks API (Live)
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      79 Athletes Synced
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      CTL/ATL/TSB Metrics
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <ul class="list-unstyled">
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      Echodevo Brain Knowledge
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      Angela Naeth Philosophy
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      90-Day Workout History
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Athlete Detail Modal -->
+  <div class="modal fade" id="athleteDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="athleteModalTitle">Athlete Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="athleteDetailContent">
+          <!-- Content loaded dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Workout Modal -->
+  <div class="modal fade" id="postWorkoutModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Post Workout</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="postWorkoutForm">
+            <input type="hidden" id="workout-athlete-id">
+            <div class="mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-control" id="workout-date" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Title</label>
+              <input type="text" class="form-control" id="workout-title" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="workout-description" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">TSS</label>
+              <input type="number" class="form-control" id="workout-tss" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Duration (seconds)</label>
+              <input type="number" class="form-control" id="workout-duration" value="3600">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Sport</label>
+              <select class="form-control" id="workout-sport">
+                <option value="Bike">Bike</option>
+                <option value="Run">Run</option>
+                <option value="Swim">Swim</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="submitWorkout()">
+            <i class="fas fa-paper-plane me-1"></i>Post Workout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentAthleteId = null;
+    let allAthletes = [];
+
+    // Load athletes on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAthletes();
+    });
+
+    // Load athletes from API
+    async function loadAthletes() {
+      try {
+        const response = await axios.get('/api/coach/athletes');
+        const data = response.data;
+        allAthletes = data.athletes || [];
+        
+        populateAthleteDropdown(allAthletes);
+
+      } catch (error) {
+        console.error('Error loading athletes:', error);
+        const dropdown = document.getElementById('athlete-dropdown');
+        dropdown.innerHTML = '<option value="">Error loading athletes</option>';
+        alert('Error loading athletes. Please connect to TrainingPeaks first.');
+      }
+    }
+
+    // Populate athlete dropdown
+    function populateAthleteDropdown(athletes) {
+      const dropdown = document.getElementById('athlete-dropdown');
+      dropdown.innerHTML = '<option value="">-- Choose an athlete --</option>';
+      
+      // Sort athletes by name
+      const sortedAthletes = athletes.sort((a, b) => a.name.localeCompare(b.name));
+      
+      sortedAthletes.forEach(athlete => {
+        const option = document.createElement('option');
+        option.value = athlete.id;
+        option.textContent = `${athlete.name}${athlete.stress_state !== 'Unknown' ? ' (' + athlete.stress_state + ')' : ''}`;
+        dropdown.appendChild(option);
+      });
+    }
+
+    // Load full athlete dashboard
+    async function loadFullAthleteDashboard(athleteId) {
+      if (!athleteId) {
+        document.getElementById('no-selection-state').style.display = 'block';
+        document.getElementById('athlete-dashboard').style.display = 'none';
+        document.getElementById('refresh-btn').disabled = true;
+        currentAthleteId = null;
+        return;
+      }
+
+      currentAthleteId = athleteId;
+      const athlete = allAthletes.find(a => a.id === athleteId);
+      if (!athlete) return;
+
+      // Hide no-selection, show loading
+      document.getElementById('no-selection-state').style.display = 'none';
+      document.getElementById('athlete-dashboard').style.display = 'none';
+      document.getElementById('loading-state').style.display = 'block';
+      document.getElementById('refresh-btn').disabled = false;
+
+      try {
+        // Fetch full athlete data from TrainingPeaks (90 days)
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const response = await axios.post('/api/gpt/fetch', {
+          athlete_id: athleteId,
+          start_date: startDate,
+          end_date: endDate
+        });
+
+        const data = response.data;
+
+        // Hide loading, show dashboard
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('athlete-dashboard').style.display = 'block';
+
+        // Render full dashboard
+        renderFullAthleteDashboard(athlete, data);
+
+      } catch (error) {
+        console.error('Error loading athlete dashboard:', error);
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('athlete-dashboard').innerHTML = `
+          <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Dashboard</h5>
+            <p>${error.response?.data?.error || error.message}</p>
+          </div>
+        `;
+        document.getElementById('athlete-dashboard').style.display = 'block';
+      }
+    }
+
+    // Refresh current athlete
+    async function refreshCurrentAthlete() {
+      if (currentAthleteId) {
+        await loadFullAthleteDashboard(currentAthleteId);
+      }
+    }
+
+    // Render full athlete dashboard
+
+function renderFullAthleteDashboard(athlete, data) {
+  const metrics = data.metrics || {};
+  const weeklyMetrics = data.weekly_metrics || {};
+  const workouts = data.workouts || [];
+  const athleteProfile = data.athlete || {};
+  
+  // Helper to format metric value
+  const fmt = (val) => (val || 0).toFixed(1);
+  const fmtInt = (val) => Math.round(val || 0);
+
+  const html = `
+    <!-- Athlete Header -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2 class="mb-1">
+              <i class="fas fa-user-circle me-2"></i>${athlete.name}
+            </h2>
+            <p class="text-muted mb-2">
+              <i class="fas fa-envelope me-2"></i>${athlete.email || 'No email'}
+              <span class="ms-3"><i class="fas fa-id-badge me-2"></i>ID: ${athlete.id}</span>
+              <span class="ms-3"><i class="fas fa-dumbbell me-2"></i>${athlete.sport || 'Triathlon'}</span>
+            </p>
+            <span class="badge bg-${getStressBadgeColor(athlete.stress_state)} fs-6">
+              ${athlete.stress_state || 'Unknown Status'}
+            </span>
+          </div>
+          <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+              <a href="https://chatgpt.com/g/g-69620c7454588191a659a39ce4b9a7d1-echodevo-trainingpeaks-coach-v5" target="_blank" class="btn btn-outline-primary">
+                <i class="fas fa-robot me-1"></i>Analyze with GPT
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comprehensive TrainingPeaks Dashboard -->
+    <div class="accordion mb-4" id="trainingPeaksAccordion">
+      
+      <!-- Section 1: TrainingPeaks Overview (Current) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#tpOverview">
+            <i class="fas fa-chart-line me-2"></i><strong>TrainingPeaks Overview (Current)</strong>
+          </button>
+        </h2>
+        <div id="tpOverview" class="accordion-collapse collapse show" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">CTL (Fitness)</h6>
+                    <h2 class="text-primary">${fmt(metrics.total?.ctl)}</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">ATL (Fatigue)</h6>
+                    <h2 class="text-warning">${fmt(metrics.total?.atl)}</h2>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card text-center">
+                  <div class="card-body">
+                    <h6 class="text-muted">TSB (Form)</h6>
+                    <h2 class="text-${getTSBColor(metrics.total?.tsb)}">${fmt(metrics.total?.tsb)}</h2>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Timeline Projections -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#timeline">
+            <i class="fas fa-calendar-alt me-2"></i><strong>Timeline Overview</strong>
+          </button>
+        </h2>
+        <div id="timeline" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Period</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>📅 Today</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.today?.metrics?.tsb)}</td>
+                </tr>
+                <tr>
+                  <td><strong>📈 This Week (Sun Projection)</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}</td>
+                </tr>
+                <tr>
+                  <td><strong>📊 Next Week (Sun Projection)</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.nextWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.nextWeek?.metrics?.tsb)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Combined Metrics (All Sports) -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#combined">
+            <i class="fas fa-layer-group me-2"></i><strong>Combined Metrics (All Sports)</strong>
+          </button>
+        </h2>
+        <div id="combined" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.combined?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.combined?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.combined?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.combined?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.combined?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.combined?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Run Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#run">
+            <i class="fas fa-running me-2"></i><strong>🏃 Run Metrics</strong>
+          </button>
+        </h2>
+        <div id="run" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.run?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.run?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.run?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.run?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.run?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.run?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.run?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.run?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.run?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.run?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.run?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Bike Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#bike">
+            <i class="fas fa-biking me-2"></i><strong>🚴 Bike Metrics</strong>
+          </button>
+        </h2>
+        <div id="bike" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.bike?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.bike?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.bike?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.bike?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.bike?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.bike?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.bike?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: Swim Metrics -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#swim">
+            <i class="fas fa-swimmer me-2"></i><strong>🏊 Swim Metrics</strong>
+          </button>
+        </h2>
+        <div id="swim" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th rowspan="2">Metric</th>
+                  <th colspan="3">Last Week</th>
+                  <th colspan="3">Today</th>
+                  <th colspan="5">This Week (Sun Proj)</th>
+                </tr>
+                <tr>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>CTL</th>
+                  <th>ATL</th>
+                  <th>TSB</th>
+                  <th>Comp TSS</th>
+                  <th>Rem TSS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Values</strong></td>
+                  <td>${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.lastWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.lastWeek?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.today?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.today?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.today?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.today?.metrics?.tsb)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.ctl)}</td>
+                  <td>${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.atl)}</td>
+                  <td class="text-${getTSBColor(weeklyMetrics.swim?.thisWeek?.metrics?.tsb)}">${fmt(weeklyMetrics.swim?.thisWeek?.metrics?.tsb)}</td>
+                  <td>${fmtInt(weeklyMetrics.swim?.thisWeek?.completedTSS)}</td>
+                  <td>${fmtInt(weeklyMetrics.swim?.thisWeek?.remainingTSS)}</td>
+                </tr>
+                <tr class="table-secondary">
+                  <td><strong>TSS Summary</strong></td>
+                  <td colspan="3">
+                    Last Week TSS: <strong>${fmtInt(weeklyMetrics.swim?.lastWeek?.tss)}</strong><br>
+                    Week-to-Today TSS: <strong>${fmtInt(weeklyMetrics.swim?.lastWeek?.weekToTodayTSS)}</strong>
+                  </td>
+                  <td colspan="3">-</td>
+                  <td colspan="5">Total TSS: <strong>${fmtInt(weeklyMetrics.swim?.thisWeek?.totalTSS)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 7: Recent Workouts -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workouts">
+            <i class="fas fa-list me-2"></i><strong>Recent Workouts (Last 10)</strong>
+          </button>
+        </h2>
+        <div id="workouts" class="accordion-collapse collapse" data-bs-parent="#trainingPeaksAccordion">
+          <div class="accordion-body">
+            ${workouts.length > 0 ? `
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Sport</th>
+                      <th>Title</th>
+                      <th>Duration</th>
+                      <th>TSS</th>
+                      <th>IF</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${workouts.slice(0, 10).map(w => `
+                      <tr>
+                        <td>${w.date}</td>
+                        <td><i class="fas fa-${getSportIcon(w.sport)} me-1"></i>${w.sport}</td>
+                        <td>${w.title || 'Untitled'}</td>
+                        <td>${formatDuration(w.duration)}</td>
+                        <td><strong>${Math.round(w.tss || 0)}</strong></td>
+                        <td>${w.if ? w.if.toFixed(2) : '-'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : '<p class="text-muted text-center py-4">No workout data available</p>'}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById('athlete-dashboard').innerHTML = html;
+}
+
+    }
+
+    // Helper functions
+    function getStressBadgeColor(state) {
+      const colors = {
+        'Compromised': 'danger',
+        'Overreached': 'warning',
+        'Productive': 'info',
+        'Productive Fatigue': 'primary',
+        'Recovered': 'success',
+        'Unknown': 'secondary'
+      };
+      return colors[state] || 'secondary';
+    }
+
+    function getTSBColor(tsb) {
+      if (tsb < -25) return 'danger';
+      if (tsb < -10) return 'warning';
+      if (tsb > 10) return 'success';
+      return 'info';
+    }
+
+    function getDurabilityColor(score) {
+      // Score is 0-100 (representing 0.00 to 1.00 fraction)
+      // >70% = strong aerobic foundation (green)
+      if (score >= 70) return 'success';
+      if (score >= 60) return 'info';
+      if (score >= 50) return 'warning';
+      return 'danger';
+    }
+
+    function getSportIcon(sport) {
+      const icons = {
+        'Swim': 'swimmer',
+        'Bike': 'biking',
+        'Run': 'running',
+        'Strength': 'dumbbell',
+        'Other': 'heartbeat'
+      };
+      return icons[sport] || 'heartbeat';
+    }
+
+    function formatDuration(minutes) {
+      if (!minutes) return '-';
+      const hours = Math.floor(minutes / 60);
+      const mins = Math.round(minutes % 60);
+      return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    }
+
+    // ATL/CTL Ratio helpers
+    function getATLCTLColor(ratio) {
+      if (ratio < 0.95) return 'secondary'; // Under-training
+      if (ratio <= 1.05) return 'success';  // Optimal
+      if (ratio <= 1.15) return 'info';     // Productive overreach
+      if (ratio <= 1.25) return 'warning';  // Functional overreach
+      return 'danger'; // Non-functional overreach
+    }
+    
+    function getATLCTLStatus(ratio) {
+      if (ratio < 0.95) return 'Under-training';
+      if (ratio <= 1.05) return 'Optimal';
+      if (ratio <= 1.15) return 'Productive';
+      if (ratio <= 1.25) return 'Overreach';
+      return 'Critical';
+    }
+    
+    function renderATLCTLGauge(ratio, label, small = false) {
+      // Normalize ratio to 0-150% range for visualization
+      const normalizedRatio = Math.min(150, ratio * 100);
+      
+      // Determine color based on ratio
+      const color = getATLCTLColor(ratio);
+      const bgColorMap = {
+        'secondary': '#6c757d',
+        'success': '#198754',
+        'info': '#0dcaf0',
+        'warning': '#ffc107',
+        'danger': '#dc3545'
+      };
+      
+      return `
+        <div class="progress-bar bg-${color}" 
+             role="progressbar" 
+             style="width: ${normalizedRatio}%"
+             aria-valuenow="${ratio}" 
+             aria-valuemin="0" 
+             aria-valuemax="1.5">
+          ${!small ? ratio.toFixed(2) : ''}
+        </div>
+      `;
+    }
+    
+    // Aerobic Decoupling helpers
+    function getDecouplingColor(decoupling) {
+      if (decoupling <= 3) return 'success';  // Excellent
+      if (decoupling <= 5) return 'info';     // Good
+      if (decoupling <= 8) return 'warning';  // Fair
+      return 'danger'; // Poor
+    }
+    
+    function getDecouplingStatus(decoupling) {
+      if (decoupling <= 3) return 'Excellent aerobic efficiency';
+      if (decoupling <= 5) return 'Good aerobic base';
+      if (decoupling <= 8) return 'Fair - needs aerobic work';
+      return 'Poor - prioritize Zone 2';
+    }
+
+    // Show section
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
+      
+      // Remove active from all sidebar items
+      document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+      
+      // Show selected section (handle both with and without -section suffix)
+      const targetSection = document.getElementById(sectionId + '-section') || document.getElementById(sectionId);
+      if (targetSection) {
+        targetSection.style.display = 'block';
+      } else {
+        console.error('Section not found:', sectionId);
+        // Fallback to overview
+        const overview = document.getElementById('overview-section');
+        if (overview) overview.style.display = 'block';
+      }
+      
+      // Set active sidebar item
+      const sidebarItem = document.querySelector(`.sidebar-item[data-section="${sectionId}"]`);
+      if (sidebarItem) {
+        sidebarItem.classList.add('active');
+      }
+    }
+
+    // Open athlete detail
+    async function openAthleteDetail(athleteId) {
+      const modal = new bootstrap.Modal(document.getElementById('athleteDetailModal'));
+      const modalTitle = document.getElementById('athleteModalTitle');
+      const modalContent = document.getElementById('athleteDetailContent');
+      
+      modalContent.innerHTML = `
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading athlete data...</p>
+        </div>
+      `;
+      
+      modal.show();
+
+      try {
+        const response = await axios.get(`/api/coach/athlete/${athleteId}`);
+        const data = response.data;
+
+        modalTitle.textContent = data.athlete.name;
+        
+        // Format the comprehensive athlete dashboard
+        const metrics = data.metrics.current;
+        const stressState = data.metrics.stress_state || 'Unknown';
+        const summary = data.summary;
+        
+        modalContent.innerHTML = `
+          <!-- Athlete Profile Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0"><i class="fas fa-user me-2"></i>Athlete Profile</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>ID:</strong> ${data.athlete.id}</p>
+                      <p><strong>Email:</strong> ${data.athlete.email || 'N/A'}</p>
+                      <p><strong>Gender:</strong> ${data.athlete.gender || 'N/A'}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>FTP:</strong> ${data.athlete.ftp || 'N/A'} watts</p>
+                      <p><strong>LTHR:</strong> ${data.athlete.lactate_threshold_heart_rate || 'N/A'} bpm</p>
+                      <p><strong>Weight:</strong> ${data.athlete.weight || 'N/A'} kg</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Load Metrics -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Training Load - Sport-Specific CTL/ATL/TSB</h5>
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-${getStressStateClass(stressState)} mb-3">
+                    <strong>Current Status:</strong> ${stressState}
+                  </div>
+                  
+                  <!-- TOTAL -->
+                  <h6 class="fw-bold mb-3">TOTAL (All Sports)</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-primary">${Math.round(metrics.total.ctl)}</div>
+                        <small class="text-muted">CTL (Fitness)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-warning">${Math.round(metrics.total.atl)}</div>
+                        <small class="text-muted">ATL (Fatigue)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h2 mb-0 text-${metrics.total.tsb < -25 ? 'danger' : metrics.total.tsb > 10 ? 'success' : 'warning'}">${Math.round(metrics.total.tsb)}</div>
+                        <small class="text-muted">TSB (Form)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SWIM -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-swimmer me-2"></i>SWIM</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.swim.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- BIKE -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-bicycle me-2"></i>BIKE</h6>
+                  <div class="row mb-4">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.bike.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- RUN -->
+                  <h6 class="fw-bold mb-3"><i class="fas fa-running me-2"></i>RUN</h6>
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.ctl)}</div>
+                        <small>CTL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.atl)}</div>
+                        <small>ATL</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded bg-light">
+                        <div class="h4 mb-0">${Math.round(metrics.run.tsb)}</div>
+                        <small>TSB</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wellness Metrics (HRV, RHR, Sleep) -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Wellness & Recovery Metrics</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-danger">${summary.latest_hrv || 'N/A'}</div>
+                        <small class="text-muted">Latest HRV</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-danger">${summary.latest_rhr || 'N/A'}</div>
+                        <small class="text-muted">Resting HR (bpm)</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h3 mb-0 text-info">${summary.avg_sleep ? summary.avg_sleep.toFixed(1) : 'N/A'}</div>
+                        <small class="text-muted">Avg Sleep (hours)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  ${data.wellness && data.wellness.length > 0 ? `
+                    <h6 class="mt-4 mb-3">Recent Wellness Data (Last 30 Days)</h6>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                      <table class="table table-sm table-hover">
+                        <thead class="sticky-top bg-white">
+                          <tr>
+                            <th>Date</th>
+                            <th>HRV</th>
+                            <th>RHR</th>
+                            <th>Sleep</th>
+                            <th>Feeling</th>
+                            <th>Weight</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.wellness.slice(0, 30).map(w => `
+                            <tr>
+                              <td>${w.date}</td>
+                              <td>${w.hrv_score || '-'}</td>
+                              <td>${w.resting_heart_rate || '-'}</td>
+                              <td>${w.hours_of_sleep ? w.hours_of_sleep.toFixed(1) + 'h' : '-'}</td>
+                              <td>${w.feeling ? getFeelingEmoji(w.feeling) : '-'}</td>
+                              <td>${w.weight ? w.weight.toFixed(1) + 'kg' : '-'}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : '<p class="text-muted">No wellness data available</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Summary -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-warning">
+                  <h5 class="mb-0"><i class="fas fa-dumbbell me-2"></i>Training Summary (Last 90 Days)</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.total_workouts}</div>
+                        <small>Total Workouts</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.avg_tss ? Math.round(summary.avg_tss) : 'N/A'}</div>
+                        <small>Avg TSS</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h4 mb-0">${summary.total_hours ? Math.round(summary.total_hours) : 'N/A'}</div>
+                        <small>Total Hours</small>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="text-center p-3 border rounded">
+                        <div class="h6 mb-0">
+                          <i class="fas fa-swimmer me-1"></i>${summary.workouts_by_sport.swim}<br>
+                          <i class="fas fa-bicycle me-1"></i>${summary.workouts_by_sport.bike}<br>
+                          <i class="fas fa-running me-1"></i>${summary.workouts_by_sport.run}
+                        </div>
+                        <small>By Sport</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Workouts -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header bg-secondary text-white">
+                  <h5 class="mb-0"><i class="fas fa-list me-2"></i>Recent Workouts</h5>
+                </div>
+                <div class="card-body">
+                  ${data.workouts && data.workouts.length > 0 ? `
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                      <table class="table table-sm table-hover">
+                        <thead class="sticky-top bg-white">
+                          <tr>
+                            <th>Date</th>
+                            <th>Sport</th>
+                            <th>Title</th>
+                            <th>TSS</th>
+                            <th>Duration</th>
+                            <th>Distance</th>
+                            <th>HR Avg</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${data.workouts.slice(0, 30).map(w => `
+                            <tr>
+                              <td>${w.WorkoutDay}</td>
+                              <td><span class="badge bg-${getSportBadgeColor(w.WorkoutType)}">${w.WorkoutType}</span></td>
+                              <td>${w.Title || '-'}</td>
+                              <td><strong>${w.TssActual ? Math.round(w.TssActual) : '-'}</strong></td>
+                              <td>${w.TotalTime ? formatDuration(w.TotalTime) : '-'}</td>
+                              <td>${w.Distance ? formatDistance(w.Distance) : '-'}</td>
+                              <td>${w.HeartRateAverage ? Math.round(w.HeartRateAverage) + ' bpm' : '-'}</td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  ` : '<p class="text-muted">No workout data available</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading athlete details:', error);
+        modalContent.innerHTML = `
+          <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Data</h5>
+            <p>${error.response?.data?.error || error.message}</p>
+            <button class="btn btn-primary mt-3" onclick="openAthleteDetail(${athleteId})">
+              <i class="fas fa-sync me-1"></i>Retry
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Helper functions for formatting
+    function getStressStateClass(state) {
+      const stateMap = {
+        'Compromised': 'danger',
+        'Overreached': 'warning',
+        'Productive Fatigue': 'info',
+        'Productive': 'success',
+        'Recovered': 'success',
+        'Unknown': 'secondary'
+      };
+      return stateMap[state] || 'secondary';
+    }
+
+    function getFeelingEmoji(feeling) {
+      if (feeling >= 4) return '😊 Great';
+      if (feeling >= 3) return '🙂 Good';
+      if (feeling >= 2) return '😐 OK';
+      if (feeling >= 1) return '😕 Poor';
+      return '😞 Bad';
+    }
+
+    function getSportBadgeColor(sport) {
+      const sportLower = (sport || '').toLowerCase();
+      if (sportLower.includes('swim')) return 'primary';
+      if (sportLower.includes('bike') || sportLower.includes('cycle')) return 'success';
+      if (sportLower.includes('run')) return 'danger';
+      return 'secondary';
+    }
+
+    function formatDuration(hours) {
+      if (!hours) return '-';
+      const totalMinutes = Math.round(hours * 60);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+
+    function formatDistance(meters) {
+      if (!meters) return '-';
+      if (meters >= 1000) {
+        return `${(meters / 1000).toFixed(2)} km`;
+      }
+      return `${Math.round(meters)} m`;
+    }
+
+    // Open TSS Planner
+    // Helper function: Get next Sunday
+    function getNextSunday(fromDate = new Date()) {
+      const date = new Date(fromDate);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      if (dayOfWeek === 0) {
+        // Already Sunday, get next Sunday
+        date.setDate(date.getDate() + 7);
+      } else {
+        // Move to next Sunday
+        date.setDate(date.getDate() + (7 - dayOfWeek));
+      }
+      
+      return date;
+    }
+
+    // Helper function: Get next Wednesday (mid-week)
+    function getNextWednesday(fromDate = new Date()) {
+      const date = new Date(fromDate);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 3 = Wednesday
+      
+      if (dayOfWeek < 3) {
+        // Before Wednesday this week, go to this Wednesday
+        date.setDate(date.getDate() + (3 - dayOfWeek));
+      } else {
+        // After Wednesday, go to next Wednesday
+        date.setDate(date.getDate() + (10 - dayOfWeek));
+      }
+      
+      return date;
+    }
+
+    // Helper function: Project CTL/ATL forward using Angela Engine v5.1 EWMA
+    function projectMetrics(currentCTL, currentATL, daysForward) {
+      const TAU_CTL = 42; // Days - slow decay
+      const TAU_ATL = 7;  // Days - fast decay
+      
+      let ctl = currentCTL;
+      let atl = currentATL;
+      
+      // Project forward assuming no workouts (TSS = 0)
+      for (let day = 0; day < daysForward; day++) {
+        ctl = ctl + (0 - ctl) / TAU_CTL;
+        atl = atl + (0 - atl) / TAU_ATL;
+      }
+      
+      return {
+        ctl: ctl,
+        atl: atl,
+        tsb: ctl - atl
+      };
+    }
+
+    async function openTSSPlanner(athleteId) {
+      try {
+        // Fetch athlete's current metrics
+        const athlete = allAthletes.find(a => a.id === athleteId);
+        
+        if (!athlete) {
+          alert('Athlete not found. Please sync the athlete first.');
+          return;
+        }
+
+        // Show the TSS Planner section
+        showSection('tss-planner');
+
+        // Open the modal
+        const modal = new bootstrap.Modal(document.getElementById('trainingStressModal'));
+        modal.show();
+
+        // Calculate projection dates
+        const today = new Date();
+        const comingSunday = getNextSunday(today);
+        const midWeekWednesday = getNextWednesday(today);
+        
+        // Get metrics date (default to today if not available)
+        const metricsDate = athlete.last_updated ? new Date(athlete.last_updated) : today;
+        
+        // Calculate days forward from metrics date
+        const daysToSunday = Math.max(0, Math.ceil((comingSunday - metricsDate) / (1000 * 60 * 60 * 24)));
+        const daysToWednesday = Math.max(0, Math.ceil((midWeekWednesday - metricsDate) / (1000 * 60 * 60 * 24)));
+        
+        console.log(`📅 Date Context:`, {
+          metricsDate: metricsDate.toISOString().split('T')[0],
+          today: today.toISOString().split('T')[0],
+          comingSunday: comingSunday.toISOString().split('T')[0],
+          midWeekWednesday: midWeekWednesday.toISOString().split('T')[0],
+          daysToSunday,
+          daysToWednesday
+        });
+
+        // Project TOTAL metrics to Sunday and Wednesday
+        const totalCurrent = { ctl: athlete.ctl || 0, atl: athlete.atl || 0, tsb: (athlete.ctl || 0) - (athlete.atl || 0) };
+        const totalSunday = projectMetrics(totalCurrent.ctl, totalCurrent.atl, daysToSunday);
+        const totalWednesday = projectMetrics(totalCurrent.ctl, totalCurrent.atl, daysToWednesday);
+        
+        // Project BIKE metrics
+        const bikeCurrent = athlete.bike_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const bikeSunday = projectMetrics(bikeCurrent.ctl, bikeCurrent.atl, daysToSunday);
+        
+        // Project RUN metrics
+        const runCurrent = athlete.run_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const runSunday = projectMetrics(runCurrent.ctl, runCurrent.atl, daysToSunday);
+        
+        // Project SWIM metrics
+        const swimCurrent = athlete.swim_metrics || { ctl: 0, atl: 0, tsb: 0 };
+        const swimSunday = projectMetrics(swimCurrent.ctl, swimCurrent.atl, daysToSunday);
+
+        console.log(`📊 Projected Metrics:`, {
+          total: { current: totalCurrent, sunday: totalSunday, wednesday: totalWednesday },
+          bike: { current: bikeCurrent, sunday: bikeSunday },
+          run: { current: runCurrent, sunday: runSunday }
+        });
+
+        // Store athlete ID and PROJECTED sport-specific metrics for the TSS planner
+        window.currentTSSAthleteId = athleteId;
+        window.currentTSSAthleteMetrics = {
+          total: { 
+            ctl: totalSunday.ctl, 
+            atl: totalSunday.atl, 
+            tsb: totalWednesday.tsb  // Use Wednesday TSB for mid-week
+          },
+          swim: swimSunday,
+          bike: bikeSunday,
+          run: runSunday
+        };
+
+        // Pre-populate with TOTAL PROJECTED values initially
+        document.getElementById('ctl_value').value = Math.round(totalSunday.ctl);
+        document.getElementById('atl_value').value = Math.round(totalSunday.atl);
+        document.getElementById('wtsb_value').value = Math.round(totalWednesday.tsb);
+
+        console.log(`✅ TSS Planner opened for athlete ${athleteId} with PROJECTED values:`, window.currentTSSAthleteMetrics);
+
+        // Add event listener for sport type changes
+        const sportRadios = document.querySelectorAll('input[name="sport_type"]');
+        sportRadios.forEach(radio => {
+          radio.addEventListener('change', function() {
+            const selectedSport = this.value;
+            const metrics = window.currentTSSAthleteMetrics[selectedSport];
+            
+            if (metrics) {
+              document.getElementById('ctl_value').value = Math.round(metrics.ctl || 0);
+              document.getElementById('atl_value').value = Math.round(metrics.atl || 0);
+              document.getElementById('wtsb_value').value = Math.round(metrics.tsb || 0);
+              
+              console.log(`Switched to ${selectedSport} with PROJECTED values:`, metrics);
+            }
+          });
+        });
+
+      } catch (error) {
+        console.error('Error opening TSS Planner:', error);
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    // Open post workout modal
+    function openPostWorkout(athleteId) {
+      document.getElementById('workout-athlete-id').value = athleteId;
+      document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+      
+      const modal = new bootstrap.Modal(document.getElementById('postWorkoutModal'));
+      modal.show();
+    }
+
+    // Submit workout
+    async function submitWorkout() {
+      const athleteId = document.getElementById('workout-athlete-id').value;
+      const workoutData = {
+        date: document.getElementById('workout-date').value,
+        title: document.getElementById('workout-title').value,
+        description: document.getElementById('workout-description').value,
+        tss: parseFloat(document.getElementById('workout-tss').value),
+        duration: parseInt(document.getElementById('workout-duration').value),
+        sport: document.getElementById('workout-sport').value,
+        block_type: 'General'
+      };
+
+      try {
+        const response = await axios.post(`/api/coach/athlete/${athleteId}/workout`, workoutData);
+        
+        if (response.data.success) {
+          alert('Workout posted successfully!');
+          bootstrap.Modal.getInstance(document.getElementById('postWorkoutModal')).hide();
+          document.getElementById('postWorkoutForm').reset();
+        }
+      } catch (error) {
+        console.error('Error posting workout:', error);
+        alert(`Error: ${error.response?.data?.error || error.message}`);
+      }
+    }
+
+    // Sync single athlete
+    async function syncSingleAthlete(athleteId) {
+      if (!confirm(`Sync athlete ${athleteId} from TrainingPeaks?\n\nThis will fetch their workout history and calculate CTL/ATL/TSB.`)) {
+        return;
+      }
+
+      try {
+        // Show loading indicator on the athlete card
+        const athleteCard = document.querySelector(`[onclick*="openAthleteDetail('${athleteId}')"]`);
+        if (athleteCard) {
+          athleteCard.style.opacity = '0.5';
+          athleteCard.style.pointerEvents = 'none';
+        }
+
+        const response = await axios.post(`/api/coach/athlete/${athleteId}/sync`);
+        
+        if (response.data.success) {
+          const data = response.data;
+          const message = `✅ Synced athlete ${athleteId}!
+
+📊 TOTAL (${data.workouts} workouts):
+  CTL: ${Math.round(data.total.ctl)}  |  ATL: ${Math.round(data.total.atl)}  |  TSB: ${Math.round(data.total.tsb)}
+
+🏊 SWIM (${data.swim.workouts} workouts):
+  CTL: ${Math.round(data.swim.ctl)}  |  ATL: ${Math.round(data.swim.atl)}  |  TSB: ${Math.round(data.swim.tsb)}
+
+🚴 BIKE (${data.bike.workouts} workouts):
+  CTL: ${Math.round(data.bike.ctl)}  |  ATL: ${Math.round(data.bike.atl)}  |  TSB: ${Math.round(data.bike.tsb)}
+
+🏃 RUN (${data.run.workouts} workouts):
+  CTL: ${Math.round(data.run.ctl)}  |  ATL: ${Math.round(data.run.atl)}  |  TSB: ${Math.round(data.run.tsb)}
+
+Status: ${data.stress_state}`;
+          
+          alert(message);
+          loadAthletes(); // Reload the list to show updated data
+        }
+      } catch (error) {
+        console.error('Error syncing athlete:', error);
+        alert(`❌ Error syncing athlete:\n${error.response?.data?.error || error.message}`);
+        loadAthletes(); // Reload anyway to restore UI
+      }
+    }
+
+    // Sync all athletes (legacy - not recommended)
+    async function syncAllAthletes() {
+      if (!confirm('Refresh all athlete data from TrainingPeaks? This may take a moment.')) {
+        return;
+      }
+      await loadAthletes();
+      alert('Athletes refreshed!');
+    }
+  </script>
+</body>
+</html>

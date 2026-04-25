@@ -1,0 +1,5 @@
+We need to keep:
+- Lines 1-829: Everything up to and including the last-synced div closing
+- Then add our new simplified content wrapper with back button
+- Lines 1116-1210: The swim section (CSS + Test Results + CTL)
+- Then close all divs and add the script sections
