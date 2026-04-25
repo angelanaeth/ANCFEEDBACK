@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Athlete Feedback — Angela Coach</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .draft-editor { min-height: 250px; font-family: Georgia, serif; line-height: 1.7; }
+    .loading-pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+  <header class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Athlete Feedback</h1>
+        <p class="text-gray-400 text-sm">Weekly coaching notes — Angela's voice</p>
+      </div>
+      <a href="/static/coach.html" class="text-indigo-400 hover:text-indigo-300 text-sm">&larr; Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8">
+
+    <section id="step1" class="bg-gray-900 rounded-lg p-6 mb-6 border border-gray-800">
+      <h2 class="text-lg font-semibold mb-4 text-indigo-400">1. Select Athlete & Date Range</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Athlete</label>
+          <select id="athleteSelect" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+            <option value="">Loading athletes...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Date Range</label>
+          <select id="dateRange" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+            <option value="this_week">This Week</option>
+            <option value="last_week">Last Week</option>
+            <option value="last_3_days">Last 3 Days</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Sport Focus</label>
+          <select id="sportFocus" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+            <option value="all">All Sports</option>
+            <option value="bike">Bike</option>
+            <option value="run">Run</option>
+            <option value="swim">Swim</option>
+          </select>
+        </div>
+      </div>
+      <div id="customDates" class="hidden grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Start Date</label>
+          <input type="date" id="startDate" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">End Date</label>
+          <input type="date" id="endDate" class="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
+        </div>
+      </div>
+      <button id="generateBtn" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded transition">
+        Generate Feedback Draft
+      </button>
+    </section>
+
+    <section id="step2" class="hidden bg-gray-900 rounded-lg p-6 mb-6 border border-gray-800 fade-in">
+      <h2 class="text-lg font-semibold mb-4 text-indigo-400">2. Confirm Training Block</h2>
+      <div class="flex items-center gap-4 mb-3">
+        <span class="text-gray-400">Detected:</span>
+        <span id="detectedBlock" class="text-white font-semibold text-lg"></span>
+        <span id="blockConfidence" class="text-xs px-2 py-0.5 rounded bg-gray-700"></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="text-sm text-gray-400">Override block:</label>
+        <select id="blockOverride" class="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm">
+          <option value="">Keep detected</option>
+        </select>
+        <button id="regenerateBlockBtn" class="hidden bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-1.5 rounded transition">
+          Regenerate with new block
+        </button>
+      </div>
+    </section>
+
+    <section id="step3" class="hidden bg-gray-900 rounded-lg p-6 mb-6 border border-gray-800 fade-in">
+      <h2 class="text-lg font-semibold mb-4 text-indigo-400">3. Review & Edit Draft</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <div id="draftText" contenteditable="true" class="draft-editor bg-gray-800 border border-gray-700 rounded p-4 text-gray-200 focus:outline-none focus:border-indigo-500"></div>
+          <div class="flex items-center justify-between mt-2">
+            <span id="wordCount" class="text-xs text-gray-500"></span>
+            <span id="generatedAt" class="text-xs text-gray-500"></span>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-gray-800 rounded p-3 border border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-400 mb-2">Key Workouts</h3>
+            <div id="keyWorkoutsList" class="text-sm space-y-2"></div>
+          </div>
+          <div class="bg-gray-800 rounded p-3 border border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-400 mb-2">Fitness Trends</h3>
+            <div id="fitnessTrendsList" class="text-sm space-y-1"></div>
+          </div>
+          <div class="bg-gray-800 rounded p-3 border border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-400 mb-2">Athlete Comments</h3>
+            <div id="athleteCommentsList" class="text-sm text-gray-300 italic"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <input id="coachInstruction" type="text" placeholder="e.g. 'Make it more motivational' or 'Focus on the long run'" class="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm placeholder-gray-500">
+        <button id="regenerateBtn" class="bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium px-4 py-2 rounded transition">
+          Regenerate
+        </button>
+      </div>
+    </section>
+
+    <section id="step4" class="hidden bg-gray-900 rounded-lg p-6 mb-6 border border-gray-800 fade-in">
+      <h2 class="text-lg font-semibold mb-4 text-indigo-400">4. Save & Post</h2>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm text-gray-300">
+          <input type="checkbox" id="postToTP" class="rounded bg-gray-700 border-gray-600">
+          Post to TrainingPeaks
+        </label>
+        <button id="saveBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded transition">
+          Save Feedback Note
+        </button>
+        <span id="saveStatus" class="text-sm text-gray-400"></span>
+      </div>
+    </section>
+
+    <div id="loading" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-gray-900 rounded-lg p-8 text-center border border-gray-700">
+        <div class="loading-pulse text-indigo-400 text-lg mb-2">Generating feedback...</div>
+        <p class="text-gray-500 text-sm">Analyzing workouts and drafting in Angela's voice</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let currentFeedback = null;
+    let athletes = [];
+
+    async function init() {
+      try {
+        const res = await fetch('/api/coach/athletes');
+        const data = await res.json();
+        athletes = data.athletes || [];
+        const select = document.getElementById('athleteSelect');
+        select.innerHTML = '<option value="">— Select Athlete —</option>';
+        athletes.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        for (const a of athletes) {
+          const opt = document.createElement('option');
+          opt.value = a.id;
+          opt.textContent = a.name || ('Athlete ' + a.id);
+          select.appendChild(opt);
+        }
+      } catch (e) {
+        console.error('Failed to load athletes:', e);
+      }
+
+      try {
+        const res = await fetch('/api/feedback/blocks');
+        const data = await res.json();
+        const select = document.getElementById('blockOverride');
+        for (const b of data.blocks) {
+          const opt = document.createElement('option');
+          opt.value = b.key;
+          opt.textContent = b.label;
+          select.appendChild(opt);
+        }
+      } catch (e) { console.error('Failed to load blocks:', e); }
+
+      document.getElementById('dateRange').addEventListener('change', function(e) {
+        document.getElementById('customDates').classList.toggle('hidden', e.target.value !== 'custom');
+      });
+
+      document.getElementById('blockOverride').addEventListener('change', function(e) {
+        document.getElementById('regenerateBlockBtn').classList.toggle('hidden', !e.target.value);
+      });
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', async function() {
+      var athleteId = document.getElementById('athleteSelect').value;
+      if (!athleteId) { alert('Please select an athlete.'); return; }
+      showLoading(true);
+      try {
+        var body = {
+          athlete_id: athleteId,
+          date_range: document.getElementById('dateRange').value,
+          sport_focus: document.getElementById('sportFocus').value
+        };
+        if (body.date_range === 'custom') {
+          body.start_date = document.getElementById('startDate').value;
+          body.end_date = document.getElementById('endDate').value;
+        }
+        var res = await fetch('/api/feedback/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Generation failed');
+        currentFeedback = data;
+        renderFeedback(data);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    document.getElementById('regenerateBtn').addEventListener('click', async function() {
+      var instruction = document.getElementById('coachInstruction').value.trim();
+      if (!instruction) { alert('Enter an instruction for regeneration.'); return; }
+      showLoading(true);
+      try {
+        var res = await fetch('/api/feedback/regenerate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            previous_draft: document.getElementById('draftText').innerText,
+            coach_instruction: instruction,
+            athlete_name: currentFeedback ? currentFeedback.athlete_name : '',
+            context: {
+              block: currentFeedback ? currentFeedback.feedback.detected_block : null,
+              stress_state: currentFeedback ? currentFeedback.feedback.stress_state : null,
+              key_workouts: currentFeedback ? currentFeedback.feedback.key_workouts : null
+            }
+          })
+        });
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Regeneration failed');
+        document.getElementById('draftText').innerText = data.draft;
+        document.getElementById('wordCount').textContent = data.word_count + ' words';
+        document.getElementById('coachInstruction').value = '';
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    document.getElementById('regenerateBlockBtn').addEventListener('click', async function() {
+      var athleteId = document.getElementById('athleteSelect').value;
+      var newBlock = document.getElementById('blockOverride').value;
+      if (!athleteId || !newBlock) return;
+      showLoading(true);
+      try {
+        var body = {
+          athlete_id: athleteId,
+          date_range: document.getElementById('dateRange').value,
+          sport_focus: document.getElementById('sportFocus').value,
+          block_override: newBlock
+        };
+        var res = await fetch('/api/feedback/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        currentFeedback = data;
+        renderFeedback(data);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async function() {
+      var athleteId = document.getElementById('athleteSelect').value;
+      var noteText = document.getElementById('draftText').innerText;
+      var postToTP = document.getElementById('postToTP').checked;
+      if (!athleteId || !noteText) { alert('No feedback to save.'); return; }
+      try {
+        var res = await fetch('/api/feedback/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ athlete_id: athleteId, note_text: noteText, post_to_tp: postToTP })
+        });
+        var data = await res.json();
+        var status = document.getElementById('saveStatus');
+        if (data.success) {
+          status.textContent = 'Saved!' + (data.tp_post_status === 'queued' ? ' (TP post queued)' : '');
+          status.className = 'text-sm text-green-400';
+        } else {
+          status.textContent = 'Error: ' + (data.error || 'Unknown');
+          status.className = 'text-sm text-red-400';
+        }
+      } catch (e) {
+        alert('Save error: ' + e.message);
+      }
+    });
+
+    function renderFeedback(data) {
+      var fb = data.feedback;
+      document.getElementById('step2').classList.remove('hidden');
+      document.getElementById('step3').classList.remove('hidden');
+      document.getElementById('step4').classList.remove('hidden');
+
+      document.getElementById('detectedBlock').textContent = fb.detected_block.block;
+      var conf = document.getElementById('blockConfidence');
+      conf.textContent = fb.detected_block.confidence;
+      var confColors = { high: 'bg-green-800 text-green-200', medium: 'bg-yellow-800 text-yellow-200', low: 'bg-red-800 text-red-200' };
+      conf.className = 'text-xs px-2 py-0.5 rounded ' + (confColors[fb.detected_block.confidence] || 'bg-gray-700');
+
+      document.getElementById('draftText').innerText = fb.draft;
+      document.getElementById('wordCount').textContent = fb.word_count + ' words';
+      document.getElementById('generatedAt').textContent = 'Generated: ' + new Date(fb.generated_at).toLocaleString();
+
+      var kwList = document.getElementById('keyWorkoutsList');
+      if (fb.key_workouts.length > 0) {
+        kwList.innerHTML = fb.key_workouts.map(function(w) {
+          return '<div class="border-l-2 border-indigo-500 pl-2">' +
+            '<div class="text-white font-medium">' + w.title + '</div>' +
+            '<div class="text-gray-400 text-xs">' + w.date + ' · ' + w.sport + ' · TSS ' + w.tss + ' · ' + w.duration_minutes + 'min</div>' +
+            (w.athlete_notes ? '<div class="text-gray-300 text-xs italic mt-1">"' + w.athlete_notes + '"</div>' : '') +
+            '</div>';
+        }).join('');
+      } else {
+        kwList.innerHTML = '<div class="text-gray-500">No key workouts identified</div>';
+      }
+
+      var ftList = document.getElementById('fitnessTrendsList');
+      if (fb.fitness_trends.length > 0) {
+        ftList.innerHTML = fb.fitness_trends.map(function(t) {
+          var latest = t.ctl_4wk[t.ctl_4wk.length - 1] || 0;
+          var arrows = { building: '↑', stable: '→', declining: '↓' };
+          var colors = { building: 'text-green-400', stable: 'text-yellow-400', declining: 'text-red-400' };
+          var arrow = arrows[t.ctl_direction] || '→';
+          var color = colors[t.ctl_direction] || 'text-gray-400';
+          return '<div><span class="text-gray-300 uppercase text-xs">' + t.sport + '</span> CTL <span class="' + color + '">' + latest + ' ' + arrow + '</span> (' + (t.ctl_change > 0 ? '+' : '') + t.ctl_change + ')</div>';
+        }).join('');
+      } else {
+        ftList.innerHTML = '<div class="text-gray-500">No trend data</div>';
+      }
+
+      var acList = document.getElementById('athleteCommentsList');
+      if (fb.athlete_comments.length > 0) {
+        acList.innerHTML = fb.athlete_comments.map(function(c) { return '<div class="mb-1">"' + c + '"</div>'; }).join('');
+      } else {
+        acList.innerHTML = '<div class="text-gray-500">No comments this week</div>';
+      }
+
+      document.getElementById('saveStatus').textContent = '';
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading').classList.toggle('hidden', !show);
+    }
+
+    init();
+  </script>
+</body>
+</html>
