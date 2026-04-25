@@ -160,6 +160,21 @@ app.get('/', (c) => {
 app.get('/static/coach', (c) => {
   return c.redirect('/static/coach.html')
 })
+// ============================================================================
+// ATHLETE FEEDBACK ROUTES
+// ============================================================================
+
+app.get('/static/athlete-feedback', (c) => {
+  return c.redirect('/static/athlete-feedback.html')
+})
+
+app.post('/api/feedback/generate', generateFeedback)
+
+app.post('/api/feedback/regenerate', regenerateFeedback)
+
+app.post('/api/feedback/save', saveFeedback)
+
+app.get('/api/feedback/blocks', getBlockTypes)
 
 app.get('/static/swim-planner', (c) => {
   // Preserve query parameters
