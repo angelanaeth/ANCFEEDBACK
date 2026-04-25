@@ -5,7 +5,7 @@
  * 
  * Integrates with existing:
  *  - D1 database (users, training_metrics, athlete_notes tables)
- *  - TrainingPeaks API (coach token from DB)
+ *  - TrainingPeaks API (coach token from DB, auto-refreshes)
  *  - Anthropic Claude API for draft generation
  */
 
@@ -20,6 +20,7 @@ type Bindings = {
   TP_API_BASE_URL: string
   TP_CLIENT_ID: string
   TP_CLIENT_SECRET: string
+  TP_TOKEN_URL: string
   ANTHROPIC_API_KEY: string
 }
 
@@ -97,6 +98,63 @@ interface FeedbackDraft {
   generated_at: string
   raw_workout_count: number
   completed_workout_count: number
+}
+
+// ============================================================================
+// TOKEN REFRESH HELPER
+// ============================================================================
+
+async function getValidCoachToken(c: Context<{ Bindings: Bindings }>): Promise<string | null> {
+  const { DB } = c.env
+
+  const coachRow = await DB.prepare(`
+    SELECT access_token, refresh_token, token_expires_at FROM users
+    WHERE account_type = 'coach'
+    ORDER BY created_at DESC LIMIT 1
+  `).first<{ access_token: string; refresh_token: string; token_expires_at: number }>()
+
+  if (!coachRow?.access_token) return null
+
+  let token = coachRow.access_token
+  const nowSec = Math.floor(Date.now() / 1000)
+
+  // If token expires within 5 minutes, refresh it
+  if (coachRow.token_expires_at && coachRow.token_expires_at < (nowSec + 300) && coachRow.refresh_token) {
+    console.log('Token expired or expiring soon, refreshing...')
+    try {
+      const refreshRes = await fetch(c.env.TP_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: coachRow.refresh_token,
+          client_id: c.env.TP_CLIENT_ID,
+          client_secret: c.env.TP_CLIENT_SECRET,
+        }).toString()
+      })
+      if (refreshRes.ok) {
+        const newTokens = await refreshRes.json() as any
+        if (newTokens.access_token) {
+          token = newTokens.access_token
+          await DB.prepare(`
+            UPDATE users SET access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = datetime('now')
+            WHERE account_type = 'coach' ORDER BY created_at DESC LIMIT 1
+          `).bind(
+            newTokens.access_token,
+            newTokens.refresh_token || coachRow.refresh_token,
+            nowSec + (newTokens.expires_in || 3600)
+          ).run()
+          console.log('Token refreshed successfully')
+        }
+      } else {
+        console.error('Token refresh failed:', refreshRes.status, await refreshRes.text())
+      }
+    } catch (e) {
+      console.error('Token refresh error:', e)
+    }
+  }
+
+  return token
 }
 
 // ============================================================================
@@ -276,13 +334,11 @@ function calculateFitnessTrend(
   const toTSS = (ws: NormalizedWorkout[]) => ws.filter(w => w.tss > 0).map(w => ({ date: w.date, tss: w.tss }))
 
   const allTSS = toTSS(allWorkouts)
-  const recentTSS = toTSS(recentWorkouts)
 
   const ctlCurrent = calculateEWMA(allTSS, 42)
   const atlCurrent = calculateEWMA(allTSS, 7)
   const tsbCurrent = Math.round((ctlCurrent - atlCurrent) * 10) / 10
 
-  // Calculate CTL from 4 weeks ago (remove last 28 days)
   const fourWeeksAgo = new Date()
   fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
   const olderTSS = allTSS.filter(w => new Date(w.date) <= fourWeeksAgo)
@@ -293,7 +349,6 @@ function calculateFitnessTrend(
   if (ctlChange > 3) ctlDirection = 'building'
   else if (ctlChange < -3) ctlDirection = 'declining'
 
-  // ATL trend
   const twoWeeksAgo = new Date()
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
   const olderForATL = allTSS.filter(w => new Date(w.date) <= twoWeeksAgo)
@@ -329,20 +384,17 @@ function buildAngelaPrompt(
   raceContext: string | null,
   coachPrompt: string | null
 ): string {
-  // Build detailed workout section with real data
   const workoutDetails = keyWorkouts.map(w => {
-    let detail = `- ${w.date}: "${w.title}" (${w.sport}) — ${w.execution_summary}`
+    let detail = `- ${w.date}: "${w.title}" (${w.sport}) -- ${w.execution_summary}`
     if (w.athlete_notes) detail += `\n  Athlete said: "${w.athlete_notes}"`
     return detail
   }).join('\n')
 
-  // Build all workouts summary
   const completedCount = allWorkouts.filter(w => w.completed || w.tss > 0).length
   const totalTSS = allWorkouts.reduce((sum, w) => sum + w.tss, 0)
   const totalDuration = allWorkouts.reduce((sum, w) => sum + w.duration_minutes, 0)
   const weekSummary = `${completedCount} workouts completed, total TSS ${totalTSS}, total duration ${totalDuration}min`
 
-  // Build fitness trends section with real numbers
   const trendDetails = fitnessTrends.map(t => {
     return `${t.sport.toUpperCase()}: CTL ${t.ctl_current} (was ${t.ctl_4wk_ago} four weeks ago, ${t.ctl_direction} ${t.ctl_change > 0 ? '+' : ''}${t.ctl_change}), ATL ${t.atl_current} (${t.atl_trend}), TSB ${t.tsb_current}`
   }).join('\n')
@@ -364,10 +416,10 @@ Your voice is:
 TONE EXAMPLES:
 
 GOOD (Angela's voice):
-"Your Tuesday run hit Z1 targets consistently—power stable, no zone creep. Saturday's long run showed good aerobic efficiency despite fatigue. Run CTL is steady at 285, up 3 points from 4 weeks ago. That's healthy adaptation. You mentioned feeling strong early week—that execution supports the data. Keep the discipline on easy days."
+"Your Tuesday run hit Z1 targets consistently--power stable, no zone creep. Saturday's long run showed good aerobic efficiency despite fatigue. Run CTL is steady at 285, up 3 points from 4 weeks ago. That's healthy adaptation. You mentioned feeling strong early week--that execution supports the data. Keep the discipline on easy days."
 
 BAD (Don't write like this):
-"Your base block consistency is showing up in the work this week. The kind of execution that builds metabolic flexibility pays dividends. Trust the process—this base work matters."
+"Your base block consistency is showing up in the work this week. The kind of execution that builds metabolic flexibility pays dividends. Trust the process--this base work matters."
 
 KEY RULES:
 
@@ -424,10 +476,10 @@ ${raceContext ? `RACE CONTEXT: ${raceContext}` : ''}
 WEEK SUMMARY: ${weekSummary}
 
 KEY WORKOUTS THIS WEEK (with real data):
-${workoutDetails || 'No completed workout data available — say so directly.'}
+${workoutDetails || 'No completed workout data available -- say so directly.'}
 
 FITNESS METRICS:
-${trendDetails || 'Limited trend data — new athlete or insufficient history. Say so directly.'}
+${trendDetails || 'Limited trend data -- new athlete or insufficient history. Say so directly.'}
 
 ${commentsSection}
 
@@ -524,18 +576,11 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     }
 
-    // 2. Get coach token
-    const coachResult = await DB.prepare(`
-      SELECT access_token FROM users
-      WHERE account_type = 'coach'
-      ORDER BY created_at DESC LIMIT 1
-    `).first<{ access_token: string }>()
-
-    if (!coachResult?.access_token) {
-      return c.json({ error: 'No coach token found. Log in at angela-coach.pages.dev first.' }, 401)
+    // 2. Get coach token (with auto-refresh)
+    const token = await getValidCoachToken(c)
+    if (!token) {
+      return c.json({ error: 'No valid coach token. Please re-authenticate with TrainingPeaks.' }, 401)
     }
-
-    const token = coachResult.access_token
 
     // 3. Fetch THIS WEEK's workouts from TrainingPeaks
     let rawWorkouts: any[] = []
@@ -547,15 +592,19 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       if (res.ok) {
         rawWorkouts = await res.json() as any[]
       } else {
+        console.log('v1 workouts failed with', res.status, '- trying v2')
         const res2 = await fetch(
           `${TP_API_BASE_URL}/v2/athlete/${athlete_id}/workouts?startDate=${startDate}&endDate=${endDate}`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         )
         if (res2.ok) { rawWorkouts = await res2.json() as any[] }
+        else { console.error('v2 workouts also failed:', res2.status) }
       }
     } catch (e) {
       console.error('Failed to fetch workouts:', e)
     }
+
+    console.log(`Fetched ${rawWorkouts.length} raw workouts for ${startDate} to ${endDate}`)
 
     // 4. Fetch HISTORICAL workouts (90 days) for CTL/ATL/TSB calculation
     let historicalRaw: any[] = []
@@ -567,6 +616,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       )
       if (histRes.ok) {
         historicalRaw = await histRes.json() as any[]
+        console.log(`Fetched ${historicalRaw.length} historical workouts for CTL/ATL/TSB`)
       }
     } catch (e) {
       console.error('Failed to fetch historical workouts:', e)
@@ -621,10 +671,8 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
     // 10. Calculate fitness trends from historical workout data
     const fitnessTrends: FitnessTrend[] = []
     if (historicalWorkouts.length > 0) {
-      // Combined trend
       fitnessTrends.push(calculateFitnessTrend(historicalWorkouts, weekWorkouts, 'combined'))
 
-      // Per-sport trends (if enough data)
       for (const sport of ['bike', 'run', 'swim']) {
         const sportHist = historicalWorkouts.filter(w => w.sport === sport)
         const sportWeek = weekWorkouts.filter(w => w.sport === sport)
@@ -760,11 +808,8 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
     let tpPostResult = null
     if (post_to_tp) {
       try {
-        const coachToken = await DB.prepare(`
-          SELECT access_token FROM users WHERE account_type = 'coach' ORDER BY created_at DESC LIMIT 1
-        `).first<{ access_token: string }>()
-
-        if (coachToken?.access_token) {
+        const token = await getValidCoachToken(c)
+        if (token) {
           await DB.prepare(`
             INSERT INTO tp_write_queue (user_id, operation, endpoint, payload, status, created_at)
             VALUES (?, 'post_note', ?, ?, 'pending', datetime('now'))
@@ -797,17 +842,12 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
   const { DB, TP_API_BASE_URL } = c.env
 
   try {
-    const coachResult = await DB.prepare(`
-      SELECT access_token FROM users
-      WHERE account_type = 'coach'
-      ORDER BY created_at DESC LIMIT 1
-    `).first<{ access_token: string }>()
-
-    if (!coachResult?.access_token) {
-      return c.json({ error: 'No coach token found. Log in at angela-coach.pages.dev first.', athletes: [] }, 401)
+    // Get valid token (with auto-refresh)
+    const token = await getValidCoachToken(c)
+    if (!token) {
+      return c.json({ error: 'No valid coach token. Please re-authenticate with TrainingPeaks.', athletes: [] }, 401)
     }
 
-    const token = coachResult.access_token
     let athletes: any[] = []
     try {
       const res = await fetch(`${TP_API_BASE_URL}/v1/coach/athletes`, {
