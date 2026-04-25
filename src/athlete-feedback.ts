@@ -21,7 +21,8 @@ type Bindings = {
   TP_API_BASE_URL: string
   TP_CLIENT_ID: string
   TP_CLIENT_SECRET: string
-  OPENAI_API_KEY: string
+  ANTHROPIC_API_KEY: string
+
 }
 
 interface FeedbackRequest {
@@ -335,31 +336,36 @@ Write 200-300 words in Angela's voice. Reference specific workouts. Reference at
   ])
 }
 
-async function generateDraftWithOpenAI(
+async function generateDraftWithClaude(
   apiKey: string,
   messages: string
 ): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const parsed = JSON.parse(messages)
+  const systemMsg = parsed.find((m: any) => m.role === 'system')?.content || ''
+  const userMsg = parsed.find((m: any) => m.role === 'user')?.content || ''
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: JSON.parse(messages),
-      temperature: 0.7,
-      max_tokens: 600,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system: systemMsg,
+      messages: [{ role: 'user', content: userMsg }],
     }),
   })
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`OpenAI API error ${response.status}: ${errorText}`)
+    throw new Error(`Claude API error ${response.status}: ${errorText}`)
   }
 
   const data = await response.json() as any
-  return data.choices?.[0]?.message?.content || 'Error generating draft.'
+  return data.content?.[0]?.text || 'Error generating draft.'
 }
 
 // ============================================================================
@@ -371,7 +377,7 @@ async function generateDraftWithOpenAI(
  * Generate an athlete feedback draft
  */
 export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
-  const { DB, TP_API_BASE_URL, OPENAI_API_KEY } = c.env
+  const { DB, TP_API_BASE_URL, ANTHROPIC_API_KEY } = c.env
 
   try {
     const body: FeedbackRequest = await c.req.json()
@@ -584,7 +590,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       coach_prompt || null
     )
 
-    const draft = await generateDraftWithOpenAI(OPENAI_API_KEY, messages)
+    const draft = await generateDraftWithOpenAI(ANTHROPIC_API_KEY, messages)
 
     // 14. Build response
     const feedbackDraft: FeedbackDraft = {
@@ -640,7 +646,7 @@ export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
       }
     ])
 
-    const draft = await generateDraftWithOpenAI(OPENAI_API_KEY, messages)
+    const draft = await generateDraftWithOpenAI(ANTHROPIC_API_KEY, messages)
 
     return c.json({
       success: true,
