@@ -1,7 +1,7 @@
 /**
  * ANC Athlete Feedback Module
  * Generates coach-edited athlete feedback notes in Angela's voice
- * Uses: TrainingPeaks data + Analysis Engine + OpenAI GPT
+ * Uses: TrainingPeaks data + Analysis Engine + Claude AI
  * 
  * Integrates with existing:
  *  - getCoachToken() from index.tsx
@@ -22,7 +22,6 @@ type Bindings = {
   TP_CLIENT_ID: string
   TP_CLIENT_SECRET: string
   ANTHROPIC_API_KEY: string
-
 }
 
 interface FeedbackRequest {
@@ -142,7 +141,6 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
     }
   }
 
-  // Find the block with the most votes
   let topBlock = 'Unknown'
   let topVotes = 0
   for (const [block, count] of Object.entries(votes)) {
@@ -152,7 +150,6 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
     }
   }
 
-  // Determine confidence
   const totalWorkouts = workoutTitles.length
   let confidence: 'high' | 'medium' | 'low' = 'low'
   if (totalWorkouts > 0) {
@@ -161,7 +158,6 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
     else if (ratio >= 0.25) confidence = 'medium'
   }
 
-  // If recent race and detected Base/Durability, flag as possible Rebuild
   const isRebuild = hasRecentRace && (topBlock === 'Base/Durability' || topBlock === 'Rebuild')
   if (isRebuild) {
     topBlock = 'Rebuild'
@@ -183,7 +179,6 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
 function selectKeyWorkouts(workouts: any[], maxCount: number = 3): KeyWorkout[] {
   if (!workouts || workouts.length === 0) return []
 
-  // Score each workout by "interestingness" for feedback
   const scored = workouts
     .filter((w: any) => w.completed || w.CompletedDate || w.TotalTime > 0)
     .map((w: any) => {
@@ -193,15 +188,10 @@ function selectKeyWorkouts(workouts: any[], maxCount: number = 3): KeyWorkout[] 
       const title = w.title || w.Title || ''
       const notes = w.athlete_notes || w.AthleteNotes || w.Description || ''
 
-      // Higher TSS = more significant
       score += Math.min(tss / 20, 5)
-      // Longer duration = more significant
       score += Math.min(duration / 30, 3)
-      // Has athlete notes = they cared enough to comment
       if (notes && notes.length > 5) score += 3
-      // Key session indicators in title
       if (/threshold|tempo|interval|VO2|race|test|brick|long/i.test(title)) score += 2
-      // Not just a recovery spin
       if (/recovery|easy|ZR|rest/i.test(title)) score -= 2
 
       return {
@@ -218,7 +208,6 @@ function selectKeyWorkouts(workouts: any[], maxCount: number = 3): KeyWorkout[] 
     .sort((a: any, b: any) => b._score - a._score)
     .slice(0, maxCount)
 
-  // Remove internal score before returning
   return scored.map(({ _score, ...rest }: any) => rest)
 }
 
@@ -251,7 +240,7 @@ function calculateFitnessTrend(
 }
 
 // ============================================================================
-// OPENAI DRAFT GENERATION (Angela's Voice)
+// CLAUDE DRAFT GENERATION (Angela's Voice)
 // ============================================================================
 
 function buildAngelaPrompt(
@@ -264,23 +253,20 @@ function buildAngelaPrompt(
   raceContext: string | null,
   coachPrompt: string | null
 ): string {
-  // Build workout details section
   const workoutDetails = keyWorkouts.map(w => {
     let detail = `- ${w.date}: "${w.title}" (${w.sport}, TSS ${w.tss}, ${w.duration_minutes}min)`
     if (w.athlete_notes) detail += `\n  Athlete said: "${w.athlete_notes}"`
     return detail
   }).join('\n')
 
-  // Build fitness trends section
   const trendDetails = fitnessTrends.map(t => {
     const latest = t.ctl_4wk[t.ctl_4wk.length - 1] || 0
     const oldest = t.ctl_4wk[0] || 0
     const latestATL = t.atl_4wk[t.atl_4wk.length - 1] || 0
     const latestTSB = t.tsb_4wk[t.tsb_4wk.length - 1] || 0
-    return `${t.sport.toUpperCase()}: CTL ${oldest}→${latest} (${t.ctl_direction}, ${t.ctl_change > 0 ? '+' : ''}${t.ctl_change}), ATL ${latestATL}, TSB ${latestTSB}`
+    return `${t.sport.toUpperCase()}: CTL ${oldest}->${latest} (${t.ctl_direction}, ${t.ctl_change > 0 ? '+' : ''}${t.ctl_change}), ATL ${latestATL}, TSB ${latestTSB}`
   }).join('\n')
 
-  // Build athlete comments section
   const commentsSection = athleteComments.length > 0
     ? `ATHLETE'S OWN COMMENTS FROM THIS WEEK:\n${athleteComments.map(c => `- "${c}"`).join('\n')}`
     : 'No athlete comments this week.'
@@ -288,15 +274,15 @@ function buildAngelaPrompt(
   const systemPrompt = `You are Angela Naeth, an elite endurance coach who has raced at the highest levels of triathlon (Ironman). You write athlete feedback notes that are:
 
 VOICE CHARACTERISTICS:
-- Professional but human — you talk TO athletes, not AT them
-- Data-informed but not numbers-heavy — reference specific workouts and trends, but frame them in coaching language
-- Motivational but honest — you acknowledge effort AND give real feedback
-- Specific to execution — you reference actual workout data, not generic praise
-- You acknowledge athlete comments directly — "You mentioned..." / "When you said..."
+- Professional but human - you talk TO athletes, not AT them
+- Data-informed but not numbers-heavy - reference specific workouts and trends, but frame them in coaching language
+- Motivational but honest - you acknowledge effort AND give real feedback
+- Specific to execution - you reference actual workout data, not generic praise
+- You acknowledge athlete comments directly - "You mentioned..." / "When you said..."
 - You connect weekly work to long-term fitness building
-- You use controlled, measured phrasing — not exclamation marks or hype
+- You use controlled, measured phrasing - not exclamation marks or hype
 - You occasionally use a short, punchy sentence for impact: "This is working."
-- You reference physiology naturally: CTL, ATL, TSB — but explain what they mean for the athlete
+- You reference physiology naturally: CTL, ATL, TSB - but explain what they mean for the athlete
 
 WHAT YOU NEVER DO:
 - Generic AI language ("Great week!", "Keep up the good work!", "You crushed it!")
@@ -387,7 +373,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       return c.json({ error: 'athlete_id is required' }, 400)
     }
 
-    console.log(`📝 Generating feedback for athlete ${athlete_id}, range: ${date_range}`)
+    console.log(`Generating feedback for athlete ${athlete_id}, range: ${date_range}`)
 
     // 1. Resolve date range
     const now = new Date()
@@ -448,7 +434,6 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       if (res.ok) {
         workouts = await res.json() as any[]
       } else {
-        // Try v2
         const res2 = await fetch(
           `${TP_API_BASE_URL}/v2/workouts/${athlete_id}/${startDate}/${endDate}`,
           { headers: { 'Authorization': `Bearer ${token}` } }
@@ -469,7 +454,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       })
     }
 
-    console.log(`📊 Fetched ${workouts.length} workouts for ${startDate} to ${endDate}`)
+    console.log(`Fetched ${workouts.length} workouts for ${startDate} to ${endDate}`)
 
     // 4. Get athlete name
     const athleteUser = await DB.prepare(`
@@ -497,7 +482,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
         )
       }
     } catch (e) {
-      // Events endpoint may not be available — continue
+      // Events endpoint may not be available - continue
     }
 
     // 7. Detect block
@@ -525,8 +510,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       `).bind(athlete_id).all()
 
       if (metricsHistory.results && metricsHistory.results.length > 0) {
-        // Extract weekly CTL snapshots (take every 7th day)
-        const rows = metricsHistory.results.reverse() // oldest first
+        const rows = metricsHistory.results.reverse()
         const weeklySnapshots = rows.filter((_: any, i: number) => i % 7 === 0 || i === rows.length - 1)
 
         const ctlValues = weeklySnapshots.map((r: any) => r.ctl || 0)
@@ -535,7 +519,6 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
 
         fitnessTrends.push(calculateFitnessTrend(ctlValues, atlValues, tsbValues, 'combined'))
 
-        // Try to extract per-sport metrics
         for (const row of [rows[rows.length - 1]]) {
           if (row?.sport_metrics) {
             try {
@@ -546,7 +529,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
               for (const sport of ['bike', 'run', 'swim']) {
                 if (sportData[sport] && sportData[sport].ctl) {
                   fitnessTrends.push(calculateFitnessTrend(
-                    [sportData[sport].ctl], // limited to latest
+                    [sportData[sport].ctl],
                     [sportData[sport].atl || 0],
                     [sportData[sport].tsb || 0],
                     sport
@@ -578,7 +561,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       raceContext = 'Recent race within last 21 days. Athlete may be in recovery/rebuild phase.'
     }
 
-    // 13. Generate draft with OpenAI
+    // 13. Generate draft with Claude
     const messages = buildAngelaPrompt(
       athleteName,
       detectedBlock,
@@ -590,7 +573,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       coach_prompt || null
     )
 
-    const draft = await generateDraftWithOpenAI(ANTHROPIC_API_KEY, messages)
+    const draft = await generateDraftWithClaude(ANTHROPIC_API_KEY, messages)
 
     // 14. Build response
     const feedbackDraft: FeedbackDraft = {
@@ -604,7 +587,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       generated_at: new Date().toISOString(),
     }
 
-    console.log(`✅ Draft generated: ${feedbackDraft.word_count} words for ${athleteName}`)
+    console.log(`Draft generated: ${feedbackDraft.word_count} words for ${athleteName}`)
 
     return c.json({
       success: true,
@@ -615,7 +598,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
     })
 
   } catch (error: any) {
-    console.error('❌ Feedback generation error:', error)
+    console.error('Feedback generation error:', error)
     return c.json({ error: error.message || 'Internal server error' }, 500)
   }
 }
@@ -625,7 +608,7 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
  * Re-draft with coach instructions
  */
 export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
-  const { OPENAI_API_KEY } = c.env
+  const { ANTHROPIC_API_KEY } = c.env
 
   try {
     const body = await c.req.json()
@@ -646,7 +629,7 @@ export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
       }
     ])
 
-    const draft = await generateDraftWithOpenAI(ANTHROPIC_API_KEY, messages)
+    const draft = await generateDraftWithClaude(ANTHROPIC_API_KEY, messages)
 
     return c.json({
       success: true,
@@ -657,7 +640,7 @@ export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
     })
 
   } catch (error: any) {
-    console.error('❌ Regeneration error:', error)
+    console.error('Regeneration error:', error)
     return c.json({ error: error.message || 'Internal server error' }, 500)
   }
 }
@@ -677,7 +660,6 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
       return c.json({ error: 'athlete_id and note_text are required' }, 400)
     }
 
-    // Get user ID from athlete
     const user = await DB.prepare(`
       SELECT id FROM users WHERE tp_athlete_id = ?
     `).bind(athlete_id).first<{ id: number }>()
@@ -686,12 +668,10 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
       return c.json({ error: 'Athlete not found in database' }, 404)
     }
 
-    // Get coach user ID
     const coach = await DB.prepare(`
       SELECT id FROM users WHERE account_type = 'coach' ORDER BY created_at DESC LIMIT 1
     `).first<{ id: number }>()
 
-    // Save to athlete_notes table (upsert — one note per coach per athlete)
     await DB.prepare(`
       INSERT INTO athlete_notes (user_id, note_text, note_type, created_by, created_at, updated_at)
       VALUES (?, ?, 'weekly_feedback', ?, datetime('now'), datetime('now'))
@@ -701,7 +681,6 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
         updated_at = datetime('now')
     `).bind(user.id, note_text, coach?.id || null).run()
 
-    // Optionally post to TrainingPeaks as a coach comment / note
     let tpPostResult = null
     if (post_to_tp) {
       try {
@@ -710,8 +689,6 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
         `).first<{ access_token: string }>()
 
         if (coachToken?.access_token) {
-          // Post as a workout note/comment on TrainingPeaks
-          // Using the TP write queue for reliability
           await DB.prepare(`
             INSERT INTO tp_write_queue (user_id, operation, endpoint, payload, status, created_at)
             VALUES (?, 'post_note', ?, ?, 'pending', datetime('now'))
@@ -741,7 +718,7 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
     })
 
   } catch (error: any) {
-    console.error('❌ Save error:', error)
+    console.error('Save error:', error)
     return c.json({ error: error.message || 'Internal server error' }, 500)
   }
 }
@@ -754,7 +731,6 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
   const { DB, TP_API_BASE_URL } = c.env
 
   try {
-    // Get coach token directly from DB (same approach as generateFeedback)
     const coachResult = await DB.prepare(`
       SELECT access_token FROM users
       WHERE account_type = 'coach'
@@ -767,7 +743,6 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
 
     const token = coachResult.access_token
 
-    // Fetch athletes from TrainingPeaks
     let athletes: any[] = []
     try {
       const res = await fetch(`${TP_API_BASE_URL}/v1/coach/athletes`, {
@@ -776,7 +751,6 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
       if (res.ok) {
         athletes = await res.json() as any[]
       } else {
-        // Try v2 fallback
         const res2 = await fetch(`${TP_API_BASE_URL}/v2/coach/athletes`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -788,7 +762,6 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
       console.error('Failed to fetch athletes from TP:', e)
     }
 
-    // Normalize athlete data
     const normalized = athletes.map((a: any) => ({
       id: a.Id || a.id || a.AthleteId || a.athleteId,
       name: [a.FirstName || a.firstName || '', a.LastName || a.lastName || ''].filter(Boolean).join(' ') || ('Athlete ' + (a.Id || a.id)),
@@ -810,11 +783,11 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
 export function getBlockTypes(c: Context) {
   return c.json({
     blocks: [
-      { key: 'Base/Durability', label: 'BD — Base / Durability', description: 'Aerobic foundation, volume steady' },
-      { key: 'Build/Threshold', label: 'BTH — Build / Threshold', description: 'Raise CP/CS, sustained power' },
-      { key: 'Aerobic Expansion', label: 'AE — Aerobic Expansion', description: 'Sub-LT1 development' },
-      { key: 'VO2 Max', label: 'VO2 — VO2 Max', description: 'Lift aerobic ceiling' },
-      { key: 'Specificity', label: 'SP — Specificity', description: 'Race pace execution' },
+      { key: 'Base/Durability', label: 'BD - Base / Durability', description: 'Aerobic foundation, volume steady' },
+      { key: 'Build/Threshold', label: 'BTH - Build / Threshold', description: 'Raise CP/CS, sustained power' },
+      { key: 'Aerobic Expansion', label: 'AE - Aerobic Expansion', description: 'Sub-LT1 development' },
+      { key: 'VO2 Max', label: 'VO2 - VO2 Max', description: 'Lift aerobic ceiling' },
+      { key: 'Specificity', label: 'SP - Specificity', description: 'Race pace execution' },
       { key: 'Hybrid', label: 'Hybrid', description: 'Mixed focus, multiple limiters' },
       { key: 'Rebuild', label: 'Rebuild / Reset', description: 'Post-race or recovery block' },
     ],
