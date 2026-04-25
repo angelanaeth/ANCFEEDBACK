@@ -177,6 +177,8 @@ app.post('/api/feedback/save', saveFeedback)
 
 app.get('/api/feedback/blocks', getBlockTypes)
 
+app.get('/api/feedback/athletes', getFeedbackAthletes);
+
 app.get('/static/swim-planner', (c) => {
   // Preserve query parameters
   const athleteId = c.req.query('athlete')
