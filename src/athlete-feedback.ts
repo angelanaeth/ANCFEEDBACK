@@ -741,6 +741,63 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
 }
 
 /**
+ * GET /api/feedback/athletes
+ * Load athletes using the coach token from the database (no cookie required)
+ */
+export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
+  const { DB, TP_API_BASE_URL } = c.env
+
+  try {
+    // Get coach token directly from DB (same approach as generateFeedback)
+    const coachResult = await DB.prepare(`
+      SELECT access_token FROM users
+      WHERE account_type = 'coach'
+      ORDER BY created_at DESC LIMIT 1
+    `).first<{ access_token: string }>()
+
+    if (!coachResult?.access_token) {
+      return c.json({ error: 'No coach token found. Log in at angela-coach.pages.dev first.', athletes: [] }, 401)
+    }
+
+    const token = coachResult.access_token
+
+    // Fetch athletes from TrainingPeaks
+    let athletes: any[] = []
+    try {
+      const res = await fetch(`${TP_API_BASE_URL}/v1/coach/athletes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        athletes = await res.json() as any[]
+      } else {
+        // Try v2 fallback
+        const res2 = await fetch(`${TP_API_BASE_URL}/v2/coach/athletes`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res2.ok) {
+          athletes = await res2.json() as any[]
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch athletes from TP:', e)
+    }
+
+    // Normalize athlete data
+    const normalized = athletes.map((a: any) => ({
+      id: a.Id || a.id || a.AthleteId || a.athleteId,
+      name: [a.FirstName || a.firstName || '', a.LastName || a.lastName || ''].filter(Boolean).join(' ') || ('Athlete ' + (a.Id || a.id)),
+      email: a.Email || a.email || null,
+    }))
+
+    return c.json({ athletes: normalized, count: normalized.length })
+
+  } catch (error: any) {
+    console.error('Athletes fetch error:', error)
+    return c.json({ error: error.message, athletes: [] }, 500)
+  }
+}
+
+/**
  * GET /api/feedback/blocks
  * Get available block types for the coach to select from
  */
