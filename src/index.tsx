@@ -19,6 +19,7 @@ import {
   regenerateFeedback,
   saveFeedback,
   getBlockTypes,
+  getFeedbackAthletes
 } from './athlete-feedback'
 
 
