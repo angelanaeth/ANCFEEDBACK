@@ -4,10 +4,9 @@
  * Uses: TrainingPeaks data + Analysis Engine + Claude AI
  * 
  * Integrates with existing:
- *  - getCoachToken() from index.tsx
- *  - analysis_engine.ts for stress state / metrics
- *  - gpt/gpt-api.ts for TP data normalization
  *  - D1 database (users, training_metrics, athlete_notes tables)
+ *  - TrainingPeaks API (coach token from DB)
+ *  - Anthropic Claude API for draft generation
  */
 
 import { Context } from 'hono'
@@ -41,23 +40,50 @@ interface DetectedBlock {
   is_rebuild: boolean
 }
 
+interface NormalizedWorkout {
+  date: string
+  title: string
+  sport: string
+  tss: number
+  duration_minutes: number
+  distance_km: number
+  avg_power: number | null
+  avg_hr: number | null
+  avg_pace: string | null
+  np: number | null
+  intensity_factor: number | null
+  elevation_gain: number | null
+  athlete_notes: string | null
+  coach_notes: string | null
+  completed: boolean
+  planned: boolean
+}
+
 interface KeyWorkout {
   date: string
   title: string
   sport: string
   tss: number
   duration_minutes: number
+  distance_km: number
+  avg_power: number | null
+  avg_hr: number | null
+  avg_pace: string | null
+  np: number | null
+  intensity_factor: number | null
   athlete_notes: string | null
-  execution_quality: string
+  execution_summary: string
 }
 
 interface FitnessTrend {
   sport: string
-  ctl_4wk: number[]
-  atl_4wk: number[]
-  tsb_4wk: number[]
-  ctl_direction: 'building' | 'stable' | 'declining'
+  ctl_current: number
+  atl_current: number
+  tsb_current: number
+  ctl_4wk_ago: number
   ctl_change: number
+  ctl_direction: 'building' | 'stable' | 'declining'
+  atl_trend: string
 }
 
 interface FeedbackDraft {
@@ -69,6 +95,38 @@ interface FeedbackDraft {
   stress_state: string
   word_count: number
   generated_at: string
+  raw_workout_count: number
+  completed_workout_count: number
+}
+
+// ============================================================================
+// WORKOUT NORMALIZATION (matches TrainingPeaks field names)
+// ============================================================================
+
+function normalizeTPWorkout(w: any): NormalizedWorkout {
+  const sport = (w.WorkoutType || w.workoutType || w.sport || 'other').toLowerCase()
+  const totalTimeSeconds = w.TotalTime || w.Duration || w.totalTime || 0
+  const tss = w.TSS || w.TrainingStressScore || w.tss || 0
+  const distance = w.Distance || w.distance || 0
+
+  return {
+    date: w.WorkoutDay || w.Date || w.date || '',
+    title: w.Title || w.title || `${sport} workout`,
+    sport: sport,
+    tss: Math.round(tss),
+    duration_minutes: Math.round(totalTimeSeconds / 60),
+    distance_km: distance > 0 ? Math.round((distance / 1000) * 100) / 100 : 0,
+    avg_power: w.AvgWatts || w.AveragePower || w.avgWatts || null,
+    avg_hr: w.AvgHR || w.AverageHeartRate || w.avgHR || null,
+    avg_pace: w.AvgPace || w.AveragePace || w.avgPace || null,
+    np: w.NormalizedPower || w.NP || w.normalizedPower || null,
+    intensity_factor: w.IntensityFactor || w.IF || w.intensityFactor || null,
+    elevation_gain: w.ElevationGain || w.Elevation || w.elevationGain || null,
+    athlete_notes: w.AthleteNotes || w.athleteNotes || null,
+    coach_notes: w.CoachComments || w.Description || w.Notes || w.coachComments || null,
+    completed: w.IsCompleted || w.isCompleted || w.completed || false,
+    planned: w.IsPlanned || w.isPlanned || w.planned || false,
+  }
 }
 
 // ============================================================================
@@ -77,52 +135,31 @@ interface FeedbackDraft {
 
 const BLOCK_PATTERNS: Record<string, RegExp[]> = {
   'Base/Durability': [
-    /\bBD\b/i,
-    /\bbase\b/i,
-    /\bdurability\b/i,
-    /\bZ[12]\s*(run|ride|bike)/i,
-    /\bZR\b/i,
-    /\baerobic\s*(run|ride|bike)/i,
-    /\beasy\s*(run|ride|bike)/i,
+    /\bBD\b/i, /\bbase\b/i, /\bdurability\b/i,
+    /\bZ[12]\s*(run|ride|bike)/i, /\bZR\b/i,
+    /\baerobic\s*(run|ride|bike)/i, /\beasy\s*(run|ride|bike)/i,
   ],
   'Build/Threshold': [
-    /\bBTH\b/i,
-    /\bbuild\b/i,
-    /\bthreshold\b/i,
-    /\bZ3\b/i,
-    /\bFTP\b/i,
-    /\bSST\b/i,
-    /\bsweet\s*spot/i,
-    /\btempo\b/i,
+    /\bBTH\b/i, /\bbuild\b/i, /\bthreshold\b/i,
+    /\bZ3\b/i, /\bFTP\b/i, /\bSST\b/i,
+    /\bsweet\s*spot/i, /\btempo\b/i,
   ],
   'Aerobic Expansion': [
-    /\bAE\b/i,
-    /\baerobic\s*expansion/i,
-    /\bsub[- ]?LT1/i,
+    /\bAE\b/i, /\baerobic\s*expansion/i, /\bsub[- ]?LT1/i,
   ],
   'VO2 Max': [
-    /\bVO2\b/i,
-    /\bZ5\b/i,
-    /\bintervals?\b.*\b(3|4|5)\s*min/i,
-    /\b110\s*%/i,
+    /\bVO2\b/i, /\bZ5\b/i,
+    /\bintervals?\b.*\b(3|4|5)\s*min/i, /\b110\s*%/i,
   ],
   'Specificity': [
-    /\bSP\b/i,
-    /\bspec\b/i,
-    /\brace\s*pace/i,
-    /\brick\b/i,
-    /\bsimulation/i,
+    /\bSP\b/i, /\bspec\b/i, /\brace\s*pace/i,
+    /\brick\b/i, /\bsimulation/i,
   ],
   'Rebuild': [
-    /\brebuild\b/i,
-    /\brecovery\s*block/i,
-    /\breset\b/i,
+    /\brebuild\b/i, /\brecovery\s*block/i, /\breset\b/i,
   ],
 }
 
-/**
- * Detect training block from workout titles
- */
 export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): DetectedBlock {
   const votes: Record<string, number> = {}
   const matchedTitles: Record<string, string[]> = {}
@@ -144,10 +181,7 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
   let topBlock = 'Unknown'
   let topVotes = 0
   for (const [block, count] of Object.entries(votes)) {
-    if (count > topVotes) {
-      topBlock = block
-      topVotes = count
-    }
+    if (count > topVotes) { topBlock = block; topVotes = count }
   }
 
   const totalWorkouts = workoutTitles.length
@@ -159,88 +193,129 @@ export function detectBlock(workoutTitles: string[], hasRecentRace: boolean): De
   }
 
   const isRebuild = hasRecentRace && (topBlock === 'Base/Durability' || topBlock === 'Rebuild')
-  if (isRebuild) {
-    topBlock = 'Rebuild'
-    confidence = hasRecentRace ? 'medium' : confidence
-  }
+  if (isRebuild) { topBlock = 'Rebuild'; confidence = 'medium' }
 
-  return {
-    block: topBlock,
-    confidence,
-    source_titles: matchedTitles[topBlock] || [],
-    is_rebuild: isRebuild,
-  }
+  return { block: topBlock, confidence, source_titles: matchedTitles[topBlock] || [], is_rebuild: isRebuild }
 }
 
 // ============================================================================
-// WORKOUT SELECTION (pick 1-3 key sessions to highlight)
+// WORKOUT SELECTION & EXECUTION SUMMARY
 // ============================================================================
 
-function selectKeyWorkouts(workouts: any[], maxCount: number = 3): KeyWorkout[] {
+function buildExecutionSummary(w: NormalizedWorkout): string {
+  const parts: string[] = []
+  if (w.tss > 0) parts.push(`TSS ${w.tss}`)
+  if (w.duration_minutes > 0) parts.push(`${w.duration_minutes}min`)
+  if (w.distance_km > 0) parts.push(`${w.distance_km}km`)
+  if (w.avg_power) parts.push(`avg ${w.avg_power}W`)
+  if (w.np) parts.push(`NP ${w.np}W`)
+  if (w.intensity_factor) parts.push(`IF ${w.intensity_factor}`)
+  if (w.avg_hr) parts.push(`avg HR ${w.avg_hr}`)
+  if (w.avg_pace) parts.push(`pace ${w.avg_pace}`)
+  if (w.elevation_gain) parts.push(`${w.elevation_gain}m gain`)
+  return parts.join(', ') || 'no data'
+}
+
+function selectKeyWorkouts(workouts: NormalizedWorkout[], maxCount: number = 3): KeyWorkout[] {
   if (!workouts || workouts.length === 0) return []
 
   const scored = workouts
-    .filter((w: any) => w.completed || w.CompletedDate || w.TotalTime > 0)
-    .map((w: any) => {
+    .filter(w => w.completed || w.tss > 0 || w.duration_minutes > 0)
+    .map(w => {
       let score = 0
-      const tss = w.tss || w.TSS || w.TrainingStressScore || 0
-      const duration = w.duration || (w.TotalTime ? w.TotalTime / 60 : 0)
-      const title = w.title || w.Title || ''
-      const notes = w.athlete_notes || w.AthleteNotes || w.Description || ''
-
-      score += Math.min(tss / 20, 5)
-      score += Math.min(duration / 30, 3)
-      if (notes && notes.length > 5) score += 3
-      if (/threshold|tempo|interval|VO2|race|test|brick|long/i.test(title)) score += 2
-      if (/recovery|easy|ZR|rest/i.test(title)) score -= 2
-
-      return {
-        date: w.date || w.WorkoutDay || '',
-        title: title,
-        sport: (w.sport || w.WorkoutType || 'other').toLowerCase(),
-        tss: tss,
-        duration_minutes: Math.round(duration),
-        athlete_notes: notes || null,
-        execution_quality: tss > 0 ? 'completed' : 'unknown',
-        _score: score,
-      }
+      if (w.tss > 0) score += Math.min(w.tss / 20, 5)
+      if (w.duration_minutes > 0) score += Math.min(w.duration_minutes / 30, 3)
+      if (w.athlete_notes && w.athlete_notes.length > 5) score += 3
+      if (/threshold|tempo|interval|VO2|race|test|brick|long/i.test(w.title)) score += 2
+      if (/recovery|easy|ZR|rest/i.test(w.title)) score -= 2
+      if (w.avg_power || w.np) score += 1
+      return { ...w, _score: score }
     })
-    .sort((a: any, b: any) => b._score - a._score)
+    .sort((a, b) => b._score - a._score)
     .slice(0, maxCount)
 
-  return scored.map(({ _score, ...rest }: any) => rest)
+  return scored.map(({ _score, ...w }) => ({
+    date: w.date,
+    title: w.title,
+    sport: w.sport,
+    tss: w.tss,
+    duration_minutes: w.duration_minutes,
+    distance_km: w.distance_km,
+    avg_power: w.avg_power,
+    avg_hr: w.avg_hr,
+    avg_pace: w.avg_pace,
+    np: w.np,
+    intensity_factor: w.intensity_factor,
+    athlete_notes: w.athlete_notes,
+    execution_summary: buildExecutionSummary(w),
+  }))
 }
 
 // ============================================================================
-// FITNESS TREND CALCULATION (4-week CTL/ATL/TSB history)
+// CTL/ATL/TSB CALCULATION (from workout data directly)
 // ============================================================================
 
+function calculateEWMA(workouts: Array<{ date: string; tss: number }>, tau: number): number {
+  if (workouts.length === 0) return 0
+  const valid = workouts.filter(w => {
+    const t = new Date(w.date).getTime()
+    return !isNaN(t) && t > 0 && w.tss > 0
+  })
+  if (valid.length === 0) return 0
+  const sorted = [...valid].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  let ewma = 0
+  for (const w of sorted) { ewma = ewma + (w.tss - ewma) / tau }
+  return Math.round(ewma * 10) / 10
+}
+
 function calculateFitnessTrend(
-  ctl4wk: number[],
-  atl4wk: number[],
-  tsb4wk: number[],
+  allWorkouts: NormalizedWorkout[],
+  recentWorkouts: NormalizedWorkout[],
   sport: string
 ): FitnessTrend {
-  const ctlChange = ctl4wk.length >= 2
-    ? ctl4wk[ctl4wk.length - 1] - ctl4wk[0]
-    : 0
+  const toTSS = (ws: NormalizedWorkout[]) => ws.filter(w => w.tss > 0).map(w => ({ date: w.date, tss: w.tss }))
 
-  let direction: 'building' | 'stable' | 'declining' = 'stable'
-  if (ctlChange > 3) direction = 'building'
-  else if (ctlChange < -3) direction = 'declining'
+  const allTSS = toTSS(allWorkouts)
+  const recentTSS = toTSS(recentWorkouts)
+
+  const ctlCurrent = calculateEWMA(allTSS, 42)
+  const atlCurrent = calculateEWMA(allTSS, 7)
+  const tsbCurrent = Math.round((ctlCurrent - atlCurrent) * 10) / 10
+
+  // Calculate CTL from 4 weeks ago (remove last 28 days)
+  const fourWeeksAgo = new Date()
+  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
+  const olderTSS = allTSS.filter(w => new Date(w.date) <= fourWeeksAgo)
+  const ctl4wkAgo = calculateEWMA(olderTSS, 42)
+  const ctlChange = Math.round((ctlCurrent - ctl4wkAgo) * 10) / 10
+
+  let ctlDirection: 'building' | 'stable' | 'declining' = 'stable'
+  if (ctlChange > 3) ctlDirection = 'building'
+  else if (ctlChange < -3) ctlDirection = 'declining'
+
+  // ATL trend
+  const twoWeeksAgo = new Date()
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+  const olderForATL = allTSS.filter(w => new Date(w.date) <= twoWeeksAgo)
+  const atl2wkAgo = calculateEWMA(olderForATL, 7)
+  let atlTrend = 'stable'
+  if (atlCurrent - atl2wkAgo > 10) atlTrend = 'elevated'
+  else if (atlCurrent - atl2wkAgo < -10) atlTrend = 'dropping'
 
   return {
     sport,
-    ctl_4wk: ctl4wk,
-    atl_4wk: atl4wk,
-    tsb_4wk: tsb4wk,
-    ctl_direction: direction,
-    ctl_change: Math.round(ctlChange),
+    ctl_current: ctlCurrent,
+    atl_current: atlCurrent,
+    tsb_current: tsbCurrent,
+    ctl_4wk_ago: ctl4wkAgo,
+    ctl_change: ctlChange,
+    ctl_direction: ctlDirection,
+    atl_trend: atlTrend,
   }
 }
 
 // ============================================================================
-// CLAUDE DRAFT GENERATION (Angela's Voice)
+// CLAUDE DRAFT GENERATION (Angela's Corrected Voice)
 // ============================================================================
 
 function buildAngelaPrompt(
@@ -250,53 +325,95 @@ function buildAngelaPrompt(
   fitnessTrends: FitnessTrend[],
   athleteComments: string[],
   stressState: string,
+  allWorkouts: NormalizedWorkout[],
   raceContext: string | null,
   coachPrompt: string | null
 ): string {
+  // Build detailed workout section with real data
   const workoutDetails = keyWorkouts.map(w => {
-    let detail = `- ${w.date}: "${w.title}" (${w.sport}, TSS ${w.tss}, ${w.duration_minutes}min)`
+    let detail = `- ${w.date}: "${w.title}" (${w.sport}) — ${w.execution_summary}`
     if (w.athlete_notes) detail += `\n  Athlete said: "${w.athlete_notes}"`
     return detail
   }).join('\n')
 
+  // Build all workouts summary
+  const completedCount = allWorkouts.filter(w => w.completed || w.tss > 0).length
+  const totalTSS = allWorkouts.reduce((sum, w) => sum + w.tss, 0)
+  const totalDuration = allWorkouts.reduce((sum, w) => sum + w.duration_minutes, 0)
+  const weekSummary = `${completedCount} workouts completed, total TSS ${totalTSS}, total duration ${totalDuration}min`
+
+  // Build fitness trends section with real numbers
   const trendDetails = fitnessTrends.map(t => {
-    const latest = t.ctl_4wk[t.ctl_4wk.length - 1] || 0
-    const oldest = t.ctl_4wk[0] || 0
-    const latestATL = t.atl_4wk[t.atl_4wk.length - 1] || 0
-    const latestTSB = t.tsb_4wk[t.tsb_4wk.length - 1] || 0
-    return `${t.sport.toUpperCase()}: CTL ${oldest}->${latest} (${t.ctl_direction}, ${t.ctl_change > 0 ? '+' : ''}${t.ctl_change}), ATL ${latestATL}, TSB ${latestTSB}`
+    return `${t.sport.toUpperCase()}: CTL ${t.ctl_current} (was ${t.ctl_4wk_ago} four weeks ago, ${t.ctl_direction} ${t.ctl_change > 0 ? '+' : ''}${t.ctl_change}), ATL ${t.atl_current} (${t.atl_trend}), TSB ${t.tsb_current}`
   }).join('\n')
 
   const commentsSection = athleteComments.length > 0
-    ? `ATHLETE'S OWN COMMENTS FROM THIS WEEK:\n${athleteComments.map(c => `- "${c}"`).join('\n')}`
+    ? `ATHLETE'S OWN COMMENTS THIS WEEK:\n${athleteComments.map(c => `- "${c}"`).join('\n')}`
     : 'No athlete comments this week.'
 
-  const systemPrompt = `You are Angela Naeth, an elite endurance coach who has raced at the highest levels of triathlon (Ironman). You write athlete feedback notes that are:
+  const systemPrompt = `You are Angela Naeth, an endurance coaching expert who coaches athletes in cycling, running, and triathlon using metabolic curve physiology and the StressLogic framework.
 
-VOICE CHARACTERISTICS:
-- Professional but human - you talk TO athletes, not AT them
-- Data-informed but not numbers-heavy - reference specific workouts and trends, but frame them in coaching language
-- Motivational but honest - you acknowledge effort AND give real feedback
-- Specific to execution - you reference actual workout data, not generic praise
-- You acknowledge athlete comments directly - "You mentioned..." / "When you said..."
-- You connect weekly work to long-term fitness building
-- You use controlled, measured phrasing - not exclamation marks or hype
-- You occasionally use a short, punchy sentence for impact: "This is working."
-- You reference physiology naturally: CTL, ATL, TSB - but explain what they mean for the athlete
+Your voice is:
+- Direct and factual (not flowery or generic)
+- Data-driven (reference real metrics, zones, compliance)
+- Specific (actual workouts, not abstract "training")
+- Human (acknowledge effort, read their comments)
+- Practical (actionable coaching, not inspiration)
+- Technical but accessible (metabolic terms + plain language)
 
-WHAT YOU NEVER DO:
-- Generic AI language ("Great week!", "Keep up the good work!", "You crushed it!")
-- List what they did day-by-day
-- Mention upcoming training plan (that's System 2, not your job)
-- Ignore their comments or effort
-- Use excessive emojis or exclamation marks
+TONE EXAMPLES:
 
-STRUCTURE (200-300 words):
-1. Opening: Acknowledge the week, the block they're in, their effort
-2. Specific wins: 1-2 key workouts + how they executed them
-3. Fitness picture: CTL/ATL/TSB trends over 4 weeks, what it means
-4. Connection: How this week's execution supports their fitness trajectory
-5. Coaching message: Motivational, honest, forward-looking (but NOT prescriptive about next week)`
+GOOD (Angela's voice):
+"Your Tuesday run hit Z1 targets consistently—power stable, no zone creep. Saturday's long run showed good aerobic efficiency despite fatigue. Run CTL is steady at 285, up 3 points from 4 weeks ago. That's healthy adaptation. You mentioned feeling strong early week—that execution supports the data. Keep the discipline on easy days."
+
+BAD (Don't write like this):
+"Your base block consistency is showing up in the work this week. The kind of execution that builds metabolic flexibility pays dividends. Trust the process—this base work matters."
+
+KEY RULES:
+
+1. USE REAL DATA ONLY
+   - Reference actual TSS, CTL, ATL, TSB values
+   - Cite specific workouts by name + performance (watts, HR, pace, duration, distance)
+   - Show 4-week trends with numbers
+   - If data missing, say so clearly, don't hedge or make it up
+
+2. REFERENCE THEIR COMMENTS
+   - If they said something, acknowledge it directly
+   - "You mentioned..." not "athletes typically..."
+
+3. ZONE & METABOLIC LANGUAGE
+   - Use zone classification (Z1, Z2, Z3, W')
+   - Mention LT1, OGC, CP when relevant
+   - "Zone creep" when easy work too hard
+   - "Aerobic efficiency" when good Z1 execution
+
+4. STRUCTURE (natural, not rigid):
+   - Opening: What they accomplished this week (with numbers)
+   - Specific workouts: 1-3 key sessions with real data
+   - Fitness picture: CTL/ATL/TSB 4-week trend with actual values
+   - Their comment: Reference what they said
+   - Coaching action: What to maintain or adjust
+   - Closing: Honest assessment (not motivational platitudes)
+
+5. LENGTH: 150-250 words. Every sentence earns its place. Cut generic phrases.
+
+6. HONESTY: Celebrate execution. Call out zone creep or missed targets. Don't sugarcoat.
+
+7. BLOCK-SPECIFIC LANGUAGE:
+   - Base: "Durability," "aerobic foundation," "consistency"
+   - Build/Threshold: "Threshold stress," "lactate tolerance," "CP work"
+   - VO2 Max: "Aerobic ceiling," "roof work," "maximal efforts"
+   - Specificity: "Race pace," "race demands," "execution"
+
+ANGELA'S WORD CHOICES: "Dialed" "Controlled" "Holding steady" "Zone creep" "Aerobic efficiency" "You showed" "Keep the discipline" "That's healthy"
+
+NEVER:
+- Generic motivation ("trust the process," "you've got this," "keep up the good work")
+- "Productive stress state" or similar jargon without meaning
+- Repeat the same idea multiple times
+- Flowery language or exclamation marks
+- Ignore missing data (state it clearly)
+- Make up metrics that weren't provided`
 
   const userPrompt = `Write a weekly feedback note for ${athleteName}.
 
@@ -304,17 +421,19 @@ CURRENT BLOCK: ${block.block} (confidence: ${block.confidence})
 STRESS STATE: ${stressState}
 ${raceContext ? `RACE CONTEXT: ${raceContext}` : ''}
 
-KEY WORKOUTS THIS WEEK:
-${workoutDetails || 'Limited workout data available.'}
+WEEK SUMMARY: ${weekSummary}
 
-FITNESS TRENDS (4-week view):
-${trendDetails || 'Limited trend data available.'}
+KEY WORKOUTS THIS WEEK (with real data):
+${workoutDetails || 'No completed workout data available — say so directly.'}
+
+FITNESS METRICS:
+${trendDetails || 'Limited trend data — new athlete or insufficient history. Say so directly.'}
 
 ${commentsSection}
 
 ${coachPrompt ? `COACH'S SPECIFIC INSTRUCTION: ${coachPrompt}` : ''}
 
-Write 200-300 words in Angela's voice. Reference specific workouts. Reference athlete comments if any. Frame the fitness data in coaching language. End with a coaching support message.`
+Generate a 150-250 word athlete feedback note in Angela's voice. Use the actual data provided. Reference specific workouts with their real numbers. Acknowledge athlete comments. Be direct and honest. No generic phrases. Make every word count.`
 
   return JSON.stringify([
     { role: 'system', content: systemPrompt },
@@ -358,10 +477,6 @@ async function generateDraftWithClaude(
 // MAIN API HANDLERS
 // ============================================================================
 
-/**
- * POST /api/feedback/generate
- * Generate an athlete feedback draft
- */
 export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
   const { DB, TP_API_BASE_URL, ANTHROPIC_API_KEY } = c.env
 
@@ -372,8 +487,6 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
     if (!athlete_id) {
       return c.json({ error: 'athlete_id is required' }, 400)
     }
-
-    console.log(`Generating feedback for athlete ${athlete_id}, range: ${date_range}`)
 
     // 1. Resolve date range
     const now = new Date()
@@ -419,53 +532,63 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
     `).first<{ access_token: string }>()
 
     if (!coachResult?.access_token) {
-      return c.json({ error: 'No coach token found. Connect TrainingPeaks first.' }, 401)
+      return c.json({ error: 'No coach token found. Log in at angela-coach.pages.dev first.' }, 401)
     }
 
     const token = coachResult.access_token
 
-    // 3. Fetch workouts from TrainingPeaks
-    let workouts: any[] = []
+    // 3. Fetch THIS WEEK's workouts from TrainingPeaks
+    let rawWorkouts: any[] = []
     try {
       const res = await fetch(
         `${TP_API_BASE_URL}/v1/athlete/${athlete_id}/workouts?startDate=${startDate}&endDate=${endDate}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       )
       if (res.ok) {
-        workouts = await res.json() as any[]
+        rawWorkouts = await res.json() as any[]
       } else {
         const res2 = await fetch(
-          `${TP_API_BASE_URL}/v2/workouts/${athlete_id}/${startDate}/${endDate}`,
+          `${TP_API_BASE_URL}/v2/athlete/${athlete_id}/workouts?startDate=${startDate}&endDate=${endDate}`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         )
-        if (res2.ok) {
-          workouts = await res2.json() as any[]
-        }
+        if (res2.ok) { rawWorkouts = await res2.json() as any[] }
       }
     } catch (e) {
       console.error('Failed to fetch workouts:', e)
     }
 
-    // Filter by sport if specified
-    if (sport_focus && sport_focus !== 'all') {
-      workouts = workouts.filter((w: any) => {
-        const sport = (w.WorkoutType || w.sport || '').toLowerCase()
-        return sport === sport_focus
-      })
+    // 4. Fetch HISTORICAL workouts (90 days) for CTL/ATL/TSB calculation
+    let historicalRaw: any[] = []
+    try {
+      const histStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const histRes = await fetch(
+        `${TP_API_BASE_URL}/v1/athlete/${athlete_id}/workouts?startDate=${histStart}&endDate=${endDate}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      )
+      if (histRes.ok) {
+        historicalRaw = await histRes.json() as any[]
+      }
+    } catch (e) {
+      console.error('Failed to fetch historical workouts:', e)
     }
 
-    console.log(`Fetched ${workouts.length} workouts for ${startDate} to ${endDate}`)
+    // 5. Normalize all workouts
+    let weekWorkouts = rawWorkouts.map(normalizeTPWorkout)
+    const historicalWorkouts = historicalRaw.map(normalizeTPWorkout)
 
-    // 4. Get athlete name
+    // Filter by sport if specified
+    if (sport_focus && sport_focus !== 'all') {
+      weekWorkouts = weekWorkouts.filter(w => w.sport === sport_focus)
+    }
+
+    // 6. Get athlete name
     const athleteUser = await DB.prepare(`
       SELECT name FROM users WHERE tp_athlete_id = ?
     `).bind(athlete_id).first<{ name: string }>()
     const athleteName = athleteUser?.name || `Athlete ${athlete_id}`
 
-    // 5. Get workout titles for block detection
-    const titles = workouts.map((w: any) => w.Title || w.title || '').filter(Boolean)
-
-    // 6. Check for recent races
+    // 7. Block detection
+    const titles = weekWorkouts.map(w => w.title).filter(Boolean)
     let hasRecentRace = false
     try {
       const raceCheck = await fetch(
@@ -481,81 +604,49 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
           (e.Name || '').toLowerCase().includes('race')
         )
       }
-    } catch (e) {
-      // Events endpoint may not be available - continue
-    }
+    } catch (e) { /* continue */ }
 
-    // 7. Detect block
     const detectedBlock = block_override
       ? { block: block_override, confidence: 'high' as const, source_titles: [], is_rebuild: false }
       : detectBlock(titles, hasRecentRace)
 
     // 8. Select key workouts
-    const keyWorkouts = selectKeyWorkouts(workouts)
+    const keyWorkouts = selectKeyWorkouts(weekWorkouts)
 
     // 9. Collect athlete comments
-    const athleteComments = workouts
-      .map((w: any) => w.AthleteNotes || w.athlete_notes || w.Description || '')
-      .filter((n: string) => n && n.length > 5 && !/^\s*$/.test(n))
+    const athleteComments = weekWorkouts
+      .map(w => w.athlete_notes || '')
+      .filter(n => n.length > 5)
 
-    // 10. Get fitness trends (4-week history from DB)
+    // 10. Calculate fitness trends from historical workout data
     const fitnessTrends: FitnessTrend[] = []
-    try {
-      const metricsHistory = await DB.prepare(`
-        SELECT date, ctl, atl, tsb, sport_metrics, stress_state
-        FROM training_metrics
-        WHERE user_id = (SELECT id FROM users WHERE tp_athlete_id = ?)
-        ORDER BY date DESC
-        LIMIT 28
-      `).bind(athlete_id).all()
+    if (historicalWorkouts.length > 0) {
+      // Combined trend
+      fitnessTrends.push(calculateFitnessTrend(historicalWorkouts, weekWorkouts, 'combined'))
 
-      if (metricsHistory.results && metricsHistory.results.length > 0) {
-        const rows = metricsHistory.results.reverse()
-        const weeklySnapshots = rows.filter((_: any, i: number) => i % 7 === 0 || i === rows.length - 1)
-
-        const ctlValues = weeklySnapshots.map((r: any) => r.ctl || 0)
-        const atlValues = weeklySnapshots.map((r: any) => r.atl || 0)
-        const tsbValues = weeklySnapshots.map((r: any) => r.tsb || 0)
-
-        fitnessTrends.push(calculateFitnessTrend(ctlValues, atlValues, tsbValues, 'combined'))
-
-        for (const row of [rows[rows.length - 1]]) {
-          if (row?.sport_metrics) {
-            try {
-              const sportData = typeof row.sport_metrics === 'string'
-                ? JSON.parse(row.sport_metrics)
-                : row.sport_metrics
-
-              for (const sport of ['bike', 'run', 'swim']) {
-                if (sportData[sport] && sportData[sport].ctl) {
-                  fitnessTrends.push(calculateFitnessTrend(
-                    [sportData[sport].ctl],
-                    [sportData[sport].atl || 0],
-                    [sportData[sport].tsb || 0],
-                    sport
-                  ))
-                }
-              }
-            } catch (e) { /* ignore parse errors */ }
-          }
+      // Per-sport trends (if enough data)
+      for (const sport of ['bike', 'run', 'swim']) {
+        const sportHist = historicalWorkouts.filter(w => w.sport === sport)
+        const sportWeek = weekWorkouts.filter(w => w.sport === sport)
+        if (sportHist.filter(w => w.tss > 0).length >= 5) {
+          fitnessTrends.push(calculateFitnessTrend(sportHist, sportWeek, sport))
         }
       }
-    } catch (e) {
-      console.warn('Could not fetch fitness history:', e)
     }
 
-    // 11. Get stress state
+    // 11. Stress state from TSB
     let stressState = 'Unknown'
-    try {
-      const latestMetrics = await DB.prepare(`
-        SELECT stress_state FROM training_metrics
-        WHERE user_id = (SELECT id FROM users WHERE tp_athlete_id = ?)
-        ORDER BY date DESC LIMIT 1
-      `).bind(athlete_id).first<{ stress_state: string }>()
-      stressState = latestMetrics?.stress_state || 'Productive'
-    } catch (e) { /* use default */ }
+    if (fitnessTrends.length > 0) {
+      const tsb = fitnessTrends[0].tsb_current
+      if (tsb < -40) stressState = 'Compromised'
+      else if (tsb < -25) stressState = 'Overreached'
+      else if (tsb < -10) stressState = 'Productive Fatigue'
+      else if (tsb <= 10) stressState = 'Recovered'
+      else if (tsb <= 25) stressState = 'Fresh'
+      else stressState = 'Detraining'
+    }
 
-    // 12. Race context string
+    // 12. Race context
     let raceContext: string | null = null
     if (hasRecentRace) {
       raceContext = 'Recent race within last 21 days. Athlete may be in recovery/rebuild phase.'
@@ -563,16 +654,9 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
 
     // 13. Generate draft with Claude
     const messages = buildAngelaPrompt(
-      athleteName,
-      detectedBlock,
-      keyWorkouts,
-      fitnessTrends,
-      athleteComments,
-      stressState,
-      raceContext,
-      coach_prompt || null
+      athleteName, detectedBlock, keyWorkouts, fitnessTrends,
+      athleteComments, stressState, weekWorkouts, raceContext, coach_prompt || null
     )
-
     const draft = await generateDraftWithClaude(ANTHROPIC_API_KEY, messages)
 
     // 14. Build response
@@ -585,9 +669,9 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
       stress_state: stressState,
       word_count: draft.split(/\s+/).length,
       generated_at: new Date().toISOString(),
+      raw_workout_count: rawWorkouts.length,
+      completed_workout_count: weekWorkouts.filter(w => w.completed || w.tss > 0).length,
     }
-
-    console.log(`Draft generated: ${feedbackDraft.word_count} words for ${athleteName}`)
 
     return c.json({
       success: true,
@@ -603,10 +687,6 @@ export async function generateFeedback(c: Context<{ Bindings: Bindings }>) {
   }
 }
 
-/**
- * POST /api/feedback/regenerate
- * Re-draft with coach instructions
- */
 export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
   const { ANTHROPIC_API_KEY } = c.env
 
@@ -621,11 +701,11 @@ export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
     const messages = JSON.stringify([
       {
         role: 'system',
-        content: `You are Angela Naeth, elite endurance coach. You previously wrote a feedback note for ${athlete_name || 'an athlete'}. The coach wants you to revise it. Maintain Angela's voice: professional, data-informed, human, motivational but honest. No generic AI language. 200-300 words.`
+        content: `You are Angela Naeth, elite endurance coach. You previously wrote a feedback note for ${athlete_name || 'an athlete'}. The coach wants you to revise it. Maintain Angela's voice: direct, data-driven, specific, honest. No generic AI language. No motivational platitudes. Use real metrics. 150-250 words. Angela's word choices: "Dialed" "Controlled" "Zone creep" "Aerobic efficiency" "Keep the discipline" "That's healthy".`
       },
       {
         role: 'user',
-        content: `Here is the previous draft:\n\n"${previous_draft}"\n\nContext about the athlete this week:\n${JSON.stringify(context || {})}\n\nCoach's instruction for revision: "${coach_instruction}"\n\nRewrite the note following the coach's instruction while maintaining Angela's voice and keeping it 200-300 words.`
+        content: `Previous draft:\n\n"${previous_draft}"\n\nContext:\n${JSON.stringify(context || {})}\n\nCoach's instruction: "${coach_instruction}"\n\nRewrite in Angela's voice. 150-250 words. Use actual data from context. Be direct.`
       }
     ])
 
@@ -645,10 +725,6 @@ export async function regenerateFeedback(c: Context<{ Bindings: Bindings }>) {
   }
 }
 
-/**
- * POST /api/feedback/save
- * Save a finalized note to the database (and optionally post to TP)
- */
 export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
   const { DB, TP_API_BASE_URL } = c.env
 
@@ -701,7 +777,6 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
               Date: new Date().toISOString().split('T')[0],
             })
           ).run()
-
           tpPostResult = 'queued'
         }
       } catch (e) {
@@ -710,12 +785,7 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
       }
     }
 
-    return c.json({
-      success: true,
-      saved: true,
-      tp_post_status: tpPostResult,
-      saved_at: new Date().toISOString(),
-    })
+    return c.json({ success: true, saved: true, tp_post_status: tpPostResult, saved_at: new Date().toISOString() })
 
   } catch (error: any) {
     console.error('Save error:', error)
@@ -723,10 +793,6 @@ export async function saveFeedback(c: Context<{ Bindings: Bindings }>) {
   }
 }
 
-/**
- * GET /api/feedback/athletes
- * Load athletes using the coach token from the database (no cookie required)
- */
 export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
   const { DB, TP_API_BASE_URL } = c.env
 
@@ -742,21 +808,17 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
     }
 
     const token = coachResult.access_token
-
     let athletes: any[] = []
     try {
       const res = await fetch(`${TP_API_BASE_URL}/v1/coach/athletes`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      if (res.ok) {
-        athletes = await res.json() as any[]
-      } else {
+      if (res.ok) { athletes = await res.json() as any[] }
+      else {
         const res2 = await fetch(`${TP_API_BASE_URL}/v2/coach/athletes`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
-        if (res2.ok) {
-          athletes = await res2.json() as any[]
-        }
+        if (res2.ok) { athletes = await res2.json() as any[] }
       }
     } catch (e) {
       console.error('Failed to fetch athletes from TP:', e)
@@ -769,17 +831,12 @@ export async function getFeedbackAthletes(c: Context<{ Bindings: Bindings }>) {
     }))
 
     return c.json({ athletes: normalized, count: normalized.length })
-
   } catch (error: any) {
     console.error('Athletes fetch error:', error)
     return c.json({ error: error.message, athletes: [] }, 500)
   }
 }
 
-/**
- * GET /api/feedback/blocks
- * Get available block types for the coach to select from
- */
 export function getBlockTypes(c: Context) {
   return c.json({
     blocks: [
